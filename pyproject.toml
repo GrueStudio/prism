@@ -1,0 +1,41 @@
+[project]
+name = "prism-cli"
+version = "0.1.0"
+description = "A command-line interface for project management and task tracking."
+authors = [{ name = "Your Name", email = "your.email@example.com" }]
+dependencies = [
+    "click",
+    "Pydantic",
+]
+requires-python = ">=3.9"
+readme = "README.md"
+license = { text = "MIT" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/prism-cli"
+Repository = "https://github.com/yourusername/prism-cli"
+
+[project.scripts]
+prism = "prism.cli:cli"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["prism*"]
+
+[tool.pytest.ini_options]
+pythonpath = [
+  ".", "src"
+]
+addopts = "--import-mode=importlib"
+testpaths = [
+    "tests",
+]
