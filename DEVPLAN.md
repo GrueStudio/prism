@@ -36,7 +36,7 @@ This document outlines the strategic and execution items for the development of 
 *   **Action:** Implement `Action` model (time_spent, due_date).
 *   **Action:** Implement `ProjectData` as the root model containing all phases.
 
-###### Deliverable: Implement JSON Data Store
+###### Deliverable: Implement JSON Data Store (Completed)
 
 *   **Action:** Create `DataStore` class in `prism/data_store.py`.
 *   **Action:** Implement `load_project_data(file_path: Path) -> ProjectData` method.
