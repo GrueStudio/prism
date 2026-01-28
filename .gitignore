@@ -19,3 +19,6 @@ venv/
 
 # Data
 *.json
+
+# Gemini Specific
+GEMINI.md
