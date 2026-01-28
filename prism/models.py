@@ -21,7 +21,13 @@ def to_kebab_case(text: str) -> str:
     s = s.replace(' ', '-')
     s = re.sub(r'[^\w-]+', '', s) # Keep alphanumeric and hyphens
     s = re.sub(r'-+', '-', s).strip('-')
-    return s[:MAX_SLUG_SIZE]
+    # Truncate to MAX_SLUG_SIZE characters
+    s = s[:MAX_SLUG_SIZE]
+    # Ensure it doesn't end with a hyphen if truncated at a hyphen boundary
+    if s.endswith('-'):
+        s = s.rstrip('-')
+    
+    return s
 
 class BaseItem(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)

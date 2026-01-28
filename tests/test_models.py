@@ -14,7 +14,7 @@ def _assert_slug_matches_generated(item_name: str, actual_slug: str):
 def test_to_kebab_case():
     assert to_kebab_case("My New Item") == "my-new-ite"
     assert to_kebab_case("AnotherOne") == "anotherone" # Corrected expected value
-    assert to_kebab_case("long name that should be truncated") == "long-name-"
+    assert to_kebab_case("long name that should be truncated") == "long-name"
     assert to_kebab_case("short") == "short"
     assert to_kebab_case("CAMELCaseName") == "camelcasen"
     assert to_kebab_case("already-kebab") == "already-ke"
