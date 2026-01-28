@@ -3,7 +3,7 @@ import json
 from datetime import datetime, date, timedelta
 from typing import List, Optional
 
-from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
+from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict, field_serializer
 import re
 
 MAX_SLUG_SIZE = 10
@@ -56,17 +56,8 @@ class BaseItem(BaseModel):
         return self
 
     model_config = ConfigDict(
-        json_encoders = {
-            uuid.UUID: str,
-            datetime: lambda dt: dt.isoformat(),
-            date: lambda d: d.isoformat(),
-            timedelta: str,
-        },
-        arbitrary_types_allowed = True,
-        json_schema_extra = {
-            'json_dumps': lambda x: json.dumps(x, indent=2), # type: ignore
-            'json_loads': json.loads # type: ignore
-        }
+        # No more json_encoders or json_schema_extra here, Pydantic handles UUID, datetime, date by default
+        # arbitrary_types_allowed = True # Not needed if timedelta is handled via field_serializer
     )
 
 
@@ -74,6 +65,10 @@ class BaseItem(BaseModel):
 class Action(BaseItem):
     time_spent: timedelta = Field(default_factory=lambda: timedelta(0))
     due_date: Optional[date] = None
+
+    @field_serializer('time_spent')
+    def serialize_time_spent(self, time_spent: timedelta) -> str:
+        return str(time_spent)
 
 class Deliverable(BaseItem):
     actions: List[Action] = Field(default_factory=list)
@@ -92,15 +87,5 @@ class ProjectData(BaseModel):
     phases: List[Phase] = Field(default_factory=list)
 
     model_config = ConfigDict(
-        json_encoders = {
-            uuid.UUID: str,
-            datetime: lambda dt: dt.isoformat(),
-            date: lambda d: d.isoformat(),
-            timedelta: str,
-        },
-        arbitrary_types_allowed = True,
-        json_schema_extra = {
-            'json_dumps': lambda x: json.dumps(x, indent=2), # type: ignore
-            'json_loads': json.loads # type: ignore
-        }
+        # No more json_encoders or json_schema_extra here
     )
