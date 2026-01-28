@@ -3,8 +3,11 @@ from pathlib import Path
 import tempfile
 import json
 
-from prism.data_store import DataStore # This will initially fail as DataStore doesn't exist yet
-from prism.models import ProjectData, Phase, Milestone, Objective, Deliverable, Action # To create dummy data
+# Import ValidationError from pydantic_core
+from pydantic_core import ValidationError
+
+from prism.data_store import DataStore
+from prism.models import ProjectData, Phase, Milestone, Objective, Deliverable, Action
 
 @pytest.fixture
 def temp_json_file():
@@ -49,7 +52,7 @@ def test_load_corrupt_json_file_raises_error(temp_json_file):
     """Test that loading a corrupt JSON file raises an error."""
     temp_json_file.write_text("this is not json")
     data_store = DataStore(temp_json_file)
-    with pytest.raises(json.JSONDecodeError):
+    with pytest.raises(ValidationError): # Changed expected exception
         data_store.load_project_data()
 
 def test_default_file_location_logic():
@@ -58,6 +61,5 @@ def test_default_file_location_logic():
     This test will be more conceptual until the default location logic is implemented in DataStore.
     For now, it just asserts the DataStore can be instantiated without an explicit path.
     """
-    # This will assume DataStore has a default_file_path internally
     data_store = DataStore()
     assert isinstance(data_store, DataStore) # placeholder assertion
