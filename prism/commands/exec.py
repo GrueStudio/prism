@@ -67,3 +67,39 @@ def addtree(json_file_path, mode):
         raise click.ClickException(f"Invalid JSON format in '{json_file_path}': {e}")
     except Exception as e:
         raise click.ClickException(f"Error adding execution tree: {e}")
+
+@exec.command(name='edit')
+@click.option('--path', 'path_str', required=True, help='The path to the item to edit.')
+@click.option('--name', help='New name for the item.')
+@click.option('--desc', help='New description for the item.')
+@click.option('--due-date', help='New due date for the item (YYYY-MM-DD).')
+@click.option('--file', 'json_file_path', type=click.Path(exists=True, dir_okay=False, readable=True), help='Path to a JSON file containing update data.')
+def edit(path_str, name, desc, due_date, json_file_path):
+    """Edits an execution item."""
+    update_data = {}
+    if json_file_path:
+        try:
+            with open(Path(json_file_path), 'r') as f:
+                file_data = json.load(f)
+            update_data.update(file_data)
+        except json.JSONDecodeError as e:
+            raise click.ClickException(f"Error: Invalid JSON format in '{json_file_path}': {e}")
+        except FileNotFoundError: # Should be caught by click.Path(exists=True) but good for safety
+            raise click.ClickException(f"Error: File '{json_file_path}' not found.")
+
+    if name is not None:
+        update_data['name'] = name
+    if desc is not None:
+        update_data['description'] = desc
+    if due_date is not None:
+        update_data['due_date'] = due_date
+
+    if not update_data:
+        raise click.ClickException("No update parameters provided. Use --name, --desc, --due-date, or --file.")
+
+    tracker = Tracker()
+    try:
+        tracker.update_item(path=path_str, **update_data, status=None)
+        click.echo(f"Item at '{path_str}' updated successfully.")
+    except Exception as e:
+        raise click.ClickException(f"Error: {e}")

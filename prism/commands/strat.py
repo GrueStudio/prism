@@ -1,6 +1,8 @@
 import click
 from prism.tracker import Tracker
 from prism.models import Objective
+import json
+from pathlib import Path
 
 @click.group()
 def strat():
@@ -23,6 +25,8 @@ def add(item_type, name, desc, parent_path):
     try:
         if parent_path:
             parent_item = tracker.get_item_by_path(parent_path)
+            if not parent_item:
+                raise click.ClickException(f"Parent item not found at path: {parent_path}")
             if isinstance(parent_item, Objective):
                 if not tracker.is_exec_tree_complete(parent_path):
                     raise click.ClickException(f"Cannot add strategic item. Execution tree for '{parent_path}' is not complete or does not exist.")
@@ -51,5 +55,38 @@ def show(path_str):
             click.echo(f"Type: {type(item).__name__}")
         else:
             raise click.ClickException(f"Item not found at path '{path_str}'.")
+    except Exception as e:
+        raise click.ClickException(f"Error: {e}")
+
+@strat.command(name='edit')
+@click.option('--path', 'path_str', required=True, help='The path to the item to edit.')
+@click.option('--name', help='New name for the item.')
+@click.option('--desc', help='New description for the item.')
+@click.option('--file', 'json_file_path', type=click.Path(exists=True, dir_okay=False, readable=True), help='Path to a JSON file containing update data.')
+def edit(path_str, name, desc, json_file_path):
+    """Edits a strategic item."""
+    update_data = {}
+    if json_file_path:
+        try:
+            with open(Path(json_file_path), 'r') as f:
+                file_data = json.load(f)
+            update_data.update(file_data)
+        except json.JSONDecodeError as e:
+            raise click.ClickException(f"Error: Invalid JSON format in '{json_file_path}': {e}")
+        except FileNotFoundError: # Should be caught by click.Path(exists=True) but good for safety
+            raise click.ClickException(f"Error: File '{json_file_path}' not found.")
+    
+    if name is not None:
+        update_data['name'] = name
+    if desc is not None:
+        update_data['description'] = desc
+
+    if not update_data:
+        raise click.ClickException("No update parameters provided. Use --name, --desc, or --file.")
+
+    tracker = Tracker()
+    try:
+        tracker.update_item(path=path_str, **update_data, status=None) # status is removed as per the deliverable
+        click.echo(f"Item at '{path_str}' updated successfully.")
     except Exception as e:
         raise click.ClickException(f"Error: {e}")

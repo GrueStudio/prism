@@ -107,3 +107,44 @@ def test_strat_add_validation_incomplete_exec_tree(mock_tracker):
     mock_tracker.return_value.is_exec_tree_complete.assert_called_once_with('parent-obj')
     mock_tracker.return_value.add_item.assert_not_called()
     assert "Error: Cannot add strategic item. Execution tree for 'parent-obj' is not complete or does not exist." in result.output
+
+@patch('prism.commands.strat.Tracker')
+def test_strat_edit(mock_tracker):
+    runner = CliRunner()
+    path = "test-phase/test-milestone"
+    new_name = "Updated Milestone Name"
+    new_description = "This is an updated description."
+    
+    result = runner.invoke(cli, ['strat', 'edit', '--path', path, '--name', new_name, '--desc', new_description])
+    
+    assert result.exit_code == 0
+    mock_tracker.return_value.update_item.assert_called_once_with(
+        path=path,
+        name=new_name,
+        description=new_description,
+        status=None # status is removed as per the deliverable
+    )
+    assert f"Item at '{path}' updated successfully." in result.output
+
+import json
+from pathlib import Path
+
+@patch('prism.commands.strat.Tracker')
+def test_strat_edit_from_file(mock_tracker):
+    runner = CliRunner()
+    path = "test-phase/test-objective"
+    json_file_path = Path("tests/test_strat_edit_file.json")
+    
+    with open(json_file_path, 'r') as f:
+        update_data = json.load(f)
+
+    result = runner.invoke(cli, ['strat', 'edit', '--path', path, '--file', str(json_file_path)])
+    
+    assert result.exit_code == 0
+    mock_tracker.return_value.update_item.assert_called_once_with(
+        path=path,
+        name=update_data.get('name'),
+        description=update_data.get('description'),
+        status=None # status is removed as per the deliverable
+    )
+    assert f"Item at '{path}' updated successfully." in result.output

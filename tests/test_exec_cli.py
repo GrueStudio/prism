@@ -111,3 +111,44 @@ def test_exec_addtree_invalid_json(mock_tracker):
     assert "Error: Invalid JSON format" in result.output
     mock_tracker.return_value.add_exec_tree.assert_not_called()
     Path(invalid_json_file).unlink() # Clean up
+
+@patch('prism.commands.exec.Tracker')
+def test_exec_edit(mock_tracker):
+    runner = CliRunner()
+    path = "test-phase/test-milestone/test-objective/test-deliverable"
+    new_name = "Updated Deliverable Name"
+    new_description = "This is an updated deliverable description."
+    new_due_date = "2024-12-31" # Example date string
+    
+    result = runner.invoke(cli, ['exec', 'edit', '--path', path, '--name', new_name, '--desc', new_description, '--due-date', new_due_date])
+    
+    assert result.exit_code == 0
+    mock_tracker.return_value.update_item.assert_called_once_with(
+        path=path,
+        name=new_name,
+        description=new_description,
+        due_date=new_due_date, # due_date is included for exec items
+        status=None # status is removed as per the deliverable
+    )
+    assert f"Item at '{path}' updated successfully." in result.output
+
+@patch('prism.commands.exec.Tracker')
+def test_exec_edit_from_file(mock_tracker):
+    runner = CliRunner()
+    path = "test-phase/test-milestone/test-objective/test-action"
+    json_file_path = Path("tests/test_exec_edit_file.json")
+    
+    with open(json_file_path, 'r') as f:
+        update_data = json.load(f)
+
+    result = runner.invoke(cli, ['exec', 'edit', '--path', path, '--file', str(json_file_path)])
+    
+    assert result.exit_code == 0
+    mock_tracker.return_value.update_item.assert_called_once_with(
+        path=path,
+        name=update_data.get('name'),
+        description=update_data.get('description'),
+        due_date=update_data.get('due_date'),
+        status=None
+    )
+    assert f"Item at '{path}' updated successfully." in result.output
