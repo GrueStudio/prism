@@ -54,11 +54,13 @@ This document outlines the strategic and execution items for the development of 
 
 ###### Deliverable: Basic CLI Commands
 
-*   **Action:** Modify `prism/cli.py` to import and register `strat` and `exec` command groups.
-*   **Action:** Implement `prism strat add --phase/--milestone/--objective --name <name> --desc <description> [--parent-path <path>]`.
-*   **Action:** Implement `prism exec add --deliverable/--action --name <name> --desc <description> [--parent-path <path>]`.
-*   **Action:** Implement `prism strat show --path <path_to_item>` to display details and children.
-*   **Action:** Implement `prism exec show --path <path_to_item>` to display details and children.
+*   **Action:** Modify `prism/cli.py` to import and register `strat` and `exec` command groups. (Completed)
+*   **Action:** Implement `prism strat add --phase/--milestone/--objective --name <name> --desc <description> [--parent-path <path>]`. (Completed)
+*   **Action:** Implement `prism exec add --deliverable/--action --name <name> --desc <description> [--parent-path <path>]`. (Completed)
+*   **Action:** Implement `prism strat show --path <path_to_item>` to display details and children. (Completed)
+*   **Action:** Implement `prism exec show --path <path_to_item>` to display details and children. (Completed)
+*   **Action:** Implement validation in `prism strat add` to prevent strategic item additions if the associated objective lacks a complete execution tree.
+*   **Action:** Implement `prism exec addtree <json_file_path> [--mode <append|replace>]` to add an entire execution tree from a JSON file.
 
 ---
 
