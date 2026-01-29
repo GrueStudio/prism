@@ -1,5 +1,6 @@
 import click
 from prism.tracker import Tracker
+from prism.models import Objective
 
 @click.group()
 def strat():
@@ -17,10 +18,16 @@ def add(item_type, name, desc, parent_path):
     """Adds a new strategic item."""
     if not item_type:
         click.echo("Error: Please specify an item type to add.", err=True)
-        return
+        raise click.ClickException("Please specify an item type to add.")
 
     tracker = Tracker()
     try:
+        if parent_path:
+            parent_item = tracker.get_item_by_path(parent_path)
+            if isinstance(parent_item, Objective):
+                if not tracker.is_exec_tree_complete(parent_path):
+                    raise click.ClickException(f"Cannot add strategic item. Execution tree for '{parent_path}' is not complete or does not exist.")
+        
         tracker.add_item(
             item_type=item_type,
             name=name,
@@ -29,7 +36,7 @@ def add(item_type, name, desc, parent_path):
         )
         click.echo(f"{item_type.capitalize()} '{name}' created successfully.")
     except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+        raise click.ClickException(f"Error: {e}")
 
 @strat.command(name='show')
 @click.option('--path', 'path_str', required=True, help='The path to the item to show.')
@@ -44,7 +51,7 @@ def show(path_str):
             click.echo(f"Status: {item.status}")
             click.echo(f"Type: {type(item).__name__}")
         else:
-            click.echo(f"Error: Item not found at path '{path_str}'.", err=True)
+            raise click.ClickException(f"Item not found at path '{path_str}'.")
     except Exception as e:
-        click.echo(f"Error: {e}", err=True)
+        raise click.ClickException(f"Error: {e}")
 
