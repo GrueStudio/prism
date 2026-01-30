@@ -148,3 +148,23 @@ def test_strat_edit_from_file(mock_tracker):
         status=None # status is removed as per the deliverable
     )
     assert f"Item at '{path}' updated successfully." in result.output
+
+@patch('prism.commands.strat.Tracker')
+def test_strat_delete(mock_tracker):
+    runner = CliRunner()
+    path = "test-phase/test-objective"
+    
+    result = runner.invoke(cli, ['strat', 'delete', '--path', path])
+    
+    assert result.exit_code == 0
+    mock_tracker.return_value.delete_item.assert_called_once_with(path=path)
+    assert f"Item at '{path}' deleted successfully." in result.output
+
+@patch('prism.commands.strat.Tracker')
+def test_strat_delete_no_path(mock_tracker):
+    runner = CliRunner()
+    result = runner.invoke(cli, ['strat', 'delete'])
+    
+    assert result.exit_code == 2 # Click exits with 2 for missing required options
+    assert "Error: Missing option '--path'" in result.output
+    mock_tracker.return_value.delete_item.assert_not_called()

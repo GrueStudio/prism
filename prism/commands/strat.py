@@ -90,3 +90,14 @@ def edit(path_str, name, desc, json_file_path):
         click.echo(f"Item at '{path_str}' updated successfully.")
     except Exception as e:
         raise click.ClickException(f"Error: {e}")
+
+@strat.command(name='delete')
+@click.option('--path', 'path_str', required=True, help='The path to the item to delete.')
+def delete(path_str):
+    """Deletes a strategic item."""
+    tracker = Tracker()
+    try:
+        tracker.delete_item(path=path_str)
+        click.echo(f"Item at '{path_str}' deleted successfully.")
+    except Exception as e:
+        raise click.ClickException(f"Error: {e}")
