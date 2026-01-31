@@ -41,7 +41,7 @@ class Tracker:
             count += 1
         return slug
 
-    def get_status_summary(self) -> Dict[str, Any]:
+    def get_status_summary(self, phase_path: Optional[str] = None, milestone_path: Optional[str] = None) -> Dict[str, Any]:
         summary = {
             "item_counts": {
                 "Phase": {"pending": 0, "completed": 0, "total": 0},
@@ -85,7 +85,26 @@ class Tracker:
                 if children:
                     _traverse(children, parent_path=current_path, parent_is_completed=is_completed)
 
-        _traverse(self.project_data.phases)
+        start_items: List[BaseItem] = []
+        start_path = ""
+        if milestone_path:
+            milestone = self.get_item_by_path(milestone_path)
+            if milestone and isinstance(milestone, Milestone):
+                start_items = [milestone]
+                start_path = milestone_path
+            else:
+                return summary # Return empty if not found
+        elif phase_path:
+            phase = self.get_item_by_path(phase_path)
+            if phase and isinstance(phase, Phase):
+                start_items = [phase]
+                start_path = phase_path
+            else:
+                return summary # Return empty if not found
+        else:
+            start_items = self.project_data.phases
+
+        _traverse(start_items, parent_path=start_path)
         return summary
 
 

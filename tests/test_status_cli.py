@@ -174,3 +174,57 @@ def test_status_command_no_issues(mock_tracker):
     
     assert "No overdue actions." in result.output
     assert "No orphaned items found." in result.output
+
+@patch('prism.commands.status.Tracker')
+def test_status_command_with_phase_filter(mock_tracker):
+    """Test the 'status' command with a --phase filter."""
+    
+    mock_summary = {
+        "item_counts": {
+            "Phase": {"pending": 1, "completed": 0, "total": 1},
+            "Milestone": {"pending": 1, "completed": 0, "total": 1},
+            "Objective": {"pending": 1, "completed": 0, "total": 1},
+            "Deliverable": {"pending": 1, "completed": 0, "total": 1},
+            "Action": {"pending": 1, "completed": 0, "total": 1},
+        },
+        "overdue_actions": [],
+        "orphaned_items": [],
+    }
+    mock_tracker.return_value.get_status_summary.return_value = mock_summary
+    
+    runner = CliRunner()
+    result = runner.invoke(cli, ['status', '--phase', 'test-phase-2'])
+    
+    assert result.exit_code == 0
+    mock_tracker.return_value.get_status_summary.assert_called_once_with(phase_path='test-phase-2', milestone_path=None)
+    
+    assert "Project Status Summary for Phase 'test-phase-2'" in result.output
+    assert "Phases: 0 completed / 1 total" in result.output
+    assert "Milestones: 0 completed / 1 total" in result.output
+
+@patch('prism.commands.status.Tracker')
+def test_status_command_with_milestone_filter(mock_tracker):
+    """Test the 'status' command with a --milestone filter."""
+    
+    mock_summary = {
+        "item_counts": {
+            "Milestone": {"pending": 0, "completed": 1, "total": 1},
+            "Objective": {"pending": 0, "completed": 1, "total": 1},
+            "Deliverable": {"pending": 1, "completed": 1, "total": 2},
+            "Action": {"pending": 0, "completed": 1, "total": 1},
+        },
+        "overdue_actions": [],
+        "orphaned_items": [{"path": "test-phase-1/test-milestone-1/test-objective-1/orphaned-deliverable", "type": "Deliverable"}],
+    }
+    mock_tracker.return_value.get_status_summary.return_value = mock_summary
+    
+    runner = CliRunner()
+    result = runner.invoke(cli, ['status', '--milestone', 'test-phase-1/test-milestone-1'])
+    
+    assert result.exit_code == 0
+    mock_tracker.return_value.get_status_summary.assert_called_once_with(phase_path=None, milestone_path='test-phase-1/test-milestone-1')
+    
+    assert "Project Status Summary for Milestone 'test-phase-1/test-milestone-1'" in result.output
+    assert "Milestones: 1 completed / 1 total" in result.output
+    assert "Orphaned Items:" in result.output
+    assert "Path: test-phase-1/test-milestone-1/test-objective-1/orphaned-deliverable" in result.output
