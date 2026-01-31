@@ -29,7 +29,8 @@ def add(item_type, name, desc, parent_path):
             item_type=item_type,
             name=name,
             description=desc,
-            parent_path=parent_path
+            parent_path=parent_path,
+            status=None
         )
         click.echo(f"{item_type.capitalize()} '{name}' created successfully.")
     except Exception as e:

@@ -32,6 +32,7 @@ def test_strat_add_phase(mock_tracker):
         name="Test Phase",
         description="A test phase",
         parent_path=None,
+        status=None,
     )
     assert "Phase 'Test Phase' created successfully." in result.output
 
@@ -59,6 +60,7 @@ def test_strat_add_milestone(mock_tracker):
         name="Test Milestone",
         description="A test milestone",
         parent_path="test-phase",
+        status=None,
     )
     assert "Milestone 'Test Milestone' created successfully." in result.output
 
@@ -86,6 +88,7 @@ def test_strat_add_objective(mock_tracker):
         name="Test Objective",
         description="A test objective",
         parent_path="test-phase/test-milestone",
+        status=None,
     )
     assert "Objective 'Test Objective' created successfully." in result.output
 
@@ -279,3 +282,34 @@ def test_strat_show_json_output(mock_tracker):
         ]
     except json.JSONDecodeError:
         pytest.fail("Output is not valid JSON.")
+
+@patch('prism.commands.strat.Tracker')
+def test_strat_edit_completed_item_raises_error(mock_tracker):
+    mock_phase = Phase(
+        id=uuid.uuid4(),
+        name='Completed Phase',
+        description='A completed phase',
+        slug='completed-phase',
+        status='completed', # Set status to completed
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+        milestones=[]
+    )
+    mock_tracker.return_value.get_item_by_path.return_value = mock_phase
+    # The Tracker.update_item method itself will raise the ValueError
+    # when the item_to_update.status is 'completed' or 'archived'.
+    # We are mocking the Tracker class directly, so we need to ensure
+    # the side_effect correctly simulates the behavior of the real method.
+    mock_tracker.return_value.update_item.side_effect = ValueError("Cannot update item 'dummy/path' because it is already in 'completed' status.")
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ['strat', 'edit', '--path', 'dummy/path', '--name', 'Attempt to Update'])
+
+    assert result.exit_code == 1
+    assert "Error: Cannot update item 'dummy/path' because it is already in 'completed' status." in result.output
+
+    mock_tracker.return_value.update_item.assert_called_once_with(
+        path='dummy/path',
+        name='Attempt to Update',
+        status=None
+    )

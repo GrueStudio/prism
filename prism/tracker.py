@@ -151,7 +151,7 @@ class Tracker:
         
         return target_item
 
-    def add_item(self, item_type: str, name: str, description: Optional[str], parent_path: Optional[str]):
+    def add_item(self, item_type: str, name: str, description: Optional[str], parent_path: Optional[str], status: Optional[str] = None):
         # Validate item_type
         if item_type not in ['phase', 'milestone', 'objective', 'deliverable', 'action']:
             raise ValueError(f"Invalid item type: {item_type}")
@@ -195,6 +195,14 @@ class Tracker:
         else:
             raise ValueError("Unsupported item type during instantiation.")
         
+        # Enforce business rule: new items cannot be created as "completed" or "archived"
+        if status in ["completed", "archived"]:
+            new_item.status = "pending"
+        elif status is not None:
+            new_item.status = status
+        else:
+            new_item.status = "pending" # Default to pending if no status is provided
+        
         if parent_path:
             # Re-fetch parent_item as it might have been modified by adding slug
             parent_item = self.get_item_by_path(parent_path)
@@ -219,6 +227,9 @@ class Tracker:
         item_to_update = self.get_item_by_path(path)
         if not item_to_update:
             raise ValueError(f"Item not found at path: {path}")
+
+        if item_to_update.status in ["completed", "archived"]:
+            raise ValueError(f"Cannot update item '{path}' because it is already in '{item_to_update.status}' status.")
         
         updated = False
         if name is not None:
