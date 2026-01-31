@@ -28,7 +28,7 @@ class Tracker:
             json.dump(self.project_data.dict(), f, indent=2)
 
     def _generate_unique_slug(self, existing_items: List[BaseItem], base_name: str) -> str:
-        base_slug = re.sub(r'[^a-z0-9]+', '-', base_name.lower()).strip('-')[:10]
+        base_slug = re.sub(r'[^a-z0-9]+', '-', base_name.lower()).strip('-')[:15]
         if not base_slug:
             base_slug = "item"
 
@@ -37,9 +37,76 @@ class Tracker:
         slug = base_slug
         count = 1
         while slug in existing_slugs:
-            slug = f"{base_slug[:(10 - len(str(count)) - 1)]}-{count}" if len(base_slug) > (10 - len(str(count)) - 1) else f"{base_slug}-{count}"
+            slug = f"{base_slug[:(15 - len(str(count)) - 1)]}-{count}" if len(base_slug) > (15 - len(str(count)) - 1) else f"{base_slug}-{count}"
             count += 1
         return slug
+
+    def get_status_summary(self, phase_path: Optional[str] = None, milestone_path: Optional[str] = None) -> Dict[str, Any]:
+        summary = {
+            "item_counts": {
+                "Phase": {"pending": 0, "completed": 0, "total": 0},
+                "Milestone": {"pending": 0, "completed": 0, "total": 0},
+                "Objective": {"pending": 0, "completed": 0, "total": 0},
+                "Deliverable": {"pending": 0, "completed": 0, "total": 0},
+                "Action": {"pending": 0, "completed": 0, "total": 0},
+            },
+            "overdue_actions": [],
+            "orphaned_items": [],
+        }
+
+        def _traverse(items: List[BaseItem], parent_path: str = "", parent_is_completed: bool = False):
+            for item in items:
+                item_type = type(item).__name__
+                current_path = f"{parent_path}/{item.slug}" if parent_path else item.slug
+                is_completed = item.status == "completed"
+
+                summary["item_counts"][item_type]["total"] += 1
+                if is_completed:
+                    summary["item_counts"][item_type]["completed"] += 1
+                else:
+                    summary["item_counts"][item_type]["pending"] += 1
+
+                if parent_is_completed and not is_completed:
+                    summary["orphaned_items"].append({"path": current_path, "type": item_type})
+
+                if isinstance(item, Action) and not is_completed and item.due_date and item.due_date < datetime.now():
+                    summary["overdue_actions"].append({"path": current_path, "due_date": item.due_date.isoformat()})
+
+                children = []
+                if isinstance(item, Phase):
+                    children = item.milestones
+                elif isinstance(item, Milestone):
+                    children = item.objectives
+                elif isinstance(item, Objective):
+                    children = item.deliverables
+                elif isinstance(item, Deliverable):
+                    children = item.actions
+                
+                if children:
+                    _traverse(children, parent_path=current_path, parent_is_completed=is_completed)
+
+        start_items: List[BaseItem] = []
+        start_path = ""
+        if milestone_path:
+            milestone = self.get_item_by_path(milestone_path)
+            if milestone and isinstance(milestone, Milestone):
+                start_items = [milestone]
+                start_path = milestone_path
+            else:
+                return summary # Return empty if not found
+        elif phase_path:
+            phase = self.get_item_by_path(phase_path)
+            if phase and isinstance(phase, Phase):
+                start_items = [phase]
+                start_path = phase_path
+            else:
+                return summary # Return empty if not found
+        else:
+            start_items = self.project_data.phases
+
+        _traverse(start_items, parent_path=start_path)
+        return summary
+
 
     def _resolve_path_segment(self, items: List[BaseItem], segment: str) -> Optional[BaseItem]:
         # Try to match by slug

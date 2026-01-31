@@ -8,7 +8,7 @@ class BaseItem(BaseModel):
     id: uuid.UUID = Field(default_factory=uuid.uuid4)
     name: str
     description: Optional[str] = None
-    slug: str = Field(min_length=1, max_length=10)
+    slug: str = Field(min_length=1, max_length=15)
     status: str = "pending"  # e.g., pending, in-progress, completed, cancelled
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
@@ -17,12 +17,12 @@ class BaseItem(BaseModel):
     @classmethod
     def validate_slug(cls, v, info):
         if v:
-            if not re.fullmatch(r"[a-z0-9\-]{1,10}", v):
-                raise ValueError("Slug must be kebab-case, alphanumeric with hyphens, and max 10 characters.")
+            if not re.fullmatch(r"[a-z0-9\-]{1,15}", v):
+                raise ValueError("Slug must be kebab-case, alphanumeric with hyphens, and max 15 characters.")
             return v
         if 'name' in info.data:
             slug = re.sub(r'[^a-z0-9]+', '-', info.data['name'].lower()).strip('-')
-            return slug[:10]
+            return slug[:15]
         return "" # Should not happen if name is always present
 
     def __hash__(self):

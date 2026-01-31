@@ -59,7 +59,7 @@ This document outlines the strategic and execution items for the development of 
 
 #### Milestone: Core CRUD Operations
 
-**Features:** Full Create, Read, Update, Delete (CRUD) functionality for all strategic and execution items, plus enhanced output.
+**Features:** Full Create, Read, Update, Delete (CRUD) functionality for all strategic and execution items, plus enhanced output and enforced business rules.
 
 ##### Objective: Implement Update and Delete Commands (Completed)
 
@@ -85,11 +85,69 @@ This document outlines the strategic and execution items for the development of 
 
 **Features:** Provide machine-readable output for CLI commands and enforce rules regarding item status changes.
 
-###### Deliverable: Implement Structured Output for Show Commands
+###### Deliverable: Implement Structured Output for Show Commands (Completed)
 
 *   **Action:** Add `--json` flag to `prism strat show` and `prism exec show` to output item details in machine-readable JSON format.
+
+###### Deliverable: Implement Status Command (Completed)
+
+*   **Action:** Implement `prism status` command to display a summary of project progress, including counts of pending/completed items, overdue actions, and orphaned items.
+*   **Action:** Consider adding filtering options (e.g., `--phase`, `--milestone`) to the `prism status` command.
 
 ###### Deliverable: Enforce Item Status Rules
 
 *   **Action:** Modify `prism strat edit` and `prism exec edit` to prevent updates to items with a "completed" or "archived" status.
 *   **Action:** Modify `prism strat add` and `prism exec add` to ensure new items cannot be created with a "completed" or "archived" status, implicitly setting them to "pending".
+
+---
+
+## Execution Items (Future)
+
+These items represent the next steps beyond the current Pre-Alpha phase.
+
+### Phase: Alpha - Basic CRUD for all item types, time tracking, bug tracking placeholder
+
+#### Milestone: CRUD & Basic Time Tracking
+
+##### Objective: Full CRUD & Time Tracking Start
+
+###### Deliverable: Full CRUD Operations
+
+*   **Action:** Implement `edit` commands for all item types in `strat` and `exec` using `--path`.
+*   **Action:** Implement `delete` commands for all item types in `strat` and `exec` using `--path`.
+*   **Action:** Implement `status` update commands for all trackable items.
+
+###### Deliverable: Initial Time Tracking
+
+*   **Action:** Implement `prism time start <action_path>`.
+*   **Action:** Implement `prism time stop <action_path>`.
+*   **Action:** Implement `prism time report`.
+*   **Action:** Implement logic for "cursor" or "current" action tracking.
+
+### Phase: Beta - Enhanced features, multi-user preparation
+
+#### Milestone: Ideas, Bug Tracking & Refinements
+
+##### Objective: Ideas & Bug Tracking
+
+###### Deliverable: Ideas Management
+
+*   **Action:** Define `Idea` Pydantic model.
+*   **Action:** Implement `prism idea add <title> --desc <description> --tags <tag1,tag2>`.
+*   **Action:** Implement `prism idea list [--tag <tag>]`.
+*   **Action:** Implement `prism idea show <id/slug>`.
+
+###### Deliverable: Bug Tracking (JSON based)
+
+*   **Action:** Define `Bug` Pydantic model.
+*   **Action:** Implement `prism bug add <title> --desc <description> --priority (low|medium|high)`.
+*   **Action:** Implement `prism bug list [--status <status>]`.
+*   **Action:** Implement `prism bug show <id/slug>`.
+*   **Action:** Implement `prism bug status <id/slug> (open|in-progress|closed)`.
+
+##### Objective: Improved CLI & Path Resolution
+
+###### Deliverable: Command Refinements
+
+*   **Action:** Implement `prism strat list` and `prism exec list` with filtering options.
+*   **Action:** Enhance user feedback and error messages for path resolution.

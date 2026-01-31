@@ -173,3 +173,39 @@ def test_exec_delete_no_path(mock_tracker):
     assert "Error: Missing option '--path'" in result.output
     mock_tracker.return_value.delete_item.assert_not_called()
 
+@patch('prism.commands.exec.Tracker')
+def test_exec_show_json_output(mock_tracker):
+    mock_id = uuid.uuid4()
+    mock_created_at = datetime.now()
+    mock_updated_at = mock_created_at
+    mock_deliverable = Deliverable(
+        id=mock_id,
+        name='Test Deliverable',
+        description='A test deliverable',
+        slug='test-deliv',
+        status='in-progress',
+        created_at=mock_created_at,
+        updated_at=mock_updated_at,
+        actions=[]
+    )
+    mock_tracker.return_value.get_item_by_path.return_value = mock_deliverable
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ['exec', 'show', '--path', 'dummy/path', '--json'])
+
+    assert result.exit_code == 0
+    mock_tracker.return_value.get_item_by_path.assert_called_once_with('dummy/path')
+
+    try:
+        output_json = json.loads(result.output)
+    except json.JSONDecodeError:
+        assert False, "Output is not valid JSON"
+
+    assert output_json['id'] == str(mock_id)
+    assert output_json['name'] == 'Test Deliverable'
+    assert output_json['description'] == 'A test deliverable'
+    assert output_json['slug'] == 'test-deliv'
+    assert output_json['status'] == 'in-progress'
+    assert output_json['created_at'] == mock_created_at.isoformat()
+    assert output_json['updated_at'] == mock_updated_at.isoformat()
+    assert output_json['actions'] == []
