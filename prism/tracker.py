@@ -284,8 +284,16 @@ class Tracker:
         if not segments:
             raise ValueError("Path cannot be empty.")
 
+        item_to_delete = self.get_item_by_path(path)
+        if not item_to_delete:
+            raise ValueError(f"Item not found at path: {path}")
+        
+        if item_to_delete.status in ["completed", "archived"]:
+            raise ValueError(f"Cannot delete item '{path}' because it is already in '{item_to_delete.status}' status.")
+
         item_slug_to_delete = segments[-1]
         parent_path = '/'.join(segments[:-1]) if len(segments) > 1 else None
+
 
         if parent_path:
             parent_item = self.get_item_by_path(parent_path)

@@ -324,7 +324,35 @@ def test_exec_edit_completed_item_raises_error(mock_tracker):
     )
 
     mock_tracker.return_value.update_item.assert_called_once_with(
-        path='dummy/path',
-        name='Attempt to Update',
-        status=None
+        path="dummy/path", name="Attempt to Update", status=None
     )
+
+
+@patch("prism.commands.exec.Tracker")
+def test_exec_delete_completed_item_raises_error(mock_tracker):
+    mock_deliverable = Deliverable(
+        id=uuid.uuid4(),
+        name="Completed Deliverable",
+        description="A completed deliverable",
+        slug="completed-deliv",
+        status="completed",  # Set status to completed
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+        actions=[],
+    )
+    mock_tracker.return_value.get_item_by_path.return_value = mock_deliverable
+    mock_tracker.return_value.delete_item.side_effect = ValueError(
+        "Cannot update item 'dummy/path' because it is already in 'completed' status."
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["exec", "delete", "--path", "dummy/path"])
+
+    print(result.output)
+    assert result.exit_code == 1
+    assert (
+        "Error: Cannot update item 'dummy/path' because it is already in 'completed' status."
+        in result.output
+    )
+
+    mock_tracker.return_value.delete_item.assert_called_once_with(path="dummy/path")
