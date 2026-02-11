@@ -81,23 +81,24 @@ This document outlines the strategic and execution items for the development of 
 
 *   **Action:** Simplify the input JSON structure for `prism exec addtree` (e.g., remove redundant object wrapping for objectives/deliverables).
 
-##### Objective: Enhance CLI Output and Enforce Business Rules
+##### Objective: Enhance CLI Output and Enforce Business Rules (Completed)
 
 **Features:** Provide machine-readable output for CLI commands and enforce rules regarding item status changes.
 
-###### Deliverable: Implement Structured Output for Show Commands
+###### Deliverable: Implement Structured Output for Show Commands (Completed)
 
 *   **Action:** Add `--json` flag to `prism strat show` and `prism exec show` to output item details in machine-readable JSON format.
 
-###### Deliverable: Implement Status Command
+###### Deliverable: Implement Status Command (Completed)
 
 *   **Action:** Implement `prism status` command to display a summary of project progress, including counts of pending/completed items, overdue actions, and orphaned items.
 *   **Action:** Consider adding filtering options (e.g., `--phase`, `--milestone`) to the `prism status` command.
 
-###### Deliverable: Enforce Item Status Rules
+###### Deliverable: Enforce Item Status Rules (Completed)
 
 *   **Action:** Modify `prism strat edit` and `prism exec edit` to prevent updates to items with a "completed" or "archived" status.
 *   **Action:** Modify `prism strat add` and `prism exec add` to ensure new items cannot be created with a "completed" or "archived" status, implicitly setting them to "pending".
+*   **Action:** Modify `prism strat delete` and `prism exec delete` to prevent deletion of items with a "completed" or "archived" status.
 
 ---
 
@@ -120,7 +121,7 @@ These items represent the next steps beyond the current Pre-Alpha phase.
 ###### Deliverable: Initial Time Tracking
 
 *   **Action:** Implement `prism time start <action_path>`.
-*   **Action:** Implement `prism time stop <action_path>`.
+*   **Action:** Implement `prism time stop <action_from_path>`.
 *   **Action:** Implement `prism time report`.
 *   **Action:** Implement logic for "cursor" or "current" action tracking.
 

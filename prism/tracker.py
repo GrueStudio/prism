@@ -28,7 +28,7 @@ class Tracker:
             json.dump(self.project_data.dict(), f, indent=2)
 
     def _generate_unique_slug(self, existing_items: List[BaseItem], base_name: str) -> str:
-        base_slug = re.sub(r'[^a-z0-9]+', '-', base_name.lower()).strip('-')[:10]
+        base_slug = re.sub(r'[^a-z0-9]+', '-', base_name.lower()).strip('-')[:15]
         if not base_slug:
             base_slug = "item"
 
@@ -37,9 +37,76 @@ class Tracker:
         slug = base_slug
         count = 1
         while slug in existing_slugs:
-            slug = f"{base_slug[:(10 - len(str(count)) - 1)]}-{count}" if len(base_slug) > (10 - len(str(count)) - 1) else f"{base_slug}-{count}"
+            slug = f"{base_slug[:(15 - len(str(count)) - 1)]}-{count}" if len(base_slug) > (15 - len(str(count)) - 1) else f"{base_slug}-{count}"
             count += 1
         return slug
+
+    def get_status_summary(self, phase_path: Optional[str] = None, milestone_path: Optional[str] = None) -> Dict[str, Any]:
+        summary = {
+            "item_counts": {
+                "Phase": {"pending": 0, "completed": 0, "total": 0},
+                "Milestone": {"pending": 0, "completed": 0, "total": 0},
+                "Objective": {"pending": 0, "completed": 0, "total": 0},
+                "Deliverable": {"pending": 0, "completed": 0, "total": 0},
+                "Action": {"pending": 0, "completed": 0, "total": 0},
+            },
+            "overdue_actions": [],
+            "orphaned_items": [],
+        }
+
+        def _traverse(items: List[BaseItem], parent_path: str = "", parent_is_completed: bool = False):
+            for item in items:
+                item_type = type(item).__name__
+                current_path = f"{parent_path}/{item.slug}" if parent_path else item.slug
+                is_completed = item.status == "completed"
+
+                summary["item_counts"][item_type]["total"] += 1
+                if is_completed:
+                    summary["item_counts"][item_type]["completed"] += 1
+                else:
+                    summary["item_counts"][item_type]["pending"] += 1
+
+                if parent_is_completed and not is_completed:
+                    summary["orphaned_items"].append({"path": current_path, "type": item_type})
+
+                if isinstance(item, Action) and not is_completed and item.due_date and item.due_date < datetime.now():
+                    summary["overdue_actions"].append({"path": current_path, "due_date": item.due_date.isoformat()})
+
+                children = []
+                if isinstance(item, Phase):
+                    children = item.milestones
+                elif isinstance(item, Milestone):
+                    children = item.objectives
+                elif isinstance(item, Objective):
+                    children = item.deliverables
+                elif isinstance(item, Deliverable):
+                    children = item.actions
+                
+                if children:
+                    _traverse(children, parent_path=current_path, parent_is_completed=is_completed)
+
+        start_items: List[BaseItem] = []
+        start_path = ""
+        if milestone_path:
+            milestone = self.get_item_by_path(milestone_path)
+            if milestone and isinstance(milestone, Milestone):
+                start_items = [milestone]
+                start_path = milestone_path
+            else:
+                return summary # Return empty if not found
+        elif phase_path:
+            phase = self.get_item_by_path(phase_path)
+            if phase and isinstance(phase, Phase):
+                start_items = [phase]
+                start_path = phase_path
+            else:
+                return summary # Return empty if not found
+        else:
+            start_items = self.project_data.phases
+
+        _traverse(start_items, parent_path=start_path)
+        return summary
+
 
     def _resolve_path_segment(self, items: List[BaseItem], segment: str) -> Optional[BaseItem]:
         # Try to match by slug
@@ -84,7 +151,7 @@ class Tracker:
         
         return target_item
 
-    def add_item(self, item_type: str, name: str, description: Optional[str], parent_path: Optional[str]):
+    def add_item(self, item_type: str, name: str, description: Optional[str], parent_path: Optional[str], status: Optional[str] = None):
         # Validate item_type
         if item_type not in ['phase', 'milestone', 'objective', 'deliverable', 'action']:
             raise ValueError(f"Invalid item type: {item_type}")
@@ -128,6 +195,14 @@ class Tracker:
         else:
             raise ValueError("Unsupported item type during instantiation.")
         
+        # Enforce business rule: new items cannot be created as "completed" or "archived"
+        if status in ["completed", "archived"]:
+            new_item.status = "pending"
+        elif status is not None:
+            new_item.status = status
+        else:
+            new_item.status = "pending" # Default to pending if no status is provided
+        
         if parent_path:
             # Re-fetch parent_item as it might have been modified by adding slug
             parent_item = self.get_item_by_path(parent_path)
@@ -152,6 +227,9 @@ class Tracker:
         item_to_update = self.get_item_by_path(path)
         if not item_to_update:
             raise ValueError(f"Item not found at path: {path}")
+
+        if item_to_update.status in ["completed", "archived"]:
+            raise ValueError(f"Cannot update item '{path}' because it is already in '{item_to_update.status}' status.")
         
         updated = False
         if name is not None:
@@ -206,8 +284,16 @@ class Tracker:
         if not segments:
             raise ValueError("Path cannot be empty.")
 
+        item_to_delete = self.get_item_by_path(path)
+        if not item_to_delete:
+            raise ValueError(f"Item not found at path: {path}")
+        
+        if item_to_delete.status in ["completed", "archived"]:
+            raise ValueError(f"Cannot delete item '{path}' because it is already in '{item_to_delete.status}' status.")
+
         item_slug_to_delete = segments[-1]
         parent_path = '/'.join(segments[:-1]) if len(segments) > 1 else None
+
 
         if parent_path:
             parent_item = self.get_item_by_path(parent_path)

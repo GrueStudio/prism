@@ -2,6 +2,10 @@ import click
 from prism.tracker import Tracker
 from pathlib import Path
 import json
+import uuid
+from datetime import datetime
+import uuid
+from datetime import datetime
 
 @click.group(name='exec')
 def exec():
@@ -25,7 +29,8 @@ def add(item_type, name, desc, parent_path):
             item_type=item_type,
             name=name,
             description=desc,
-            parent_path=parent_path
+            parent_path=parent_path,
+            status=None
         )
         click.echo(f"{item_type.capitalize()} '{name}' created successfully.")
     except Exception as e:
@@ -33,18 +38,32 @@ def add(item_type, name, desc, parent_path):
 
 @exec.command(name='show')
 @click.option('--path', 'path_str', required=True, help='The path to the item to show.')
-def show(path_str):
+@click.option(
+    "--json", "json_output", is_flag=True, help="Output item details in JSON format."
+)
+def show(path_str, json_output):
     """Shows details for an execution item."""
     tracker = Tracker()
     try:
         item = tracker.get_item_by_path(path_str)
-        if item:
+        if not item:
+            raise click.ClickException(f"Item not found at path '{path_str}'.")
+
+        if json_output:
+            item_dict = item.model_dump()
+            # Convert UUID and datetime objects to strings for JSON serialization
+            for key, value in item_dict.items():
+                if isinstance(value, uuid.UUID):
+                    item_dict[key] = str(value)
+                elif isinstance(value, datetime):
+                    item_dict[key] = value.isoformat()
+
+            click.echo(json.dumps(item_dict, indent=2))
+        else:
             click.echo(f"Name: {item.name}")
             click.echo(f"Description: {item.description}")
             click.echo(f"Status: {item.status}")
             click.echo(f"Type: {type(item).__name__}")
-        else:
-            raise click.ClickException(f"Item not found at path '{path_str}'.")
     except Exception as e:
         raise click.ClickException(f"Error: {e}")
 
