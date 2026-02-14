@@ -17,5 +17,5 @@ venv/
 .DS_Store
 .env
 
-# Data
-*.json
+#
+tests/*.json

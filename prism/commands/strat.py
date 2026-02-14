@@ -67,15 +67,7 @@ def show(path_str, json_output):
             raise click.ClickException(f"Item not found at path '{path_str}'.")
 
         if json_output:
-            item_dict = item.model_dump()
-            # Convert UUID and datetime objects to strings for JSON serialization
-            for key, value in item_dict.items():
-                if isinstance(value, uuid.UUID):
-                    item_dict[key] = str(value)
-                elif isinstance(value, datetime):
-                    item_dict[key] = value.isoformat()
-
-            click.echo(json.dumps(item_dict, indent=2))
+            click.echo(item.model_dump_json(indent=2))
         else:
             click.echo(f"Name: {item.name}")
             click.echo(f"Description: {item.description}")

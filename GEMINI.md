@@ -51,6 +51,35 @@ Initially, the `DEVPLAN.md` file will serve as the source for identifying delive
 
 ---
 
+## Prism CLI Workflow
+
+This section outlines the workflow for using the `prism` CLI to manage the development of the Prism project itself.
+
+### Strategic Planning (`prism strat`)
+
+1.  **Phases, Milestones, and Objectives:** Strategic items are created using `prism strat add`. These items represent the high-level goals of the project.
+    *   `prism strat add --phase --name "..." --desc "..."`
+    *   `prism strat add --milestone --name "..." --desc "..." --parent-path "..."`
+    *   `prism strat add --objective --name "..." --desc "..." --parent-path "..."`
+2.  **Current Objective:** The "current" objective is implicitly defined as the most recently created objective that is not `completed` or `archived`. This is the objective that `prism exec addtree` will target.
+
+### Execution Planning (`prism exec`)
+
+1.  **Deliverables and Actions:** Execution items (deliverables and their actions) are added to the current objective using `prism exec addtree` with a JSON file.
+    *   Create a JSON file (e.g., `exec_tree.json`) that contains a list of deliverables and their nested actions.
+    *   Run `prism exec addtree exec_tree.json --mode [append|replace]` to add the items to the current objective.
+2.  **Viewing Items:** Items can be viewed using `prism strat show` and `prism exec show`.
+    *   `prism strat show --path <path_to_item>`
+    *   `prism exec show --path <path_to_item>`
+    *   Paths can be specified using slugs (e.g., `alpha/cli-operational/dogfooding-the-`) or numerical indices (e.g., `1/1/1`). Numerical indices are often more practical due to slug truncation.
+
+### Temporary Workflows
+
+*   **Bug Tracking:** Bugs are tracked in `BUGS.md`.
+*   **Future Ideas:** "Orphan" ideas and future enhancements are tracked in `FUTURE_IDEAS.md`.
+
+---
+
 ## Post-Action Reporting
 
 After every action that makes changes to the codebase, a summary of the changes will be provided.
