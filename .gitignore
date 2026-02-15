@@ -19,3 +19,6 @@ venv/
 
 #
 tests/*.json
+commit_message.txt
+pr_body.txt
+exec_tree.json
