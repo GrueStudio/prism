@@ -5,7 +5,6 @@ import re
 import uuid
 
 class BaseItem(BaseModel):
-    id: uuid.UUID = Field(default_factory=uuid.uuid4)
     name: str
     description: Optional[str] = None
     slug: str = Field(min_length=1, max_length=15)
@@ -25,14 +24,6 @@ class BaseItem(BaseModel):
             return slug[:15]
         return "" # Should not happen if name is always present
 
-    def __hash__(self):
-        return hash(self.id)
-
-    def __eq__(self, other):
-        if not isinstance(other, BaseItem):
-            return NotImplemented
-        return self.id == other.id
-
 class Action(BaseItem):
     time_spent: Optional[int] = None  # in minutes
     due_date: Optional[datetime] = None
@@ -50,4 +41,7 @@ class Phase(BaseItem):
     milestones: List[Milestone] = Field(default_factory=list)
 
 class ProjectData(BaseModel):
+
     phases: List[Phase] = Field(default_factory=list)
+
+    cursor: Optional[str] = None
