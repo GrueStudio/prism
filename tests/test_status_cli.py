@@ -102,9 +102,19 @@ def setup_test_project(tmp_path):
 @patch('prism.commands.status.Tracker')
 def test_status_command_output(mock_tracker, tmp_path):
     """Test the output formatting of the 'status' command."""
-    
+
     yesterday = datetime.now() - timedelta(days=1)
-    
+
+    # Configure the mock to have the new methods
+    mock_tracker.return_value.get_current_strategic_items.return_value = {
+        "phase": None,
+        "milestone": None,
+        "objective": None
+    }
+    mock_tracker.return_value.get_current_action.return_value = None
+    mock_tracker.return_value.calculate_completion_percentage.return_value = {"overall": 0.0}
+    mock_tracker.return_value.get_item_path.return_value = None
+
     mock_summary = {
         "item_counts": {
             "Phase": {"pending": 1, "completed": 1, "total": 2},
@@ -120,31 +130,31 @@ def test_status_command_output(mock_tracker, tmp_path):
             {"path": "test-phase-1/test-milesto/test-object/orphaned-de", "type": "Deliverable"}
         ],
     }
-    
+
     mock_tracker.return_value.get_status_summary.return_value = mock_summary
-    
+
     runner = CliRunner()
     result = runner.invoke(cli, ['status'])
-    
+
     assert result.exit_code == 0
-    
+
     # Check for titles
     assert "Project Status Summary" in result.output
     assert "Item Counts:" in result.output
     assert "Overdue Actions:" in result.output
     assert "Orphaned Items:" in result.output
-    
+
     # Check item counts
     assert "Phases: 1 completed / 2 total" in result.output
     assert "Milestones: 1 completed / 2 total" in result.output
     assert "Objectives: 1 completed / 2 total" in result.output
     assert "Deliverables: 1 completed / 3 total" in result.output
     assert "Actions: 1 completed / 2 total" in result.output
-    
+
     # Check overdue actions
     assert "Path: test-phase-2/test-milesto/test-object/deliverable/overdue-ac" in result.output
     assert f"(Due: {yesterday.strftime('%Y-%m-%d')})" in result.output
-    
+
     # Check orphaned items
     assert "Path: test-phase-1/test-milesto/test-object/orphaned-de" in result.output
     assert "(Type: Deliverable)" in result.output

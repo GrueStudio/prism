@@ -457,6 +457,89 @@ class Tracker:
             return item
         return None
 
+    def get_current_strategic_items(self) -> Dict[str, Optional[BaseItem]]:
+        """Returns the current phase, milestone, and objective based on the current action cursor."""
+        current_action = self.get_current_action()
+        if not current_action:
+            # If no current action, return the current objective and its parents
+            current_objective = self.get_current_objective()
+            if not current_objective:
+                return {"phase": None, "milestone": None, "objective": None}
+            
+            # Find the parent milestone and phase for the current objective
+            for phase in self.project_data.phases:
+                for milestone in phase.milestones:
+                    if current_objective in milestone.objectives:
+                        return {
+                            "phase": phase,
+                            "milestone": milestone,
+                            "objective": current_objective
+                        }
+            return {"phase": None, "milestone": None, "objective": current_objective}
+        
+        # If there's a current action, trace back to find its parent items
+        action_path = self.get_item_path(current_action)
+        if not action_path:
+            return {"phase": None, "milestone": None, "objective": None}
+        
+        path_segments = action_path.split('/')
+        if len(path_segments) >= 3:  # At least phase/milestone/objective
+            try:
+                phase_path = path_segments[0]
+                milestone_path = f"{path_segments[0]}/{path_segments[1]}"
+                objective_path = f"{path_segments[0]}/{path_segments[1]}/{path_segments[2]}"
+                
+                return {
+                    "phase": self.get_item_by_path(phase_path),
+                    "milestone": self.get_item_by_path(milestone_path),
+                    "objective": self.get_item_by_path(objective_path)
+                }
+            except:
+                return {"phase": None, "milestone": None, "objective": None}
+        
+        return {"phase": None, "milestone": None, "objective": None}
+
+    def calculate_completion_percentage(self, item: BaseItem) -> Dict[str, float]:
+        """Calculates completion percentage for objectives and deliverables."""
+        if isinstance(item, Objective):
+            if len(item.deliverables) == 0:
+                return {"overall": 0.0, "by_type": {"deliverables": 0.0}}
+            
+            completed_deliverables = sum(1 for d in item.deliverables if d.status == "completed")
+            total_deliverables = len(item.deliverables)
+            
+            # Calculate completion for each deliverable's actions
+            total_actions = 0
+            completed_actions = 0
+            
+            for deliverable in item.deliverables:
+                for action in deliverable.actions:
+                    total_actions += 1
+                    if action.status == "completed":
+                        completed_actions += 1
+            
+            return {
+                "overall": round((completed_deliverables / total_deliverables) * 100, 1) if total_deliverables > 0 else 0.0,
+                "by_type": {
+                    "deliverables": round((completed_deliverables / total_deliverables) * 100, 1) if total_deliverables > 0 else 0.0,
+                    "actions": round((completed_actions / total_actions) * 100, 1) if total_actions > 0 else 0.0
+                }
+            }
+        
+        elif isinstance(item, Deliverable):
+            if len(item.actions) == 0:
+                return {"overall": 0.0}
+            
+            completed_actions = sum(1 for a in item.actions if a.status == "completed")
+            total_actions = len(item.actions)
+            
+            return {
+                "overall": round((completed_actions / total_actions) * 100, 1),
+                "by_type": {"actions": round((completed_actions / total_actions) * 100, 1)}
+            }
+        
+        return {"overall": 0.0}
+
     def start_next_action(self) -> Optional[Action]:
         """
         If there's an action in progress, returns it.
