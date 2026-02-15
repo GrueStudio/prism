@@ -439,6 +439,86 @@ class Tracker:
                             current_objective = objective
         return current_objective
 
+    def get_item_path(self, item_to_find: BaseItem) -> Optional[str]:
+        """Recursively finds the path of a given item."""
+
+        def _traverse(items: List[BaseItem], current_path: str) -> Optional[str]:
+            for item in items:
+                path = f"{current_path}/{item.slug}" if current_path else item.slug
+                if item is item_to_find:
+                    return path
+
+                children = []
+                if isinstance(item, Phase):
+                    children = item.milestones
+                elif isinstance(item, Milestone):
+                    children = item.objectives
+                elif isinstance(item, Objective):
+                    children = item.deliverables
+                elif isinstance(item, Deliverable):
+                    children = item.actions
+
+                if children:
+                    found_path = _traverse(children, path)
+                    if found_path:
+                        return found_path
+            return None
+
+        return _traverse(self.project_data.phases, "")
+
+    def get_current_action(self) -> Optional[Action]:
+        """Gets the action currently referenced by the cursor."""
+        if not self.project_data.cursor:
+            return None
+        item = self.get_item_by_path(self.project_data.cursor)
+        if isinstance(item, Action):
+            return item
+        return None
+
+    def start_next_action(self) -> Optional[Action]:
+        """Finds the next pending action, sets it to 'in-progress', and updates the cursor."""
+        current_objective = self.get_current_objective()
+        if not current_objective:
+            self.project_data.cursor = None
+            self._save_project_data()
+            return None
+
+        next_action = None
+        for deliverable in current_objective.deliverables:
+            if deliverable.status != "completed":
+                for action in deliverable.actions:
+                    if action.status == "pending":
+                        next_action = action
+                        break
+                if next_action:
+                    break
+        
+        if next_action:
+            next_action.status = "in-progress"
+            action_path = self.get_item_path(next_action)
+            self.project_data.cursor = action_path
+        else:
+            self.project_data.cursor = None
+
+        self._save_project_data()
+        return next_action
+
+    def complete_current_action(self) -> Optional[Action]:
+        """Completes the current action and advances the cursor by finding the next pending action."""
+        current_action = self.get_current_action()
+        if not current_action or current_action.status != "in-progress":
+            return None  # Or raise an error if no action is in progress
+
+        current_action.status = "completed"
+        current_action.updated_at = datetime.now()
+        
+        # Now find the next action and update the cursor
+        self.start_next_action()
+        
+        self._save_project_data()
+        return current_action
+
+
     def add_exec_tree(self, tree_data: List[Dict[str, Any]], mode: str):
         """
         Adds an execution tree (objectives, deliverables, actions) from a list of dicts.

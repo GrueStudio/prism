@@ -41,4 +41,7 @@ class Phase(BaseItem):
     milestones: List[Milestone] = Field(default_factory=list)
 
 class ProjectData(BaseModel):
+
     phases: List[Phase] = Field(default_factory=list)
+
+    cursor: Optional[str] = None
