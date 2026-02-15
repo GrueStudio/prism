@@ -206,9 +206,9 @@
                       "name": "Identify current strategic items",
                       "description": "Implement logic in Tracker to identify the current phase, milestone, and objective.",
                       "slug": "identify-curren",
-                      "status": "in-progress",
+                      "status": "completed",
                       "created_at": "2026-02-15T02:40:32.905265",
-                      "updated_at": "2026-02-15T02:40:32.905266",
+                      "updated_at": "2026-02-15T14:22:45.854497",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -216,9 +216,9 @@
                       "name": "Update prism status command",
                       "description": "Modify the 'prism status' command to display the identified strategic items.",
                       "slug": "update-prism-st",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-15T02:40:32.905274",
-                      "updated_at": "2026-02-15T02:40:32.905275",
+                      "updated_at": "2026-02-15T14:22:52.057084",
                       "time_spent": null,
                       "due_date": null
                     }
@@ -236,9 +236,9 @@
                       "name": "Calculate completion percentages",
                       "description": "Implement logic in Tracker to calculate completion percentages for deliverables and objectives.",
                       "slug": "calculate-compl",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-15T02:40:32.905292",
-                      "updated_at": "2026-02-15T02:40:32.905298",
+                      "updated_at": "2026-02-15T14:22:58.677913",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -246,9 +246,9 @@
                       "name": "Update prism status command with percentages",
                       "description": "Modify the 'prism status' command to display completion percentages.",
                       "slug": "update-prism-st",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-15T02:40:32.905309",
-                      "updated_at": "2026-02-15T02:40:32.905310",
+                      "updated_at": "2026-02-15T14:23:28.424942",
                       "time_spent": null,
                       "due_date": null
                     }
@@ -266,9 +266,9 @@
                       "name": "Identify cursor location",
                       "description": "Implement logic in Tracker to identify the full path of the cursor location.",
                       "slug": "identify-cursor",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-15T02:40:32.905328",
-                      "updated_at": "2026-02-15T02:40:32.905328",
+                      "updated_at": "2026-02-15T15:07:50.989048",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -276,9 +276,9 @@
                       "name": "Update prism status command with cursor indicator",
                       "description": "Modify the 'prism status' command to visually highlight the cursor's location.",
                       "slug": "update-prism-st",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-15T02:40:32.905337",
-                      "updated_at": "2026-02-15T02:40:32.905338",
+                      "updated_at": "2026-02-15T15:08:16.917068",
                       "time_spent": null,
                       "due_date": null
                     }
@@ -296,7 +296,7 @@
                       "name": "Create Core Navigation Class",
                       "description": "Create a new CoreTracker class focused solely on tree navigation and path resolution.",
                       "slug": "create-core-nav",
-                      "status": "pending",
+                      "status": "in-progress",
                       "created_at": "2026-02-15T13:08:44.227446",
                       "updated_at": "2026-02-15T13:08:44.227450",
                       "time_spent": null,
@@ -513,6 +513,66 @@
                       "due_date": null
                     }
                   ]
+                },
+                {
+                  "name": "Task System Behavior Fix",
+                  "description": "Correct the behavior of task commands: prism task done should only complete current task, prism task next should complete and start next task, and add proper deliverable boundary management.",
+                  "slug": "task-system-beh",
+                  "status": "pending",
+                  "created_at": "2026-02-15T16:07:45.160442",
+                  "updated_at": "2026-02-15T16:07:45.160445",
+                  "actions": [
+                    {
+                      "name": "Task logic separation",
+                      "description": "Modify the Tracker class to separate the logic for completing a task from starting a new task.",
+                      "slug": "task-logic-sepa",
+                      "status": "pending",
+                      "created_at": "2026-02-15T16:07:45.160463",
+                      "updated_at": "2026-02-15T16:07:45.160464",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Task done behavior",
+                      "description": "Change prism task done to only complete the current task without starting the next one.",
+                      "slug": "task-done-behav",
+                      "status": "pending",
+                      "created_at": "2026-02-15T16:07:45.160484",
+                      "updated_at": "2026-02-15T16:07:45.160485",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Task next behavior",
+                      "description": "Change prism task next to complete current task and then start the next one.",
+                      "slug": "task-next-behav",
+                      "status": "pending",
+                      "created_at": "2026-02-15T16:07:45.160495",
+                      "updated_at": "2026-02-15T16:07:45.160495",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Boundary management",
+                      "description": "Implement logic to respect deliverable boundaries and warn when crossing them.",
+                      "slug": "boundary-manage",
+                      "status": "pending",
+                      "created_at": "2026-02-15T16:07:45.160508",
+                      "updated_at": "2026-02-15T16:07:45.160508",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Task start behavior",
+                      "description": "Ensure prism task start only starts the next pending task without completing anything.",
+                      "slug": "task-start-beha",
+                      "status": "pending",
+                      "created_at": "2026-02-15T16:07:45.160517",
+                      "updated_at": "2026-02-15T16:07:45.160518",
+                      "time_spent": null,
+                      "due_date": null
+                    }
+                  ]
                 }
               ]
             }
@@ -521,5 +581,5 @@
       ]
     }
   ],
-  "cursor": "alpha/cli-operational/refactor-persis/implement-strat/identify-curren"
+  "cursor": "alpha/cli-operational/refactor-persis/refactor-tracke/create-core-nav"
 }
