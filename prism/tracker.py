@@ -1,10 +1,7 @@
-import json
 import re  # Import re for slug generation
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-
-from pydantic import ValidationError
 
 from prism.models import (
     Action,
@@ -15,31 +12,16 @@ from prism.models import (
     Phase,
     ProjectData,
 )
+from prism.data_store import DataStore
 
 
 class Tracker:
     def __init__(self, project_file: Optional[Path] = None):
-        self.project_file = (
-            project_file if project_file else Path("project.json")
-        )  # Default for testing
-        self.project_data = self._load_project_data()
-
-    def _load_project_data(self) -> ProjectData:
-        if self.project_file.exists():
-            try:
-                with open(self.project_file, "r") as f:
-                    data = json.load(f)
-                return ProjectData.parse_obj(data)
-            except (json.JSONDecodeError, ValidationError) as e:
-                # For now, just re-raise. In a real app, we might handle this more gracefully.
-                raise Exception(
-                    f"Error loading project data from {self.project_file}: {e}"
-                )
-        return ProjectData()
+        self.data_store = DataStore(project_file)
+        self.project_data = self.data_store.load_project_data()
 
     def _save_project_data(self):
-        with open(self.project_file, "w") as f:
-            f.write(self.project_data.model_dump_json(indent=2))
+        self.data_store.save_project_data(self.project_data)
 
     def _generate_unique_slug(
         self, existing_items: List[BaseItem], base_name: str
