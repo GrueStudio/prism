@@ -9,11 +9,14 @@ def task():
 
 @task.command()
 def start():
-    """Start the next pending task."""
+    """Start the next pending task, or show current in-progress task."""
     tracker = Tracker()
     action = tracker.start_next_action()
     if action:
-        click.echo(f"Started task: {action.name}")
+        if action.status == "in-progress":
+            click.echo(f"Currently working on: {action.name}")
+        else: # Should not happen with new logic, but good for safety
+            click.echo(f"Started task: {action.name}")
     else:
         click.echo("No pending tasks found.")
 

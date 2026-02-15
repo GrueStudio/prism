@@ -476,33 +476,42 @@ class Tracker:
         return None
 
     def start_next_action(self) -> Optional[Action]:
-        """Finds the next pending action, sets it to 'in-progress', and updates the cursor."""
+        """
+        If there's an action in progress, returns it.
+        Otherwise, finds the next pending action, sets it to 'in-progress', and updates the cursor.
+        """
+        # Check if there's an action currently in progress
+        current_action = self.get_current_action()
+        if current_action and current_action.status == "in-progress":
+            return current_action
+
+        # If no action in progress, find the next pending one
         current_objective = self.get_current_objective()
         if not current_objective:
             self.project_data.cursor = None
             self._save_project_data()
             return None
 
-        next_action = None
+        next_pending_action = None
         for deliverable in current_objective.deliverables:
             if deliverable.status != "completed":
                 for action in deliverable.actions:
                     if action.status == "pending":
-                        next_action = action
+                        next_pending_action = action
                         break
-                if next_action:
-                    break
+            if next_pending_action:
+                break
         
-        if next_action:
-            next_action.status = "in-progress"
-            action_path = self.get_item_path(next_action)
+        if next_pending_action:
+            next_pending_action.status = "in-progress"
+            action_path = self.get_item_path(next_pending_action)
             self.project_data.cursor = action_path
         else:
             self.project_data.cursor = None
 
         self._save_project_data()
-        return next_action
-
+        return next_pending_action
+    
     def complete_current_action(self) -> Optional[Action]:
         """Completes the current action and advances the cursor by finding the next pending action."""
         current_action = self.get_current_action()

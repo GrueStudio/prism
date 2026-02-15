@@ -28,7 +28,7 @@
                   "name": "Migrate DEVPLAN.md content to Prism CLI",
                   "description": "Transfer the existing development plan from DEVPLAN.md into the Prism CLI's data structure.",
                   "slug": "migrate-devplan",
-                  "status": "pending",
+                  "status": "completed",
                   "created_at": "2026-02-12T16:02:40.052305",
                   "updated_at": "2026-02-12T16:02:40.052309",
                   "actions": [
@@ -58,7 +58,7 @@
                   "name": "Establish Initial Prism Workflow",
                   "description": "Define and document the initial Git workflow for the Prism project, as described in GEMINI.md.",
                   "slug": "establish-initi",
-                  "status": "pending",
+                  "status": "completed",
                   "created_at": "2026-02-12T16:02:40.052363",
                   "updated_at": "2026-02-12T16:02:40.052363",
                   "actions": [
@@ -86,9 +86,9 @@
                       "name": "Document the Prism workflow in GEMINI.md",
                       "description": "Add a section to README.md that explains the Git branching and merging strategy, as outlined in GEMINI.md.",
                       "slug": "document-the-gi",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-12T16:02:40.052395",
-                      "updated_at": "2026-02-12T16:02:40.052395",
+                      "updated_at": "2026-02-15T01:39:54.900333",
                       "time_spent": null,
                       "due_date": null
                     }
@@ -106,9 +106,9 @@
                       "name": "Add 'in-progress' status",
                       "description": "Add a new 'in-progress' status to the list of available statuses in the BaseItem model.",
                       "slug": "add-in-progress",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-12T17:31:33.523387",
-                      "updated_at": "2026-02-12T17:31:33.523388",
+                      "updated_at": "2026-02-15T01:51:51.526390",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -116,9 +116,9 @@
                       "name": "Implement 'prism time start'",
                       "description": "Implement a 'prism time start' command that sets the status of the current action to 'in-progress' and records the start time.",
                       "slug": "implement-prism",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-12T17:31:33.523402",
-                      "updated_at": "2026-02-12T17:31:33.523403",
+                      "updated_at": "2026-02-15T01:52:07.541845",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -126,9 +126,9 @@
                       "name": "Implement 'prism time done'",
                       "description": "Implement a 'prism time done' command that sets the status of the current action to 'completed', records the end time, and displays a list of all completed items.",
                       "slug": "implement-pri-1",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-12T17:31:33.523417",
-                      "updated_at": "2026-02-12T17:31:33.523418",
+                      "updated_at": "2026-02-15T01:52:37.431127",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -136,9 +136,9 @@
                       "name": "Implement 'prism time next'",
                       "description": "Implement a 'prism time next' command that functions as a combination of 'prism time done' and 'prism time start'.",
                       "slug": "implement-pri-2",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-12T17:31:33.523431",
-                      "updated_at": "2026-02-12T17:31:33.523432",
+                      "updated_at": "2026-02-15T01:52:48.690952",
                       "time_spent": null,
                       "due_date": null
                     }
@@ -150,5 +150,6 @@
         }
       ]
     }
-  ]
+  ],
+  "cursor": null
 }

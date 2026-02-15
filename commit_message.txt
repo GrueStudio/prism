@@ -1,12 +1,10 @@
-feat(task): Implement basic task navigation commands
+fix(task): Correct task skipping and improve 'start' command behavior
 
-This commit implements the initial set of task navigation commands: `start`, `done`, and `next`.
-It also introduces a cursor mechanism to track the current action and refactors the underlying `Tracker` logic to support this new functionality.
+This commit fixes an issue where the `prism task start` command would sometimes appear to skip tasks.
+The `start_next_action` method in `prism/tracker.py` was refined to prioritize returning an already in-progress task, and only then search for the next pending task.
+Additionally, the `start_next_action` method was incorrectly nested within another method, causing an `AttributeError`. This has been corrected.
 
 Key changes include:
-- Added a `cursor` field to the `ProjectData` model to persist the current task.
-- Implemented `get_item_path` in `Tracker` for reliable item path retrieval.
-- Implemented `get_current_action`, `start_next_action`, and `complete_current_action` methods in `Tracker` to manage task states and cursor movement.
-- Created the `prism task` command group with `start`, `done`, and `next` subcommands.
-- Registered the `task` command group in `prism/cli.py`.
-- Added comprehensive unit tests for all `task` commands and their interactions.
+- Refactored `start_next_action` in `prism/tracker.py` to correctly identify and return an existing in-progress task, or find the next pending task if none is active.
+- Corrected the accidental nesting of `start_next_action` and `complete_current_action` methods in `prism/tracker.py`, making them top-level methods of the `Tracker` class.
+- Updated the `start` command in `prism/commands/task.py` to provide appropriate feedback when a task is already in progress.
