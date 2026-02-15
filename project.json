@@ -283,6 +283,236 @@
                       "due_date": null
                     }
                   ]
+                },
+                {
+                  "name": "Refactor Tracker Class Structure",
+                  "description": "Break down the large Tracker class into smaller, more focused classes with a core navigation class.",
+                  "slug": "refactor-tracke",
+                  "status": "pending",
+                  "created_at": "2026-02-15T13:07:14.440280",
+                  "updated_at": "2026-02-15T13:07:14.440284",
+                  "actions": [
+                    {
+                      "name": "Create Core Navigation Class",
+                      "description": "Create a new CoreTracker class focused solely on tree navigation and path resolution.",
+                      "slug": "create-core-nav",
+                      "status": "pending",
+                      "created_at": "2026-02-15T13:08:44.227446",
+                      "updated_at": "2026-02-15T13:08:44.227450",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Move Business Logic to Core Class",
+                      "description": "Move tree traversal, path resolution, and navigation logic from Tracker to CoreTracker.",
+                      "slug": "move-business-l",
+                      "status": "pending",
+                      "created_at": "2026-02-15T13:08:52.475489",
+                      "updated_at": "2026-02-15T13:08:52.475492",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Update Tracker to Use Core Class",
+                      "description": "Refactor the Tracker class to delegate navigation and tree operations to the CoreTracker.",
+                      "slug": "update-tracker-",
+                      "status": "pending",
+                      "created_at": "2026-02-15T13:08:58.663046",
+                      "updated_at": "2026-02-15T13:08:58.663049",
+                      "time_spent": null,
+                      "due_date": null
+                    }
+                  ]
+                },
+                {
+                  "name": "Enhance Error Handling and Validation",
+                  "description": "Improve error messages, validation, and add constants for magic numbers.",
+                  "slug": "enhance-error-h",
+                  "status": "pending",
+                  "created_at": "2026-02-15T13:07:30.126224",
+                  "updated_at": "2026-02-15T13:07:30.126227",
+                  "actions": [
+                    {
+                      "name": "Add Constants for Magic Numbers",
+                      "description": "Define constants for values like slug length limits instead of hardcoding them.",
+                      "slug": "add-constants-f",
+                      "status": "pending",
+                      "created_at": "2026-02-15T13:09:19.621320",
+                      "updated_at": "2026-02-15T13:09:19.621324",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Improve Validation Error Messages",
+                      "description": "Enhance validation error messages to be more user-friendly and informative.",
+                      "slug": "improve-validat",
+                      "status": "pending",
+                      "created_at": "2026-02-15T13:09:24.166893",
+                      "updated_at": "2026-02-15T13:09:24.166897",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Add Comprehensive Error Handling",
+                      "description": "Add more robust error handling throughout the codebase with contextual messages.",
+                      "slug": "add-comprehensi",
+                      "status": "pending",
+                      "created_at": "2026-02-15T13:09:28.082483",
+                      "updated_at": "2026-02-15T13:09:28.082487",
+                      "time_spent": null,
+                      "due_date": null
+                    }
+                  ]
+                },
+                {
+                  "name": "Improve Date Handling",
+                  "description": "Add support for more flexible date input formats and better date validation.",
+                  "slug": "improve-date-ha",
+                  "status": "pending",
+                  "created_at": "2026-02-15T13:07:40.830900",
+                  "updated_at": "2026-02-15T13:07:40.830904",
+                  "actions": [
+                    {
+                      "name": "Implement Flexible Date Parsing",
+                      "description": "Add support for multiple date formats in addition to YYYY-MM-DD.",
+                      "slug": "implement-flexi",
+                      "status": "pending",
+                      "created_at": "2026-02-15T13:09:36.360941",
+                      "updated_at": "2026-02-15T13:09:36.360945",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Enhance Date Validation",
+                      "description": "Improve date validation with better error messages and range checking.",
+                      "slug": "enhance-date-va",
+                      "status": "pending",
+                      "created_at": "2026-02-15T13:09:40.338638",
+                      "updated_at": "2026-02-15T13:09:40.338641",
+                      "time_spent": null,
+                      "due_date": null
+                    }
+                  ]
+                },
+                {
+                  "name": "Implement Atomic Writes for DataStore",
+                  "description": "Add atomic write functionality to the DataStore to prevent data corruption during writes.",
+                  "slug": "implement-atomi",
+                  "status": "pending",
+                  "created_at": "2026-02-15T13:09:49.778224",
+                  "updated_at": "2026-02-15T13:09:49.778228",
+                  "actions": [
+                    {
+                      "name": "Research Atomic Write Patterns",
+                      "description": "Investigate atomic write patterns in Python to prevent data corruption.",
+                      "slug": "research-atomic",
+                      "status": "pending",
+                      "created_at": "2026-02-15T13:10:10.624786",
+                      "updated_at": "2026-02-15T13:10:10.624790",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Implement Atomic Write Method",
+                      "description": "Implement a safe atomic write method in the DataStore class using temporary files.",
+                      "slug": "implement-atomi",
+                      "status": "pending",
+                      "created_at": "2026-02-15T13:10:17.620539",
+                      "updated_at": "2026-02-15T13:10:17.620542",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Integrate Atomic Writes with Tracker",
+                      "description": "Update the Tracker class to use the atomic write functionality from DataStore.",
+                      "slug": "integrate-atomi",
+                      "status": "pending",
+                      "created_at": "2026-02-15T13:10:22.226845",
+                      "updated_at": "2026-02-15T13:10:22.226849",
+                      "time_spent": null,
+                      "due_date": null
+                    }
+                  ]
+                },
+                {
+                  "name": "Add Comprehensive Unit Tests",
+                  "description": "Add more comprehensive unit tests for the refactored classes and new functionality.",
+                  "slug": "add-comprehensi",
+                  "status": "pending",
+                  "created_at": "2026-02-15T13:10:27.709937",
+                  "updated_at": "2026-02-15T13:10:27.709940",
+                  "actions": [
+                    {
+                      "name": "Create Tests for DataStore Class",
+                      "description": "Write comprehensive unit tests for the DataStore class and its methods.",
+                      "slug": "create-tests-fo",
+                      "status": "pending",
+                      "created_at": "2026-02-15T13:10:36.219023",
+                      "updated_at": "2026-02-15T13:10:36.219027",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Create Tests for CoreTracker Class",
+                      "description": "Write comprehensive unit tests for the CoreTracker class and its navigation methods.",
+                      "slug": "create-tests--1",
+                      "status": "pending",
+                      "created_at": "2026-02-15T13:10:42.166931",
+                      "updated_at": "2026-02-15T13:10:42.166935",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Update Existing Tests for Refactored Code",
+                      "description": "Update existing tests to work with the refactored Tracker and new CoreTracker/DataStore classes.",
+                      "slug": "update-existing",
+                      "status": "pending",
+                      "created_at": "2026-02-15T13:10:50.970282",
+                      "updated_at": "2026-02-15T13:10:50.970287",
+                      "time_spent": null,
+                      "due_date": null
+                    }
+                  ]
+                },
+                {
+                  "name": "Enhance Show Commands with Child Listings",
+                  "description": "Improve the strat show and exec show commands to display names/slugs of child items when applicable.",
+                  "slug": "enhance-show-co",
+                  "status": "pending",
+                  "created_at": "2026-02-15T13:12:58.330050",
+                  "updated_at": "2026-02-15T13:12:58.330054",
+                  "actions": [
+                    {
+                      "name": "Update strat show to Display Children",
+                      "description": "Modify the strat show command to display names/slugs of child items when showing strategic items.",
+                      "slug": "update-strat-sh",
+                      "status": "pending",
+                      "created_at": "2026-02-15T13:13:07.722942",
+                      "updated_at": "2026-02-15T13:13:07.722946",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Update exec show to Display Children",
+                      "description": "Modify the exec show command to display names/slugs of child items when showing execution items.",
+                      "slug": "update-exec-sho",
+                      "status": "pending",
+                      "created_at": "2026-02-15T13:13:17.645064",
+                      "updated_at": "2026-02-15T13:13:17.645068",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Ensure Consistent Child Display in JSON Mode",
+                      "description": "Make sure child listings work properly in both regular and JSON output modes for show commands.",
+                      "slug": "ensure-consiste",
+                      "status": "pending",
+                      "created_at": "2026-02-15T13:13:24.615916",
+                      "updated_at": "2026-02-15T13:13:24.615919",
+                      "time_spent": null,
+                      "due_date": null
+                    }
+                  ]
                 }
               ]
             }
