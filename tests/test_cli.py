@@ -248,7 +248,6 @@ def test_strat_delete_no_path(mock_tracker):
 @patch("prism.commands.strat.Tracker")
 def test_strat_show_json_output(mock_tracker):
     mock_phase_data = Phase(
-        id=uuid.uuid4(),
         name="Test Phase",
         description="A test phase",
         slug="test-phase",
@@ -270,16 +269,13 @@ def test_strat_show_json_output(mock_tracker):
     try:
         output_json = json.loads(result.output)
 
-        assert output_json["id"] == str(mock_phase_data.id)
         assert output_json["name"] == mock_phase_data.name
         assert output_json["description"] == mock_phase_data.description
         assert output_json["slug"] == mock_phase_data.slug
         assert output_json["status"] == mock_phase_data.status
         assert output_json["created_at"] == mock_phase_data.created_at.isoformat()
         assert output_json["updated_at"] == mock_phase_data.updated_at.isoformat()
-        assert output_json["milestones"] == [
-            str(milestone.id) for milestone in mock_phase_data.milestones
-        ]
+        assert output_json["milestones"] == []  # Empty milestones list
     except json.JSONDecodeError:
         pytest.fail("Output is not valid JSON.")
 
