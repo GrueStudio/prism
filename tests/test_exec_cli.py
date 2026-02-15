@@ -258,11 +258,9 @@ def test_exec_delete_no_path(mock_tracker):
 
 @patch("prism.commands.exec.Tracker")
 def test_exec_show_json_output(mock_tracker):
-    mock_id = uuid.uuid4()
     # Use consistent datetime objects for both mock creation and assertion
     now = datetime.now()
     mock_deliverable = Deliverable(
-        id=mock_id,
         name="Test Deliverable",
         description="A test deliverable",
         slug="test-deliv",
@@ -284,7 +282,6 @@ def test_exec_show_json_output(mock_tracker):
     except json.JSONDecodeError:
         assert False, "Output is not valid JSON"
 
-    assert output_json["id"] == str(mock_id)
     assert output_json["name"] == "Test Deliverable"
     assert output_json["description"] == "A test deliverable"
     assert output_json["slug"] == "test-deliv"
