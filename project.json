@@ -20,7 +20,7 @@
               "name": "Dogfooding the Project",
               "description": "Use the Prism CLI to manage its own development, migrating from DEVPLAN.md.",
               "slug": "dogfooding-the-",
-              "status": "pending",
+              "status": "completed",
               "created_at": "2026-02-12T12:36:20.271536",
               "updated_at": "2026-02-12T12:36:20.271539",
               "deliverables": [
@@ -98,7 +98,7 @@
                   "name": "Implement Basic Time Tracking",
                   "description": "Add basic time tracking functionality to the Prism CLI.",
                   "slug": "implement-basic",
-                  "status": "pending",
+                  "status": "completed",
                   "created_at": "2026-02-12T17:31:33.523365",
                   "updated_at": "2026-02-12T17:31:33.523368",
                   "actions": [
@@ -139,6 +139,146 @@
                       "status": "completed",
                       "created_at": "2026-02-12T17:31:33.523431",
                       "updated_at": "2026-02-15T01:52:48.690952",
+                      "time_spent": null,
+                      "due_date": null
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Refactor Persistence Layer and Enhance Status Command",
+              "description": "Abstract the persistence layer for better modularity and enhance the status command to provide more detailed project insights.",
+              "slug": "refactor-persis",
+              "status": "pending",
+              "created_at": "2026-02-15T02:35:31.108920",
+              "updated_at": "2026-02-15T02:35:31.108923",
+              "deliverables": [
+                {
+                  "name": "Abstract Data Store",
+                  "description": "Move persistence logic from Tracker to a dedicated DataStore class.",
+                  "slug": "abstract-data-s",
+                  "status": "pending",
+                  "created_at": "2026-02-15T02:40:32.905195",
+                  "updated_at": "2026-02-15T02:40:32.905199",
+                  "actions": [
+                    {
+                      "name": "Create DataStore class",
+                      "description": "Define the DataStore class in prism/data_store.py with load and save methods.",
+                      "slug": "create-datastor",
+                      "status": "pending",
+                      "created_at": "2026-02-15T02:40:32.905218",
+                      "updated_at": "2026-02-15T02:40:32.905219",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Refactor Tracker to use DataStore",
+                      "description": "Modify Tracker to instantiate and use DataStore for all persistence operations.",
+                      "slug": "refactor-tracke",
+                      "status": "pending",
+                      "created_at": "2026-02-15T02:40:32.905233",
+                      "updated_at": "2026-02-15T02:40:32.905234",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Update DataStore tests",
+                      "description": "Add or update tests for DataStore class.",
+                      "slug": "update-datastor",
+                      "status": "pending",
+                      "created_at": "2026-02-15T02:40:32.905244",
+                      "updated_at": "2026-02-15T02:40:32.905244",
+                      "time_spent": null,
+                      "due_date": null
+                    }
+                  ]
+                },
+                {
+                  "name": "Implement Strategic Item Display",
+                  "description": "Modify 'prism status' to show current strategic descriptions (phase, milestone, objective).",
+                  "slug": "implement-strat",
+                  "status": "pending",
+                  "created_at": "2026-02-15T02:40:32.905255",
+                  "updated_at": "2026-02-15T02:40:32.905256",
+                  "actions": [
+                    {
+                      "name": "Identify current strategic items",
+                      "description": "Implement logic in Tracker to identify the current phase, milestone, and objective.",
+                      "slug": "identify-curren",
+                      "status": "pending",
+                      "created_at": "2026-02-15T02:40:32.905265",
+                      "updated_at": "2026-02-15T02:40:32.905266",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Update prism status command",
+                      "description": "Modify the 'prism status' command to display the identified strategic items.",
+                      "slug": "update-prism-st",
+                      "status": "pending",
+                      "created_at": "2026-02-15T02:40:32.905274",
+                      "updated_at": "2026-02-15T02:40:32.905275",
+                      "time_spent": null,
+                      "due_date": null
+                    }
+                  ]
+                },
+                {
+                  "name": "Implement Completion Percentage Display",
+                  "description": "Modify 'prism status' to show completion percentages for deliverables and objectives.",
+                  "slug": "implement-compl",
+                  "status": "pending",
+                  "created_at": "2026-02-15T02:40:32.905284",
+                  "updated_at": "2026-02-15T02:40:32.905284",
+                  "actions": [
+                    {
+                      "name": "Calculate completion percentages",
+                      "description": "Implement logic in Tracker to calculate completion percentages for deliverables and objectives.",
+                      "slug": "calculate-compl",
+                      "status": "pending",
+                      "created_at": "2026-02-15T02:40:32.905292",
+                      "updated_at": "2026-02-15T02:40:32.905298",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Update prism status command with percentages",
+                      "description": "Modify the 'prism status' command to display completion percentages.",
+                      "slug": "update-prism-st",
+                      "status": "pending",
+                      "created_at": "2026-02-15T02:40:32.905309",
+                      "updated_at": "2026-02-15T02:40:32.905310",
+                      "time_spent": null,
+                      "due_date": null
+                    }
+                  ]
+                },
+                {
+                  "name": "Implement Cursor Location Indicator",
+                  "description": "Modify 'prism status' to visually indicate the current task cursor location within the execution tree.",
+                  "slug": "implement-curso",
+                  "status": "pending",
+                  "created_at": "2026-02-15T02:40:32.905319",
+                  "updated_at": "2026-02-15T02:40:32.905319",
+                  "actions": [
+                    {
+                      "name": "Identify cursor location",
+                      "description": "Implement logic in Tracker to identify the full path of the cursor location.",
+                      "slug": "identify-cursor",
+                      "status": "pending",
+                      "created_at": "2026-02-15T02:40:32.905328",
+                      "updated_at": "2026-02-15T02:40:32.905328",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Update prism status command with cursor indicator",
+                      "description": "Modify the 'prism status' command to visually highlight the cursor's location.",
+                      "slug": "update-prism-st",
+                      "status": "pending",
+                      "created_at": "2026-02-15T02:40:32.905337",
+                      "updated_at": "2026-02-15T02:40:32.905338",
                       "time_spent": null,
                       "due_date": null
                     }
