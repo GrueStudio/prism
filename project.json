@@ -398,7 +398,7 @@
                   "name": "Enhance Show Commands with Child Listings",
                   "description": "Improve the strat show and exec show commands to display names/slugs of child items when applicable.",
                   "slug": "enhance-show-co",
-                  "status": "pending",
+                  "status": "completed",
                   "created_at": "2026-02-15T13:12:58.330050",
                   "updated_at": "2026-02-15T13:12:58.330054",
                   "actions": [
@@ -408,7 +408,7 @@
                       "slug": "update-strat-sh",
                       "status": "completed",
                       "created_at": "2026-02-15T13:13:07.722942",
-                      "updated_at": "2026-02-16T16:19:17.540643",
+                      "updated_at": "2026-02-15T13:13:07.722946",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -418,7 +418,7 @@
                       "slug": "update-exec-sho",
                       "status": "completed",
                       "created_at": "2026-02-15T13:13:17.645064",
-                      "updated_at": "2026-02-16T16:20:32.968669",
+                      "updated_at": "2026-02-15T13:13:17.645068",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -428,7 +428,7 @@
                       "slug": "ensure-consiste",
                       "status": "completed",
                       "created_at": "2026-02-15T13:13:24.615916",
-                      "updated_at": "2026-02-16T16:20:33.311552",
+                      "updated_at": "2026-02-15T13:13:24.615919",
                       "time_spent": null,
                       "due_date": null
                     }
@@ -446,7 +446,7 @@
                       "name": "Task logic separation",
                       "description": "Modify the Tracker class to separate the logic for completing a task from starting a new task.",
                       "slug": "task-logic-sepa",
-                      "status": "in-progress",
+                      "status": "pending",
                       "created_at": "2026-02-15T16:07:45.160463",
                       "updated_at": "2026-02-15T16:07:45.160464",
                       "time_spent": null,
@@ -501,5 +501,5 @@
       ]
     }
   ],
-  "cursor": "alpha/cli-operational/refactor-persis/task-system-beh/task-logic-sepa"
+  "cursor": "alpha/cli-operational/refactor-persis/implement-atomi/research-atomic"
 }
