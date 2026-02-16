@@ -53,10 +53,3 @@ DATE_FORMAT_ERROR = (
 # Date validation constants
 DATE_MAX_YEARS_FUTURE = 10  # Maximum years in the future for due dates
 DATE_MAX_YEARS_PAST = 1  # Maximum years in the past allowed (for historical tracking)
-
-# Date validation error messages
-DATE_OUT_OF_RANGE_ERROR = (
-    f"Date is out of valid range. Due dates must be within the last {DATE_MAX_YEARS_PAST} year "
-    f"or up to {DATE_MAX_YEARS_FUTURE} years in the future."
-)
-DATE_IN_PAST_WARNING = "Note: The due date is in the past."

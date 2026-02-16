@@ -129,7 +129,7 @@ class TestValidateDateRange:
 
     def test_invalid_date_too_far_past(self):
         """Test that a date too far in the past is invalid."""
-        past_date = datetime.now() - timedelta(days=(DATE_MAX_YEARS_PAST + 1) * 365)
+        past_date = datetime.now().replace(year=datetime.now().year - DATE_MAX_YEARS_PAST - 1)
         is_valid, error_msg = validate_date_range(past_date)
         assert is_valid is False
         assert error_msg is not None
@@ -137,7 +137,7 @@ class TestValidateDateRange:
 
     def test_invalid_date_too_far_future(self):
         """Test that a date too far in the future is invalid."""
-        future_date = datetime.now() + timedelta(days=(DATE_MAX_YEARS_FUTURE + 1) * 365)
+        future_date = datetime.now().replace(year=datetime.now().year + DATE_MAX_YEARS_FUTURE + 1)
         is_valid, error_msg = validate_date_range(future_date)
         assert is_valid is False
         assert error_msg is not None
