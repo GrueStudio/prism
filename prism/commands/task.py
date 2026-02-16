@@ -1,6 +1,6 @@
 import click
 
-from prism.tracker import Tracker
+from prism.core import Core
 
 @click.group()
 def task():
@@ -10,8 +10,8 @@ def task():
 @task.command()
 def start():
     """Start the next pending task, or show current in-progress task."""
-    tracker = Tracker()
-    action = tracker.start_next_action()
+    core = Core()
+    action = core.start_next_action()
     if action:
         if action.status == "in-progress":
             click.echo(f"Currently working on: {action.name}")
@@ -23,11 +23,11 @@ def start():
 @task.command()
 def done():
     """Mark the current task as done."""
-    tracker = Tracker()
-    action = tracker.complete_current_action()
+    core = Core()
+    action = core.complete_current_action()
     if action:
         click.echo(f"Completed task: {action.name}")
-        next_action = tracker.get_current_action()
+        next_action = core.get_current_action()
         if next_action:
             click.echo(f"Next task: {next_action.name}")
         else:
@@ -38,11 +38,11 @@ def done():
 @task.command()
 def next():
     """Complete the current task and start the next one."""
-    tracker = Tracker()
-    completed_action = tracker.complete_current_action()
+    core = Core()
+    completed_action = core.complete_current_action()
     if completed_action:
         click.echo(f"Completed task: {completed_action.name}")
-        next_action = tracker.get_current_action()
+        next_action = core.get_current_action()
         if next_action:
             click.echo(f"Started next task: {next_action.name}")
         else:

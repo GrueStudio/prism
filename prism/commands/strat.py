@@ -6,7 +6,7 @@ from pathlib import Path
 import click
 
 from prism.models import Objective
-from prism.tracker import Tracker
+from prism.core import Core
 
 
 @click.group()
@@ -31,21 +31,21 @@ def add(item_type, name, desc, parent_path):
     if not item_type:
         raise click.ClickException("Please specify an item type to add.")
 
-    tracker = Tracker()
+    core = Core()
     try:
         if parent_path:
-            parent_item = tracker.get_item_by_path(parent_path)
+            parent_item = core.navigator.get_item_by_path(parent_path)
             if not parent_item:
                 raise click.ClickException(
                     f"Parent item not found at path: {parent_path}"
                 )
             if isinstance(parent_item, Objective):
-                if not tracker.is_exec_tree_complete(parent_path):
+                if not core.is_exec_tree_complete(parent_path):
                     raise click.ClickException(
                         f"Cannot add strategic item. Execution tree for '{parent_path}' is not complete or does not exist."
                     )
 
-        tracker.add_item(
+        core.add_item(
             item_type=item_type, name=name, description=desc, parent_path=parent_path, status=None
         )
         click.echo(f"{item_type.capitalize()} '{name}' created successfully.")
@@ -60,9 +60,9 @@ def add(item_type, name, desc, parent_path):
 )
 def show(path_str, json_output):
     """Shows details for a strategic item."""
-    tracker = Tracker()
+    core = Core()
     try:
-        item = tracker.get_item_by_path(path_str)
+        item = core.navigator.get_item_by_path(path_str)
         if not item:
             raise click.ClickException(f"Item not found at path '{path_str}'.")
 
@@ -114,9 +114,9 @@ def edit(path_str, name, desc, json_file_path):
             "No update parameters provided. Use --name, --desc, or --file."
         )
 
-    tracker = Tracker()
+    core = Core()
     try:
-        tracker.update_item(
+        core.update_item(
             path=path_str, **update_data, status=None
         )  # status is removed as per the deliverable
         click.echo(f"Item at '{path_str}' updated successfully.")
@@ -130,9 +130,9 @@ def edit(path_str, name, desc, json_file_path):
 )
 def delete(path_str):
     """Deletes a strategic item."""
-    tracker = Tracker()
+    core = Core()
     try:
-        tracker.delete_item(path=path_str)
+        core.delete_item(path=path_str)
         click.echo(f"Item at '{path_str}' deleted successfully.")
     except Exception as e:
         raise click.ClickException(f"Error: {e}")

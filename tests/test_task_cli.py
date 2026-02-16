@@ -2,12 +2,12 @@ import pytest
 from click.testing import CliRunner
 from prism.cli import cli
 from prism.models import ProjectData, Phase, Milestone, Objective, Deliverable, Action
-from prism.tracker import Tracker
+from prism.core import Core
 from unittest.mock import patch, MagicMock
 
 
-@patch("prism.commands.task.Tracker")
-def test_task_start_with_pending_task(mock_tracker_class):
+@patch("prism.commands.task.Core")
+def test_task_start_with_pending_task(mock_core_class):
     """Test 'prism task start' when there is a pending task."""
     runner = CliRunner()
     
@@ -20,8 +20,8 @@ def test_task_start_with_pending_task(mock_tracker_class):
     project_data = ProjectData(phases=[phase1])
 
     # Configure the mock
-    mock_tracker_instance = mock_tracker_class.return_value
-    mock_tracker_instance.start_next_action.return_value = action1
+    mock_core_instance = mock_core_class.return_value
+    mock_core_instance.start_next_action.return_value = action1
     
     # Run the command
     result = runner.invoke(cli, ["task", "start"])
@@ -29,16 +29,16 @@ def test_task_start_with_pending_task(mock_tracker_class):
     # Assertions
     assert result.exit_code == 0
     assert "Started task: Action 1" in result.output
-    mock_tracker_instance.start_next_action.assert_called_once()
+    mock_core_instance.start_next_action.assert_called_once()
 
-@patch("prism.commands.task.Tracker")
-def test_task_start_no_pending_tasks(mock_tracker_class):
+@patch("prism.commands.task.Core")
+def test_task_start_no_pending_tasks(mock_core_class):
     """Test 'prism task start' when there are no pending tasks."""
     runner = CliRunner()
     
     # Configure the mock to return None, simulating no pending tasks
-    mock_tracker_instance = mock_tracker_class.return_value
-    mock_tracker_instance.start_next_action.return_value = None
+    mock_core_instance = mock_core_class.return_value
+    mock_core_instance.start_next_action.return_value = None
     
     # Run the command
     result = runner.invoke(cli, ["task", "start"])
@@ -46,10 +46,10 @@ def test_task_start_no_pending_tasks(mock_tracker_class):
     # Assertions
     assert result.exit_code == 0
     assert "No pending tasks found." in result.output
-    mock_tracker_instance.start_next_action.assert_called_once()
+    mock_core_instance.start_next_action.assert_called_once()
 
-@patch("prism.commands.task.Tracker")
-def test_task_done_with_in_progress_task(mock_tracker_class):
+@patch("prism.commands.task.Core")
+def test_task_done_with_in_progress_task(mock_core_class):
     """Test 'prism task done' when there is a task in progress."""
     runner = CliRunner()
 
@@ -58,9 +58,9 @@ def test_task_done_with_in_progress_task(mock_tracker_class):
     next_action = Action(name="Next Task", slug="next-task", status="pending")
 
     # Configure the mock
-    mock_tracker_instance = mock_tracker_class.return_value
-    mock_tracker_instance.complete_current_action.return_value = current_action
-    mock_tracker_instance.get_current_action.return_value = next_action # Simulates cursor moving to next action
+    mock_core_instance = mock_core_class.return_value
+    mock_core_instance.complete_current_action.return_value = current_action
+    mock_core_instance.get_current_action.return_value = next_action # Simulates cursor moving to next action
 
     # Run the command
     result = runner.invoke(cli, ["task", "done"])
@@ -69,17 +69,17 @@ def test_task_done_with_in_progress_task(mock_tracker_class):
     assert result.exit_code == 0
     assert "Completed task: Current Task" in result.output
     assert "Next task: Next Task" in result.output
-    mock_tracker_instance.complete_current_action.assert_called_once()
-    mock_tracker_instance.get_current_action.assert_called_once()
+    mock_core_instance.complete_current_action.assert_called_once()
+    mock_core_instance.get_current_action.assert_called_once()
 
-@patch("prism.commands.task.Tracker")
-def test_task_done_no_in_progress_task(mock_tracker_class):
+@patch("prism.commands.task.Core")
+def test_task_done_no_in_progress_task(mock_core_class):
     """Test 'prism task done' when there is no task in progress."""
     runner = CliRunner()
 
     # Configure the mock to return None, simulating no task in progress
-    mock_tracker_instance = mock_tracker_class.return_value
-    mock_tracker_instance.complete_current_action.return_value = None
+    mock_core_instance = mock_core_class.return_value
+    mock_core_instance.complete_current_action.return_value = None
 
     # Run the command
     result = runner.invoke(cli, ["task", "done"])
@@ -87,11 +87,11 @@ def test_task_done_no_in_progress_task(mock_tracker_class):
     # Assertions
     assert result.exit_code == 0
     assert "No task in progress." in result.output
-    mock_tracker_instance.complete_current_action.assert_called_once()
-    mock_tracker_instance.get_current_action.assert_not_called()
+    mock_core_instance.complete_current_action.assert_called_once()
+    mock_core_instance.get_current_action.assert_not_called()
 
-@patch("prism.commands.task.Tracker")
-def test_task_next_with_in_progress_task(mock_tracker_class):
+@patch("prism.commands.task.Core")
+def test_task_next_with_in_progress_task(mock_core_class):
     """Test 'prism task next' when there is a task in progress."""
     runner = CliRunner()
 
@@ -100,11 +100,11 @@ def test_task_next_with_in_progress_task(mock_tracker_class):
     next_action = Action(name="Next New Task", slug="next-new-task", status="in-progress")
 
     # Configure the mock
-    mock_tracker_instance = mock_tracker_class.return_value
-    mock_tracker_instance.complete_current_action.return_value = completed_action
+    mock_core_instance = mock_core_class.return_value
+    mock_core_instance.complete_current_action.return_value = completed_action
     # After complete_current_action, start_next_action is called internally by tracker,
     # which then sets the cursor and get_current_action would return the new next_action
-    mock_tracker_instance.get_current_action.return_value = next_action 
+    mock_core_instance.get_current_action.return_value = next_action 
 
     # Run the command
     result = runner.invoke(cli, ["task", "next"])
@@ -113,17 +113,17 @@ def test_task_next_with_in_progress_task(mock_tracker_class):
     assert result.exit_code == 0
     assert "Completed task: Completed Task" in result.output
     assert "Started next task: Next New Task" in result.output
-    mock_tracker_instance.complete_current_action.assert_called_once()
-    mock_tracker_instance.get_current_action.assert_called_once()
+    mock_core_instance.complete_current_action.assert_called_once()
+    mock_core_instance.get_current_action.assert_called_once()
 
-@patch("prism.commands.task.Tracker")
-def test_task_next_no_in_progress_task(mock_tracker_class):
+@patch("prism.commands.task.Core")
+def test_task_next_no_in_progress_task(mock_core_class):
     """Test 'prism task next' when there is no task in progress."""
     runner = CliRunner()
 
     # Configure the mock to return None, simulating no task in progress to complete
-    mock_tracker_instance = mock_tracker_class.return_value
-    mock_tracker_instance.complete_current_action.return_value = None
+    mock_core_instance = mock_core_class.return_value
+    mock_core_instance.complete_current_action.return_value = None
 
     # Run the command
     result = runner.invoke(cli, ["task", "next"])
@@ -131,11 +131,11 @@ def test_task_next_no_in_progress_task(mock_tracker_class):
     # Assertions
     assert result.exit_code == 0
     assert "No task in progress to complete." in result.output
-    mock_tracker_instance.complete_current_action.assert_called_once()
-    mock_tracker_instance.get_current_action.assert_not_called()
+    mock_core_instance.complete_current_action.assert_called_once()
+    mock_core_instance.get_current_action.assert_not_called()
 
-@patch("prism.commands.task.Tracker")
-def test_task_workflow(mock_tracker_class):
+@patch("prism.commands.task.Core")
+def test_task_workflow(mock_core_class):
     """Test the full workflow: start, next, done."""
     runner = CliRunner()
 
@@ -145,48 +145,48 @@ def test_task_workflow(mock_tracker_class):
     action3 = Action(name="Action 3", slug="action-3", status="pending")
 
     # Configure the mock
-    mock_tracker_instance = mock_tracker_class.return_value
+    mock_core_instance = mock_core_class.return_value
 
     # --- Step 1: Start the first task ---
-    mock_tracker_instance.start_next_action.return_value = action1
+    mock_core_instance.start_next_action.return_value = action1
     result = runner.invoke(cli, ["task", "start"])
     assert result.exit_code == 0
     assert "Started task: Action 1" in result.output
-    mock_tracker_instance.start_next_action.assert_called_once()
-    mock_tracker_instance.start_next_action.reset_mock() # Reset mock for next call
+    mock_core_instance.start_next_action.assert_called_once()
+    mock_core_instance.start_next_action.reset_mock() # Reset mock for next call
 
     # --- Step 2: Complete current and start next (Action 2) ---
-    mock_tracker_instance.complete_current_action.return_value = action1
-    mock_tracker_instance.get_current_action.return_value = action2 # Simulates cursor moved to action2
+    mock_core_instance.complete_current_action.return_value = action1
+    mock_core_instance.get_current_action.return_value = action2 # Simulates cursor moved to action2
     result = runner.invoke(cli, ["task", "next"])
     assert result.exit_code == 0
     assert "Completed task: Action 1" in result.output
     assert "Started next task: Action 2" in result.output
-    mock_tracker_instance.complete_current_action.assert_called_once()
-    mock_tracker_instance.complete_current_action.reset_mock()
-    mock_tracker_instance.get_current_action.assert_called_once()
-    mock_tracker_instance.get_current_action.reset_mock()
+    mock_core_instance.complete_current_action.assert_called_once()
+    mock_core_instance.complete_current_action.reset_mock()
+    mock_core_instance.get_current_action.assert_called_once()
+    mock_core_instance.get_current_action.reset_mock()
 
 
     # --- Step 3: Complete current (Action 2) and find next (Action 3) using 'done' ---
-    mock_tracker_instance.complete_current_action.return_value = action2
-    mock_tracker_instance.get_current_action.return_value = action3 # Simulates cursor moved to action3
+    mock_core_instance.complete_current_action.return_value = action2
+    mock_core_instance.get_current_action.return_value = action3 # Simulates cursor moved to action3
     result = runner.invoke(cli, ["task", "done"])
     assert result.exit_code == 0
     assert "Completed task: Action 2" in result.output
     assert "Next task: Action 3" in result.output
-    mock_tracker_instance.complete_current_action.assert_called_once()
-    mock_tracker_instance.complete_current_action.reset_mock()
-    mock_tracker_instance.get_current_action.assert_called_once()
-    mock_tracker_instance.get_current_action.reset_mock()
+    mock_core_instance.complete_current_action.assert_called_once()
+    mock_core_instance.complete_current_action.reset_mock()
+    mock_core_instance.get_current_action.assert_called_once()
+    mock_core_instance.get_current_action.reset_mock()
 
 
     # --- Step 4: Complete current (Action 3), no more tasks ---
-    mock_tracker_instance.complete_current_action.return_value = action3
-    mock_tracker_instance.get_current_action.return_value = None # Simulates no more tasks
+    mock_core_instance.complete_current_action.return_value = action3
+    mock_core_instance.get_current_action.return_value = None # Simulates no more tasks
     result = runner.invoke(cli, ["task", "done"])
     assert result.exit_code == 0
     assert "Completed task: Action 3" in result.output
     assert "All tasks completed!" in result.output
-    mock_tracker_instance.complete_current_action.assert_called_once()
-    mock_tracker_instance.get_current_action.assert_called_once()
+    mock_core_instance.complete_current_action.assert_called_once()
+    mock_core_instance.get_current_action.assert_called_once()

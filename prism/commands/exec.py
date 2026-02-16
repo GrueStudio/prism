@@ -5,7 +5,7 @@ from pathlib import Path
 
 import click
 
-from prism.tracker import Tracker
+from prism.core import Core
 
 
 @click.group(name="exec")
@@ -30,9 +30,9 @@ def add(item_type, name, desc, parent_path):
     if not item_type:
         raise click.ClickException("Please specify an item type to add.")
 
-    tracker = Tracker()
+    core = Core()
     try:
-        tracker.add_item(
+        core.add_item(
             item_type=item_type,
             name=name,
             description=desc,
@@ -51,9 +51,9 @@ def add(item_type, name, desc, parent_path):
 )
 def show(path_str, json_output):
     """Shows details for an execution item."""
-    tracker = Tracker()
+    core = Core()
     try:
-        item = tracker.get_item_by_path(path_str)
+        item = core.navigator.get_item_by_path(path_str)
         if not item:
             raise click.ClickException(f"Item not found at path '{path_str}'.")
 
@@ -88,13 +88,13 @@ def show(path_str, json_output):
 )
 def addtree(json_file_path, mode):
     """Adds an entire execution tree from a JSON file."""
-    tracker = Tracker()
+    core = Core()
     try:
         file_path = Path(json_file_path)
         with open(file_path, "r") as f:
             tree_data = json.load(f)
 
-        tracker.add_exec_tree(tree_data, mode)
+        core.add_exec_tree(tree_data, mode)
         click.echo(f"Execution tree added successfully in '{mode}' mode.")
     except FileNotFoundError:
         raise click.ClickException(f"File '{json_file_path}' not found.")
@@ -144,9 +144,9 @@ def edit(path_str, name, desc, due_date, json_file_path):
             "No update parameters provided. Use --name, --desc, --due-date, or --file."
         )
 
-    tracker = Tracker()
+    core = Core()
     try:
-        tracker.update_item(path=path_str, **update_data, status=None)
+        core.update_item(path=path_str, **update_data, status=None)
         click.echo(f"Item at '{path_str}' updated successfully.")
     except Exception as e:
         raise click.ClickException(f"Error: {e}")
@@ -158,9 +158,9 @@ def edit(path_str, name, desc, due_date, json_file_path):
 )
 def delete(path_str):
     """Deletes an execution item."""
-    tracker = Tracker()
+    core = Core()
     try:
-        tracker.delete_item(path=path_str)
+        core.delete_item(path=path_str)
         click.echo(f"Item at '{path_str}' deleted successfully.")
     except Exception as e:
         raise click.ClickException(f"Error: {e}")

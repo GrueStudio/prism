@@ -10,8 +10,8 @@ from prism.cli import cli
 from prism.models import Deliverable
 
 
-@patch("prism.commands.exec.Tracker")
-def test_exec_add_deliverable(mock_tracker):
+@patch("prism.commands.exec.Core")
+def test_exec_add_deliverable(mock_core):
     runner = CliRunner()
     result = runner.invoke(
         cli,
@@ -28,7 +28,7 @@ def test_exec_add_deliverable(mock_tracker):
         ],
     )
     assert result.exit_code == 0
-    mock_tracker.return_value.add_item.assert_called_once_with(
+    mock_core.return_value.add_item.assert_called_once_with(
         item_type="deliverable",
         name="Test Deliverable",
         description="A test deliverable",
@@ -38,8 +38,8 @@ def test_exec_add_deliverable(mock_tracker):
     assert "Deliverable 'Test Deliverable' created successfully." in result.output
 
 
-@patch("prism.commands.exec.Tracker")
-def test_exec_add_action(mock_tracker):
+@patch("prism.commands.exec.Core")
+def test_exec_add_action(mock_core):
     runner = CliRunner()
     result = runner.invoke(
         cli,
@@ -56,7 +56,7 @@ def test_exec_add_action(mock_tracker):
         ],
     )
     assert result.exit_code == 0
-    mock_tracker.return_value.add_item.assert_called_once_with(
+    mock_core.return_value.add_item.assert_called_once_with(
         item_type="action",
         name="Test Action",
         description="A test action",
@@ -66,17 +66,17 @@ def test_exec_add_action(mock_tracker):
     assert "Action 'Test Action' created successfully." in result.output
 
 
-@patch("prism.commands.exec.Tracker")
-def test_exec_add_no_item_type(mock_tracker):
+@patch("prism.commands.exec.Core")
+def test_exec_add_no_item_type(mock_core):
     runner = CliRunner()
     result = runner.invoke(cli, ["exec", "add", "--name", "Test Item"])
     assert result.exit_code == 1  # Expecting an error exit code
     assert "Error: Please specify an item type to add." in result.output
-    mock_tracker.return_value.add_item.assert_not_called()
+    mock_core.return_value.add_item.assert_not_called()
 
 
-@patch("prism.commands.exec.Tracker")
-def test_exec_show(mock_tracker):
+@patch("prism.commands.exec.Core")
+def test_exec_show(mock_core):
     mock_deliverable = Deliverable(
         id=uuid.uuid4(),
         name="Test Deliverable",
@@ -87,7 +87,7 @@ def test_exec_show(mock_tracker):
         updated_at=datetime.now(),
         actions=[],
     )
-    mock_tracker.return_value.get_item_by_path.return_value = mock_deliverable
+    mock_core.return_value.get_item_by_path.return_value = mock_deliverable
 
     runner = CliRunner()
     result = runner.invoke(
@@ -100,7 +100,7 @@ def test_exec_show(mock_tracker):
         ],
     )
     assert result.exit_code == 0
-    mock_tracker.return_value.get_item_by_path.assert_called_once_with(
+    mock_core.return_value.get_item_by_path.assert_called_once_with(
         "test-phase/test-milestone/test-objective/test-deliverable"
     )
     assert "Name: Test Deliverable" in result.output
@@ -109,8 +109,8 @@ def test_exec_show(mock_tracker):
     assert "Type: Deliverable" in result.output
 
 
-@patch("prism.commands.exec.Tracker")
-def test_exec_addtree(mock_tracker):
+@patch("prism.commands.exec.Core")
+def test_exec_addtree(mock_core):
     runner = CliRunner()
     json_file_path = Path("tests/test_simplified_exec_tree.json")
     with open(json_file_path, "r") as f:
@@ -119,37 +119,37 @@ def test_exec_addtree(mock_tracker):
     # Test with default mode (append)
     result = runner.invoke(cli, ["exec", "addtree", str(json_file_path)])
     assert result.exit_code == 0
-    mock_tracker.return_value.add_exec_tree.assert_called_once_with(
+    mock_core.return_value.add_exec_tree.assert_called_once_with(
         expected_data, "append"
     )
     assert "Execution tree added successfully in 'append' mode." in result.output
-    mock_tracker.return_value.add_exec_tree.reset_mock()
+    mock_core.return_value.add_exec_tree.reset_mock()
 
     # Test with replace mode
     result = runner.invoke(
         cli, ["exec", "addtree", str(json_file_path), "--mode", "replace"]
     )
     assert result.exit_code == 0
-    mock_tracker.return_value.add_exec_tree.assert_called_once_with(
+    mock_core.return_value.add_exec_tree.assert_called_once_with(
         expected_data, "replace"
     )
     assert "Execution tree added successfully in 'replace' mode." in result.output
-    mock_tracker.return_value.add_exec_tree.reset_mock()
+    mock_core.return_value.add_exec_tree.reset_mock()
 
     # Test with append mode explicitly
     result = runner.invoke(
         cli, ["exec", "addtree", str(json_file_path), "--mode", "append"]
     )
     assert result.exit_code == 0
-    mock_tracker.return_value.add_exec_tree.assert_called_once_with(
+    mock_core.return_value.add_exec_tree.assert_called_once_with(
         expected_data, "append"
     )
     assert "Execution tree added successfully in 'append' mode." in result.output
-    mock_tracker.return_value.add_exec_tree.reset_mock()
+    mock_core.return_value.add_exec_tree.reset_mock()
 
 
-@patch("prism.commands.exec.Tracker")
-def test_exec_addtree_file_not_found(mock_tracker):
+@patch("prism.commands.exec.Core")
+def test_exec_addtree_file_not_found(mock_core):
     runner = CliRunner()
     non_existent_file = "non_existent.json"
     result = runner.invoke(cli, ["exec", "addtree", non_existent_file])
@@ -160,23 +160,23 @@ def test_exec_addtree_file_not_found(mock_tracker):
         "Error: Invalid value for 'JSON_FILE_PATH': File 'non_existent.json' does not exist."
         in result.output
     )
-    mock_tracker.return_value.add_exec_tree.assert_not_called()
+    mock_core.return_value.add_exec_tree.assert_not_called()
 
 
-@patch("prism.commands.exec.Tracker")
-def test_exec_addtree_invalid_json(mock_tracker):
+@patch("prism.commands.exec.Core")
+def test_exec_addtree_invalid_json(mock_core):
     runner = CliRunner()
     invalid_json_file = "tests/invalid_exec_tree.json"
     Path(invalid_json_file).write_text("{invalid json}")
     result = runner.invoke(cli, ["exec", "addtree", invalid_json_file])
     assert result.exit_code == 1
     assert "Error: Invalid JSON format" in result.output
-    mock_tracker.return_value.add_exec_tree.assert_not_called()
+    mock_core.return_value.add_exec_tree.assert_not_called()
     Path(invalid_json_file).unlink()  # Clean up
 
 
-@patch("prism.commands.exec.Tracker")
-def test_exec_edit(mock_tracker):
+@patch("prism.commands.exec.Core")
+def test_exec_edit(mock_core):
     runner = CliRunner()
     path = "test-phase/test-milestone/test-objective/test-deliverable"
     new_name = "Updated Deliverable Name"
@@ -200,7 +200,7 @@ def test_exec_edit(mock_tracker):
     )
 
     assert result.exit_code == 0
-    mock_tracker.return_value.update_item.assert_called_once_with(
+    mock_core.return_value.update_item.assert_called_once_with(
         path=path,
         name=new_name,
         description=new_description,
@@ -210,8 +210,8 @@ def test_exec_edit(mock_tracker):
     assert f"Item at '{path}' updated successfully." in result.output
 
 
-@patch("prism.commands.exec.Tracker")
-def test_exec_edit_from_file(mock_tracker):
+@patch("prism.commands.exec.Core")
+def test_exec_edit_from_file(mock_core):
     runner = CliRunner()
     path = "test-phase/test-milestone/test-objective/test-action"
     json_file_path = Path("tests/test_exec_edit_file.json")
@@ -224,7 +224,7 @@ def test_exec_edit_from_file(mock_tracker):
     )
 
     assert result.exit_code == 0
-    mock_tracker.return_value.update_item.assert_called_once_with(
+    mock_core.return_value.update_item.assert_called_once_with(
         path=path,
         name=update_data.get("name"),
         description=update_data.get("description"),
@@ -234,30 +234,30 @@ def test_exec_edit_from_file(mock_tracker):
     assert f"Item at '{path}' updated successfully." in result.output
 
 
-@patch("prism.commands.exec.Tracker")
-def test_exec_delete(mock_tracker):
+@patch("prism.commands.exec.Core")
+def test_exec_delete(mock_core):
     runner = CliRunner()
     path = "test-phase/test-milestone/test-objective/test-action"
 
     result = runner.invoke(cli, ["exec", "delete", "--path", path])
 
     assert result.exit_code == 0
-    mock_tracker.return_value.delete_item.assert_called_once_with(path=path)
+    mock_core.return_value.delete_item.assert_called_once_with(path=path)
     assert f"Item at '{path}' deleted successfully." in result.output
 
 
-@patch("prism.commands.exec.Tracker")
-def test_exec_delete_no_path(mock_tracker):
+@patch("prism.commands.exec.Core")
+def test_exec_delete_no_path(mock_core):
     runner = CliRunner()
     result = runner.invoke(cli, ["exec", "delete"])
 
     assert result.exit_code == 2  # Click exits with 2 for missing required options
     assert "Error: Missing option '--path'" in result.output
-    mock_tracker.return_value.delete_item.assert_not_called()
+    mock_core.return_value.delete_item.assert_not_called()
 
 
-@patch("prism.commands.exec.Tracker")
-def test_exec_show_json_output(mock_tracker):
+@patch("prism.commands.exec.Core")
+def test_exec_show_json_output(mock_core):
     # Use consistent datetime objects for both mock creation and assertion
     now = datetime.now()
     mock_deliverable = Deliverable(
@@ -269,13 +269,13 @@ def test_exec_show_json_output(mock_tracker):
         updated_at=now,
         actions=[],
     )
-    mock_tracker.return_value.get_item_by_path.return_value = mock_deliverable
+    mock_core.return_value.get_item_by_path.return_value = mock_deliverable
 
     runner = CliRunner()
     result = runner.invoke(cli, ["exec", "show", "--path", "dummy/path", "--json"])
 
     assert result.exit_code == 0
-    mock_tracker.return_value.get_item_by_path.assert_called_once_with("dummy/path")
+    mock_core.return_value.get_item_by_path.assert_called_once_with("dummy/path")
 
     try:
         output_json = json.loads(result.output)
@@ -291,8 +291,8 @@ def test_exec_show_json_output(mock_tracker):
     assert output_json["actions"] == []
 
 
-@patch("prism.commands.exec.Tracker")
-def test_exec_edit_completed_item_raises_error(mock_tracker):
+@patch("prism.commands.exec.Core")
+def test_exec_edit_completed_item_raises_error(mock_core):
     mock_deliverable = Deliverable(
         id=uuid.uuid4(),
         name="Completed Deliverable",
@@ -303,8 +303,8 @@ def test_exec_edit_completed_item_raises_error(mock_tracker):
         updated_at=datetime.now(),
         actions=[],
     )
-    mock_tracker.return_value.get_item_by_path.return_value = mock_deliverable
-    mock_tracker.return_value.update_item.side_effect = ValueError(
+    mock_core.return_value.get_item_by_path.return_value = mock_deliverable
+    mock_core.return_value.update_item.side_effect = ValueError(
         "Cannot update item 'dummy/path' because it is already in 'completed' status."
     )
 
@@ -320,13 +320,13 @@ def test_exec_edit_completed_item_raises_error(mock_tracker):
         in result.output
     )
 
-    mock_tracker.return_value.update_item.assert_called_once_with(
+    mock_core.return_value.update_item.assert_called_once_with(
         path="dummy/path", name="Attempt to Update", status=None
     )
 
 
-@patch("prism.commands.exec.Tracker")
-def test_exec_delete_completed_item_raises_error(mock_tracker):
+@patch("prism.commands.exec.Core")
+def test_exec_delete_completed_item_raises_error(mock_core):
     mock_deliverable = Deliverable(
         id=uuid.uuid4(),
         name="Completed Deliverable",
@@ -337,8 +337,8 @@ def test_exec_delete_completed_item_raises_error(mock_tracker):
         updated_at=datetime.now(),
         actions=[],
     )
-    mock_tracker.return_value.get_item_by_path.return_value = mock_deliverable
-    mock_tracker.return_value.delete_item.side_effect = ValueError(
+    mock_core.return_value.get_item_by_path.return_value = mock_deliverable
+    mock_core.return_value.delete_item.side_effect = ValueError(
         "Cannot update item 'dummy/path' because it is already in 'completed' status."
     )
 
@@ -352,4 +352,4 @@ def test_exec_delete_completed_item_raises_error(mock_tracker):
         in result.output
     )
 
-    mock_tracker.return_value.delete_item.assert_called_once_with(path="dummy/path")
+    mock_core.return_value.delete_item.assert_called_once_with(path="dummy/path")
