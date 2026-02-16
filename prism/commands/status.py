@@ -1,10 +1,10 @@
 import click
 import json
-from prism.tracker import Tracker
+from prism.core import Core
 from datetime import datetime
 
 
-def display_exec_tree(tracker, objective, current_action_path=None, indent_level=0, current_deliverable_only=False):
+def display_exec_tree(core, objective, current_action_path=None, indent_level=0, current_deliverable_only=False):
     """Display the execution tree for an objective with completion indicators."""
     indent = "  " * indent_level
     
@@ -13,7 +13,7 @@ def display_exec_tree(tracker, objective, current_action_path=None, indent_level
         # Find the deliverable that contains the current action
         for deliverable in objective.deliverables:
             for action in deliverable.actions:
-                action_path = tracker.get_item_path(action)
+                action_path = core.navigator.get_item_path(action)
                 if action_path == current_action_path:
                     current_deliverable = deliverable
                     break
@@ -27,13 +27,13 @@ def display_exec_tree(tracker, objective, current_action_path=None, indent_level
     
     for deliverable in deliverables_to_display:
         # Calculate completion percentage for this deliverable
-        deliv_completion = tracker.calculate_completion_percentage(deliverable)
+        deliv_completion = core.calculate_completion_percentage(deliverable)
         completion_text = f" ({deliv_completion['overall']:.1f}%)" if deliv_completion['overall'] > 0 else " (0%)"
         
         # Check if any action in this deliverable is the current one
         current_indicator = ""
         for action in deliverable.actions:
-            action_path = tracker.get_item_path(action)
+            action_path = core.navigator.get_item_path(action)
             if action_path == current_action_path:
                 current_indicator = " →"  # Current action indicator
                 break
@@ -49,7 +49,7 @@ def display_exec_tree(tracker, objective, current_action_path=None, indent_level
         
         # Display actions under this deliverable
         for action in deliverable.actions:
-            action_path = tracker.get_item_path(action)
+            action_path = core.navigator.get_item_path(action)
             action_indent = "  " + indent
             
             # Calculate action-specific indicators
@@ -66,14 +66,14 @@ def display_exec_tree(tracker, objective, current_action_path=None, indent_level
             click.echo(f"{action_indent}- {action.name}{action_status_indicator}{action_indicator}")
 
 
-def get_exec_tree_data(tracker, objective, current_action_path=None, current_deliverable_only=False):
+def get_exec_tree_data(core, objective, current_action_path=None, current_deliverable_only=False):
     """Get execution tree data in a structured format for JSON output."""
     current_deliverable = None
     if current_action_path:
         # Find the deliverable that contains the current action
         for deliverable in objective.deliverables:
             for action in deliverable.actions:
-                action_path = tracker.get_item_path(action)
+                action_path = core.navigator.get_item_path(action)
                 if action_path == current_action_path:
                     current_deliverable = deliverable
                     break
@@ -88,7 +88,7 @@ def get_exec_tree_data(tracker, objective, current_action_path=None, current_del
     tree_data = []
     for deliverable in deliverables_to_include:
         # Calculate completion percentage for this deliverable
-        deliv_completion = tracker.calculate_completion_percentage(deliverable)
+        deliv_completion = core.calculate_completion_percentage(deliverable)
         
         deliverable_data = {
             "name": deliverable.name,
@@ -99,7 +99,7 @@ def get_exec_tree_data(tracker, objective, current_action_path=None, current_del
         }
         
         for action in deliverable.actions:
-            action_path = tracker.get_item_path(action)
+            action_path = core.navigator.get_item_path(action)
             action_data = {
                 "name": action.name,
                 "slug": action.slug,
@@ -120,14 +120,14 @@ def get_exec_tree_data(tracker, objective, current_action_path=None, current_del
 @click.option('--json', 'json_output', is_flag=True, help='Output status in JSON format for AI agents.')
 def status(phase_path, milestone_path, current_deliverable_only, json_output):
     """Displays a summary of project progress."""
-    tracker = Tracker()
-    summary = tracker.get_status_summary(phase_path=phase_path, milestone_path=milestone_path)
+    core = Core()
+    summary = core.get_status_summary(phase_path=phase_path, milestone_path=milestone_path)
 
     # Handle JSON output first
     if json_output:
-        current_items = tracker.get_current_strategic_items()
-        current_action = tracker.get_current_action()
-        current_action_path = tracker.get_item_path(current_action) if current_action else None
+        current_items = core.get_current_strategic_items()
+        current_action = core.get_current_action()
+        current_action_path = core.navigator.get_item_path(current_action) if current_action else None
         
         result = {
             "current_strategic_focus": {},
@@ -154,7 +154,7 @@ def status(phase_path, milestone_path, current_deliverable_only, json_output):
             
             if current_items["objective"]:
                 result["execution_tree"] = get_exec_tree_data(
-                    tracker, 
+                    core, 
                     current_items["objective"], 
                     current_action_path, 
                     current_deliverable_only
@@ -175,7 +175,7 @@ def status(phase_path, milestone_path, current_deliverable_only, json_output):
 
     # Show current strategic items if not filtered by phase or milestone
     if not phase_path and not milestone_path:
-        current_items = tracker.get_current_strategic_items()
+        current_items = core.get_current_strategic_items()
         if current_items["objective"]:
             click.echo(click.style("\nCurrent Strategic Focus:", bold=True))
             if current_items["phase"]:
@@ -187,17 +187,17 @@ def status(phase_path, milestone_path, current_deliverable_only, json_output):
             if current_items["objective"]:
                 objective_status = f" ({current_items['objective'].status})" if current_items['objective'].status != 'pending' else ''
                 # Calculate and show completion percentage for the current objective
-                obj_completion = tracker.calculate_completion_percentage(current_items["objective"])
+                obj_completion = core.calculate_completion_percentage(current_items["objective"])
                 completion_text = f" - {obj_completion['overall']:.1f}% complete" if obj_completion['overall'] > 0 else ''
                 click.echo(f"- Objective: {current_items['objective'].name}{objective_status}{completion_text}")
                 
                 # Show the execution tree for the current objective
-                current_action = tracker.get_current_action()
-                current_action_path = tracker.get_item_path(current_action) if current_action else None
+                current_action = core.get_current_action()
+                current_action_path = core.navigator.get_item_path(current_action) if current_action else None
                 
                 section_title = "\nCurrent Deliverable:" if current_deliverable_only else "\nExecution Tree:"
                 click.echo(click.style(section_title, bold=True))
-                display_exec_tree(tracker, current_items["objective"], current_action_path, indent_level=1, current_deliverable_only=current_deliverable_only)
+                display_exec_tree(core, current_items["objective"], current_action_path, indent_level=1, current_deliverable_only=current_deliverable_only)
 
     if summary["overdue_actions"]:
         click.echo(click.style("\nOverdue Actions:", bold=True, fg='red'))

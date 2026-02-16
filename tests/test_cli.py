@@ -19,15 +19,15 @@ def test_cli_registers_strat_and_exec_groups():
     assert "exec" in result.output
 
 
-@patch("prism.commands.strat.Tracker")
-def test_strat_add_phase(mock_tracker):
+@patch("prism.commands.strat.Core")
+def test_strat_add_phase(mock_core):
     runner = CliRunner()
     result = runner.invoke(
         cli,
         ["strat", "add", "--phase", "--name", "Test Phase", "--desc", "A test phase"],
     )
     assert result.exit_code == 0
-    mock_tracker.return_value.add_item.assert_called_once_with(
+    mock_core.return_value.add_item.assert_called_once_with(
         item_type="phase",
         name="Test Phase",
         description="A test phase",
@@ -37,8 +37,8 @@ def test_strat_add_phase(mock_tracker):
     assert "Phase 'Test Phase' created successfully." in result.output
 
 
-@patch("prism.commands.strat.Tracker")
-def test_strat_add_milestone(mock_tracker):
+@patch("prism.commands.strat.Core")
+def test_strat_add_milestone(mock_core):
     runner = CliRunner()
     result = runner.invoke(
         cli,
@@ -55,7 +55,7 @@ def test_strat_add_milestone(mock_tracker):
         ],
     )
     assert result.exit_code == 0
-    mock_tracker.return_value.add_item.assert_called_once_with(
+    mock_core.return_value.add_item.assert_called_once_with(
         item_type="milestone",
         name="Test Milestone",
         description="A test milestone",
@@ -65,8 +65,8 @@ def test_strat_add_milestone(mock_tracker):
     assert "Milestone 'Test Milestone' created successfully." in result.output
 
 
-@patch("prism.commands.strat.Tracker")
-def test_strat_add_objective(mock_tracker):
+@patch("prism.commands.strat.Core")
+def test_strat_add_objective(mock_core):
     runner = CliRunner()
     result = runner.invoke(
         cli,
@@ -83,7 +83,7 @@ def test_strat_add_objective(mock_tracker):
         ],
     )
     assert result.exit_code == 0
-    mock_tracker.return_value.add_item.assert_called_once_with(
+    mock_core.return_value.add_item.assert_called_once_with(
         item_type="objective",
         name="Test Objective",
         description="A test objective",
@@ -93,17 +93,17 @@ def test_strat_add_objective(mock_tracker):
     assert "Objective 'Test Objective' created successfully." in result.output
 
 
-@patch("prism.commands.strat.Tracker")
-def test_strat_add_no_item_type(mock_tracker):
+@patch("prism.commands.strat.Core")
+def test_strat_add_no_item_type(mock_core):
     runner = CliRunner()
     result = runner.invoke(cli, ["strat", "add", "--name", "Test Item"])
     assert result.exit_code == 1  # Expecting an error exit code
     assert "Error: Please specify an item type to add." in result.output
-    mock_tracker.return_value.add_item.assert_not_called()
+    mock_core.return_value.add_item.assert_not_called()
 
 
-@patch("prism.commands.strat.Tracker")
-def test_strat_show(mock_tracker):
+@patch("prism.commands.strat.Core")
+def test_strat_show(mock_core):
     mock_phase = Phase(
         id=uuid.uuid4(),
         name="Test Phase",
@@ -114,21 +114,22 @@ def test_strat_show(mock_tracker):
         updated_at=datetime.now(),
         milestones=[],
     )
-    mock_tracker.return_value.get_item_by_path.return_value = mock_phase
+    # Set up the mock to return the mock_phase when navigator.get_item_by_path is called
+    mock_core.return_value.navigator.get_item_by_path.return_value = mock_phase
 
     runner = CliRunner()
     result = runner.invoke(cli, ["strat", "show", "--path", "test-phase"])
     assert result.exit_code == 0
-    mock_tracker.return_value.get_item_by_path.assert_called_once_with("test-phase")
+    mock_core.return_value.navigator.get_item_by_path.assert_called_once_with("test-phase")
     assert "Name: Test Phase" in result.output
     assert "Description: A test phase" in result.output
     assert "Status: in-progress" in result.output
     assert "Type: Phase" in result.output
 
 
-@patch("prism.commands.strat.Tracker")
-def test_strat_add_validation_incomplete_exec_tree(mock_tracker):
-    mock_tracker.return_value.is_exec_tree_complete.return_value = False
+@patch("prism.commands.strat.Core")
+def test_strat_add_validation_incomplete_exec_tree(mock_core):
+    mock_core.return_value.is_exec_tree_complete.return_value = False
 
     # Mock get_item_by_path to return a valid Objective,
     # so the validation can proceed
@@ -142,7 +143,7 @@ def test_strat_add_validation_incomplete_exec_tree(mock_tracker):
         updated_at=datetime.now(),
         deliverables=[],
     )
-    mock_tracker.return_value.get_item_by_path.return_value = mock_objective
+    mock_core.return_value.navigator.get_item_by_path.return_value = mock_objective
 
     runner = CliRunner()
     result = runner.invoke(
@@ -159,18 +160,18 @@ def test_strat_add_validation_incomplete_exec_tree(mock_tracker):
     )
 
     assert result.exit_code == 1  # Expecting an error exit code
-    mock_tracker.return_value.is_exec_tree_complete.assert_called_once_with(
+    mock_core.return_value.is_exec_tree_complete.assert_called_once_with(
         "parent-obj"
     )
-    mock_tracker.return_value.add_item.assert_not_called()
+    mock_core.return_value.add_item.assert_not_called()
     assert (
         "Error: Cannot add strategic item. Execution tree for 'parent-obj' is not complete or does not exist."
         in result.output
     )
 
 
-@patch("prism.commands.strat.Tracker")
-def test_strat_edit(mock_tracker):
+@patch("prism.commands.strat.Core")
+def test_strat_edit(mock_core):
     runner = CliRunner()
     path = "test-phase/test-milestone"
     new_name = "Updated Milestone Name"
@@ -191,7 +192,7 @@ def test_strat_edit(mock_tracker):
     )
 
     assert result.exit_code == 0
-    mock_tracker.return_value.update_item.assert_called_once_with(
+    mock_core.return_value.update_item.assert_called_once_with(
         path=path,
         name=new_name,
         description=new_description,
@@ -200,8 +201,8 @@ def test_strat_edit(mock_tracker):
     assert f"Item at '{path}' updated successfully." in result.output
 
 
-@patch("prism.commands.strat.Tracker")
-def test_strat_edit_from_file(mock_tracker):
+@patch("prism.commands.strat.Core")
+def test_strat_edit_from_file(mock_core):
     runner = CliRunner()
     path = "test-phase/test-objective"
     json_file_path = Path("tests/test_strat_edit_file.json")
@@ -214,7 +215,7 @@ def test_strat_edit_from_file(mock_tracker):
     )
 
     assert result.exit_code == 0
-    mock_tracker.return_value.update_item.assert_called_once_with(
+    mock_core.return_value.update_item.assert_called_once_with(
         path=path,
         name=update_data.get("name"),
         description=update_data.get("description"),
@@ -223,30 +224,30 @@ def test_strat_edit_from_file(mock_tracker):
     assert f"Item at '{path}' updated successfully." in result.output
 
 
-@patch("prism.commands.strat.Tracker")
-def test_strat_delete(mock_tracker):
+@patch("prism.commands.strat.Core")
+def test_strat_delete(mock_core):
     runner = CliRunner()
     path = "test-phase/test-objective"
 
     result = runner.invoke(cli, ["strat", "delete", "--path", path])
 
     assert result.exit_code == 0
-    mock_tracker.return_value.delete_item.assert_called_once_with(path=path)
+    mock_core.return_value.delete_item.assert_called_once_with(path=path)
     assert f"Item at '{path}' deleted successfully." in result.output
 
 
-@patch("prism.commands.strat.Tracker")
-def test_strat_delete_no_path(mock_tracker):
+@patch("prism.commands.strat.Core")
+def test_strat_delete_no_path(mock_core):
     runner = CliRunner()
     result = runner.invoke(cli, ["strat", "delete"])
 
     assert result.exit_code == 2  # Click exits with 2 for missing required options
     assert "Error: Missing option '--path'" in result.output
-    mock_tracker.return_value.delete_item.assert_not_called()
+    mock_core.return_value.delete_item.assert_not_called()
 
 
-@patch("prism.commands.strat.Tracker")
-def test_strat_show_json_output(mock_tracker):
+@patch("prism.commands.strat.Core")
+def test_strat_show_json_output(mock_core):
     mock_phase_data = Phase(
         name="Test Phase",
         description="A test phase",
@@ -256,15 +257,15 @@ def test_strat_show_json_output(mock_tracker):
         updated_at=datetime.now(),
         milestones=[],
     )
-    mock_tracker.return_value.get_item_by_path.return_value = mock_phase_data
+    mock_core.return_value.navigator.get_item_by_path.return_value = mock_phase_data
 
     runner = CliRunner()
     result = runner.invoke(cli, ["strat", "show", "--path", "test-phase", "--json"])
     print(result.output)
 
     assert result.exit_code == 0
-    mock_tracker.assert_called_once()  # Ensure Tracker class was instantiated
-    mock_tracker.return_value.get_item_by_path.assert_called_once_with("test-phase")
+    mock_core.assert_called_once()  # Ensure Tracker class was instantiated
+    mock_core.return_value.navigator.get_item_by_path.assert_called_once_with("test-phase")
 
     try:
         output_json = json.loads(result.output)
@@ -280,8 +281,8 @@ def test_strat_show_json_output(mock_tracker):
         pytest.fail("Output is not valid JSON.")
 
 
-@patch("prism.commands.strat.Tracker")
-def test_strat_edit_completed_item_raises_error(mock_tracker):
+@patch("prism.commands.strat.Core")
+def test_strat_edit_completed_item_raises_error(mock_core):
     mock_phase = Phase(
         id=uuid.uuid4(),
         name="Completed Phase",
@@ -292,12 +293,12 @@ def test_strat_edit_completed_item_raises_error(mock_tracker):
         updated_at=datetime.now(),
         milestones=[],
     )
-    mock_tracker.return_value.get_item_by_path.return_value = mock_phase
+    mock_core.return_value.get_item_by_path.return_value = mock_phase
     # The Tracker.update_item method itself will raise the ValueError
     # when the item_to_update.status is 'completed' or 'archived'.
     # We are mocking the Tracker class directly, so we need to ensure
     # the side_effect correctly simulates the behavior of the real method.
-    mock_tracker.return_value.update_item.side_effect = ValueError(
+    mock_core.return_value.update_item.side_effect = ValueError(
         "Cannot update item 'dummy/path' because it is already in 'completed' status."
     )
 
@@ -312,6 +313,6 @@ def test_strat_edit_completed_item_raises_error(mock_tracker):
         in result.output
     )
 
-    mock_tracker.return_value.update_item.assert_called_once_with(
+    mock_core.return_value.update_item.assert_called_once_with(
         path="dummy/path", name="Attempt to Update", status=None
     )
