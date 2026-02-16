@@ -22,3 +22,14 @@ PERCENTAGE_ROUND_PRECISION = 1
 VALIDATION_NAME_REQUIRED = "Name is required for all items."
 VALIDATION_INVALID_STATUS = "Status must be one of: pending, in-progress, completed, cancelled, archived."
 VALIDATION_DUPLICATE_SLUG = "An item with this slug already exists in the same parent. Please use a unique name."
+
+# Status constants
+DEFAULT_STATUS = "pending"
+VALID_STATUSES = ["pending", "in-progress", "completed", "cancelled", "archived"]
+COMPLETED_STATUS = "completed"
+ARCHIVED_STATUS = "archived"
+IN_PROGRESS_STATUS = "in-progress"
+
+# Date format
+DATE_FORMAT = "%Y-%m-%d"
+DATE_FORMAT_ERROR = f"Invalid date format. Expected YYYY-MM-DD (e.g., 2024-12-31)."

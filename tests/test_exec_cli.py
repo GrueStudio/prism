@@ -8,6 +8,7 @@ from click.testing import CliRunner
 
 from prism.cli import cli
 from prism.models import Deliverable
+from prism.exceptions import InvalidOperationError
 
 
 @patch("prism.commands.exec.Core")
@@ -304,7 +305,7 @@ def test_exec_edit_completed_item_raises_error(mock_core):
         actions=[],
     )
     mock_core.return_value.navigator.get_item_by_path.return_value = mock_deliverable
-    mock_core.return_value.update_item.side_effect = ValueError(
+    mock_core.return_value.update_item.side_effect = InvalidOperationError(
         "Cannot update item 'dummy/path' because it is already in 'completed' status."
     )
 
@@ -338,8 +339,8 @@ def test_exec_delete_completed_item_raises_error(mock_core):
         actions=[],
     )
     mock_core.return_value.navigator.get_item_by_path.return_value = mock_deliverable
-    mock_core.return_value.delete_item.side_effect = ValueError(
-        "Cannot update item 'dummy/path' because it is already in 'completed' status."
+    mock_core.return_value.delete_item.side_effect = InvalidOperationError(
+        "Cannot delete item 'dummy/path' because it is already in 'completed' status."
     )
 
     runner = CliRunner()
@@ -348,7 +349,7 @@ def test_exec_delete_completed_item_raises_error(mock_core):
     print(result.output)
     assert result.exit_code == 1
     assert (
-        "Error: Cannot update item 'dummy/path' because it is already in 'completed' status."
+        "Operation Error: Cannot delete item 'dummy/path' because it is already in 'completed' status."
         in result.output
     )
 

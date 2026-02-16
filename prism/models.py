@@ -3,13 +3,13 @@ from typing import List, Optional
 from datetime import datetime
 import re
 import uuid
-from prism.constants import SLUG_MAX_LENGTH, SLUG_REGEX_PATTERN, SLUG_ERROR_MESSAGE
+from prism.constants import SLUG_MAX_LENGTH, SLUG_REGEX_PATTERN, SLUG_ERROR_MESSAGE, DEFAULT_STATUS
 
 class BaseItem(BaseModel):
     name: str
     description: Optional[str] = None
     slug: str = Field(min_length=1, max_length=SLUG_MAX_LENGTH)
-    status: str = "pending"  # e.g., pending, in-progress, completed, cancelled
+    status: str = Field(default=DEFAULT_STATUS)
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
 

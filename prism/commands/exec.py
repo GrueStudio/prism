@@ -6,6 +6,7 @@ from pathlib import Path
 import click
 
 from prism.core import Core
+from prism.exceptions import PrismError, NotFoundError, ValidationError, InvalidOperationError
 
 
 @click.group(name="exec")
@@ -40,7 +41,13 @@ def add(item_type, name, desc, parent_path):
             status=None,
         )
         click.echo(f"{item_type.capitalize()} '{name}' created successfully.")
-    except Exception as e:
+    except NotFoundError as e:
+        raise click.ClickException(str(e))
+    except ValidationError as e:
+        raise click.ClickException(f"Validation Error: {e}")
+    except InvalidOperationError as e:
+        raise click.ClickException(f"Operation Error: {e}")
+    except PrismError as e:
         raise click.ClickException(f"Error: {e}")
 
 
@@ -55,7 +62,7 @@ def show(path_str, json_output):
     try:
         item = core.navigator.get_item_by_path(path_str)
         if not item:
-            raise click.ClickException(f"Item not found at path '{path_str}'.")
+            raise NotFoundError(f"Item not found at path '{path_str}'.")
 
         if json_output:
             item_dict = item.model_dump()
@@ -72,7 +79,9 @@ def show(path_str, json_output):
             click.echo(f"Description: {item.description}")
             click.echo(f"Status: {item.status}")
             click.echo(f"Type: {type(item).__name__}")
-    except Exception as e:
+    except NotFoundError as e:
+        raise click.ClickException(str(e))
+    except PrismError as e:
         raise click.ClickException(f"Error: {e}")
 
 
@@ -100,7 +109,13 @@ def addtree(json_file_path, mode):
         raise click.ClickException(f"File '{json_file_path}' not found.")
     except json.JSONDecodeError as e:
         raise click.ClickException(f"Invalid JSON format in '{json_file_path}': {e}")
-    except Exception as e:
+    except NotFoundError as e:
+        raise click.ClickException(str(e))
+    except ValidationError as e:
+        raise click.ClickException(f"Validation Error: {e}")
+    except InvalidOperationError as e:
+        raise click.ClickException(f"Operation Error: {e}")
+    except PrismError as e:
         raise click.ClickException(f"Error adding execution tree: {e}")
 
 
@@ -148,7 +163,13 @@ def edit(path_str, name, desc, due_date, json_file_path):
     try:
         core.update_item(path=path_str, **update_data, status=None)
         click.echo(f"Item at '{path_str}' updated successfully.")
-    except Exception as e:
+    except NotFoundError as e:
+        raise click.ClickException(str(e))
+    except ValidationError as e:
+        raise click.ClickException(f"Validation Error: {e}")
+    except InvalidOperationError as e:
+        raise click.ClickException(f"Operation Error: {e}")
+    except PrismError as e:
         raise click.ClickException(f"Error: {e}")
 
 
@@ -162,5 +183,9 @@ def delete(path_str):
     try:
         core.delete_item(path=path_str)
         click.echo(f"Item at '{path_str}' deleted successfully.")
-    except Exception as e:
+    except NotFoundError as e:
+        raise click.ClickException(str(e))
+    except InvalidOperationError as e:
+        raise click.ClickException(f"Operation Error: {e}")
+    except PrismError as e:
         raise click.ClickException(f"Error: {e}")

@@ -7,6 +7,7 @@ import click
 
 from prism.models import Objective
 from prism.core import Core
+from prism.exceptions import PrismError, NotFoundError, ValidationError, InvalidOperationError
 
 
 @click.group()
@@ -36,12 +37,12 @@ def add(item_type, name, desc, parent_path):
         if parent_path:
             parent_item = core.navigator.get_item_by_path(parent_path)
             if not parent_item:
-                raise click.ClickException(
-                    f"Parent item not found at path: {parent_path}"
+                raise NotFoundError(
+                    f"Parent item not found at path: '{parent_path}'"
                 )
             if isinstance(parent_item, Objective):
                 if not core.is_exec_tree_complete(parent_path):
-                    raise click.ClickException(
+                    raise InvalidOperationError(
                         f"Cannot add strategic item. Execution tree for '{parent_path}' is not complete or does not exist."
                     )
 
@@ -49,7 +50,13 @@ def add(item_type, name, desc, parent_path):
             item_type=item_type, name=name, description=desc, parent_path=parent_path, status=None
         )
         click.echo(f"{item_type.capitalize()} '{name}' created successfully.")
-    except Exception as e:
+    except NotFoundError as e:
+        raise click.ClickException(str(e))
+    except ValidationError as e:
+        raise click.ClickException(f"Validation Error: {e}")
+    except InvalidOperationError as e:
+        raise click.ClickException(f"Operation Error: {e}")
+    except PrismError as e:
         raise click.ClickException(f"Error: {e}")
 
 
