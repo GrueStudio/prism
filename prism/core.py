@@ -19,6 +19,22 @@ from prism.models import (
 )
 from prism.navigator import Navigator
 from prism.data_store import DataStore
+from prism.constants import SLUG_MAX_LENGTH
+from prism.exceptions import (
+    PrismError,
+    ValidationError,
+    NotFoundError,
+    InvalidOperationError,
+    DuplicateError,
+)
+from prism.constants import (
+    SLUG_MAX_LENGTH,
+    VALID_STATUSES,
+    COMPLETED_STATUS,
+    ARCHIVED_STATUS,
+    DATE_FORMAT,
+    DATE_FORMAT_ERROR,
+)
 
 
 class Core:
@@ -46,7 +62,7 @@ class Core:
         self, existing_items: List[BaseItem], base_name: str
     ) -> str:
         """Generate a unique slug for an item."""
-        base_slug = re.sub(r"[^a-z0-9]+", "-", base_name.lower()).strip("-")[:15]
+        base_slug = re.sub(r"[^a-z0-9]+", "-", base_name.lower()).strip("-")[:SLUG_MAX_LENGTH]
         if not base_slug:
             base_slug = "item"
 
@@ -56,8 +72,8 @@ class Core:
         count = 1
         while slug in existing_slugs:
             slug = (
-                f"{base_slug[: (15 - len(str(count)) - 1)]}-{count}"
-                if len(base_slug) > (15 - len(str(count)) - 1)
+                f"{base_slug[: (SLUG_MAX_LENGTH - len(str(count)) - 1)]}-{count}"
+                if len(base_slug) > (SLUG_MAX_LENGTH - len(str(count)) - 1)
                 else f"{base_slug}-{count}"
             )
             count += 1
@@ -80,14 +96,20 @@ class Core:
             "deliverable",
             "action",
         ]:
-            raise ValueError(f"Invalid item type: {item_type}")
+            raise ValidationError(
+                f"Invalid item type: '{item_type}'. "
+                f"Valid types are: phase, milestone, objective, deliverable, action."
+            )
 
         # Determine the list of items to check for slug uniqueness
         items_to_check: List[BaseItem]
         if parent_path:
             parent_item = self.navigator.get_item_by_path(parent_path)
             if not parent_item:
-                raise ValueError(f"Parent item not found at path: {parent_path}")
+                raise NotFoundError(
+                    f"Parent item not found at path: '{parent_path}'. "
+                    f"Please verify the path is correct and the parent item exists."
+                )
 
             if item_type == "milestone" and isinstance(parent_item, Phase):
                 items_to_check = parent_item.milestones
@@ -98,14 +120,16 @@ class Core:
             elif item_type == "action" and isinstance(parent_item, Deliverable):
                 items_to_check = parent_item.actions
             else:
-                raise ValueError(
-                    f"Cannot add {item_type} to parent of type {type(parent_item).__name__}"
+                raise InvalidOperationError(
+                    f"Cannot add {item_type} to parent of type {type(parent_item).__name__}. "
+                    f"Valid parent-child relationships are: phase->milestone, milestone->objective, "
+                    f"objective->deliverable, deliverable->action."
                 )
         else:
             if item_type == "phase":
                 items_to_check = self.project_data.phases
             else:
-                raise ValueError(f"Cannot add {item_type} without a parent path.")
+                raise ValueError(f"Cannot add {item_type} without a parent path. Only phases can be added at the top level.")
 
         slug = self._generate_unique_slug(items_to_check, name)
 
@@ -121,21 +145,26 @@ class Core:
         elif item_type == "action":
             new_item = Action(name=name, description=description, slug=slug)
         else:
-            raise ValueError("Unsupported item type during instantiation.")
+            raise ValidationError("Unsupported item type during instantiation.")
 
         # Enforce business rule: new items cannot be created as "completed" or "archived"
-        if status in ["completed", "archived"]:
-            new_item.status = "pending"
+        if status in [COMPLETED_STATUS, ARCHIVED_STATUS]:
+            new_item.status = DEFAULT_STATUS
         elif status is not None:
+            # Validate status against allowed values
+            if status not in VALID_STATUSES:
+                raise ValidationError(
+                    f"Invalid status: '{status}'. {VALIDATION_INVALID_STATUS}"
+                )
             new_item.status = status
         else:
-            new_item.status = "pending"  # Default to pending if no status is provided
+            new_item.status = DEFAULT_STATUS
 
         if parent_path:
             # Re-fetch parent_item as it might have been modified by adding slug
             parent_item = self.navigator.get_item_by_path(parent_path)
             if not parent_item:  # Should not happen if it was found before
-                raise ValueError(f"Parent item not found at path: {parent_path}")
+                raise ValueError(f"Parent item not found at path: '{parent_path}'. Please verify the path is correct and the parent item exists.")
 
             if item_type == "milestone" and isinstance(parent_item, Phase):
                 parent_item.milestones.append(new_item)
@@ -162,11 +191,12 @@ class Core:
         """Update an existing item."""
         item_to_update = self.navigator.get_item_by_path(path)
         if not item_to_update:
-            raise ValueError(f"Item not found at path: {path}")
+            raise NotFoundError(f"Item not found at path: '{path}'. Please verify the path is correct and the item exists.")
 
         if item_to_update.status in ["completed", "archived"]:
-            raise ValueError(
-                f"Cannot update item '{path}' because it is already in '{item_to_update.status}' status."
+            raise InvalidOperationError(
+                f"Cannot update item '{path}' because it is already in '{item_to_update.status}' status. "
+                f"Items in 'completed' or 'archived' status cannot be modified to maintain historical accuracy."
             )
 
         updated = False
@@ -182,18 +212,18 @@ class Core:
             updated = True
         if due_date is not None and isinstance(item_to_update, (Action, Deliverable)):
             try:
-                item_to_update.due_date = datetime.strptime(due_date, "%Y-%m-%d")
+                item_to_update.due_date = datetime.strptime(due_date, DATE_FORMAT)
                 updated = True
             except ValueError:
-                raise ValueError(
-                    f"Invalid date format for due_date: {due_date}. Expected YYYY-MM-DD."
-                )
+                raise ValidationError(DATE_FORMAT_ERROR)
 
         if updated:
             item_to_update.updated_at = datetime.now()
             self._save_project_data()
         else:
-            raise ValueError("No update parameters provided.")
+            raise ValidationError(
+                "No update parameters provided. Please specify at least one field to update: --name, --desc, or --due-date."
+            )
 
     def _get_parent_items_for_slug_check(self, path: str) -> List[BaseItem]:
         """Helper to get the list of siblings for slug uniqueness check."""
@@ -223,11 +253,12 @@ class Core:
 
         item_to_delete = self.navigator.get_item_by_path(path)
         if not item_to_delete:
-            raise ValueError(f"Item not found at path: {path}")
+            raise NotFoundError(f"Item not found at path: {path}")
 
         if item_to_delete.status in ["completed", "archived"]:
-            raise ValueError(
-                f"Cannot delete item '{path}' because it is already in '{item_to_delete.status}' status."
+            raise InvalidOperationError(
+                f"Cannot delete item '{path}' because it is already in '{item_to_delete.status}' status. "
+                f"Items in 'completed' or 'archived' status cannot be deleted for record-keeping purposes."
             )
 
         item_slug_to_delete = segments[-1]
@@ -236,7 +267,7 @@ class Core:
         if parent_path:
             parent_item = self.navigator.get_item_by_path(parent_path)
             if not parent_item:
-                raise ValueError(f"Parent item not found at path: {parent_path}")
+                raise ValueError(f"Parent item not found at path: '{parent_path}'. Please verify the path is correct and the parent item exists.")
 
             # Determine the list of children to remove from
             target_list: Optional[List[BaseItem]] = None
@@ -365,7 +396,7 @@ class Core:
             del_name = del_data.get("name")
             del_desc = del_data.get("description")
             if not del_name:
-                raise ValueError("Deliverable name is required in addtree input.")
+                raise ValidationError("Deliverable name is required in addtree input.")
 
             deliverable_slug = self._generate_unique_slug(
                 current_objective.deliverables, del_name
@@ -378,7 +409,7 @@ class Core:
                 act_name = act_data.get("name")
                 act_desc = act_data.get("description")
                 if not act_name:
-                    raise ValueError("Action name is required in addtree input.")
+                    raise ValidationError("Action name is required in addtree input.")
 
                 action_slug = self._generate_unique_slug(
                     new_deliverable.actions, act_name
@@ -526,7 +557,8 @@ class Core:
                     "milestone": self.navigator.get_item_by_path(milestone_path),
                     "objective": self.navigator.get_item_by_path(objective_path)
                 }
-            except:
+            except (NotFoundError, KeyError, TypeError):
+                # Log the exception for debugging but return None values to maintain functionality
                 return {"phase": None, "milestone": None, "objective": None}
         
         return {"phase": None, "milestone": None, "objective": None}
