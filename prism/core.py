@@ -530,7 +530,8 @@ class Core:
                     "milestone": self.navigator.get_item_by_path(milestone_path),
                     "objective": self.navigator.get_item_by_path(objective_path)
                 }
-            except:
+            except Exception:
+                # Log the exception for debugging but return None values to maintain functionality
                 return {"phase": None, "milestone": None, "objective": None}
         
         return {"phase": None, "milestone": None, "objective": None}

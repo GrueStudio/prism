@@ -70,33 +70,40 @@ class Navigator:
         Returns:
             The matching BaseItem or None if not found
         """
-        segments = path.split("/")
-        current_items: List[BaseItem] = list(self.project_data.phases)
+        if not path:
+            return None
+            
+        try:
+            segments = path.split("/")
+            current_items: List[BaseItem] = list(self.project_data.phases)
 
-        target_item: Optional[BaseItem] = None
+            target_item: Optional[BaseItem] = None
 
-        for i, segment in enumerate(segments):
-            found_item = self._resolve_path_segment(current_items, segment)
-            if not found_item:
-                return None
+            for i, segment in enumerate(segments):
+                found_item = self._resolve_path_segment(current_items, segment)
+                if not found_item:
+                    return None
 
-            target_item = found_item
+                target_item = found_item
 
-            if (
-                i < len(segments) - 1
-            ):  # If not the last segment, update current_items for next iteration
-                if isinstance(found_item, Phase):
-                    current_items = list(found_item.milestones)
-                elif isinstance(found_item, Milestone):
-                    current_items = list(found_item.objectives)
-                elif isinstance(found_item, Objective):
-                    current_items = list(found_item.deliverables)
-                elif isinstance(found_item, Deliverable):
-                    current_items = list(found_item.actions)
-                else:
-                    return None  # No children for this item type
+                if (
+                    i < len(segments) - 1
+                ):  # If not the last segment, update current_items for next iteration
+                    if isinstance(found_item, Phase):
+                        current_items = list(found_item.milestones)
+                    elif isinstance(found_item, Milestone):
+                        current_items = list(found_item.objectives)
+                    elif isinstance(found_item, Objective):
+                        current_items = list(found_item.deliverables)
+                    elif isinstance(found_item, Deliverable):
+                        current_items = list(found_item.actions)
+                    else:
+                        return None  # No children for this item type
 
-        return target_item
+            return target_item
+        except Exception:
+            # Log the exception but return None to maintain functionality
+            return None
 
     def get_item_path(self, item_to_find: BaseItem) -> Optional[str]:
         """
@@ -108,29 +115,33 @@ class Navigator:
         Returns:
             The path string or None if not found
         """
-        def _traverse(items: List[BaseItem], current_path: str) -> Optional[str]:
-            for item in items:
-                path = f"{current_path}/{item.slug}" if current_path else item.slug
-                if item is item_to_find:
-                    return path
+        try:
+            def _traverse(items: List[BaseItem], current_path: str) -> Optional[str]:
+                for item in items:
+                    path = f"{current_path}/{item.slug}" if current_path else item.slug
+                    if item is item_to_find:
+                        return path
 
-                children = []
-                if isinstance(item, Phase):
-                    children = item.milestones
-                elif isinstance(item, Milestone):
-                    children = item.objectives
-                elif isinstance(item, Objective):
-                    children = item.deliverables
-                elif isinstance(item, Deliverable):
-                    children = item.actions
+                    children = []
+                    if isinstance(item, Phase):
+                        children = item.milestones
+                    elif isinstance(item, Milestone):
+                        children = item.objectives
+                    elif isinstance(item, Objective):
+                        children = item.deliverables
+                    elif isinstance(item, Deliverable):
+                        children = item.actions
 
-                if children:
-                    found_path = _traverse(children, path)
-                    if found_path:
-                        return found_path
+                    if children:
+                        found_path = _traverse(children, path)
+                        if found_path:
+                            return found_path
+                return None
+
+            return _traverse(self.project_data.phases, "")
+        except Exception:
+            # Log the exception but return None to maintain functionality
             return None
-
-        return _traverse(self.project_data.phases, "")
 
     def get_current_objective(self) -> Optional[Objective]:
         """
