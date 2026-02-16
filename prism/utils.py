@@ -3,9 +3,9 @@ Utility functions for the Prism CLI application.
 """
 
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Tuple
 
-from prism.constants import DATE_FORMATS
+from prism.constants import DATE_FORMATS, DATE_MAX_YEARS_FUTURE, DATE_MAX_YEARS_PAST
 
 
 def parse_date(date_string: str) -> Optional[datetime]:
@@ -31,6 +31,35 @@ def parse_date(date_string: str) -> Optional[datetime]:
         except ValueError:
             continue
     return None
+
+
+def validate_date_range(date: datetime) -> Tuple[bool, Optional[str]]:
+    """
+    Validate that a date is within acceptable range.
+    
+    Args:
+        date: The datetime object to validate.
+        
+    Returns:
+        A tuple of (is_valid, error_message). If valid, error_message is None.
+    """
+    now = datetime.now()
+    min_date = datetime(now.year - DATE_MAX_YEARS_PAST, now.month, now.day)
+    max_date = datetime(now.year + DATE_MAX_YEARS_FUTURE, now.month, now.day)
+    
+    if date < min_date:
+        return False, (
+            f"Date {date.strftime('%Y-%m-%d')} is too far in the past. "
+            f"Dates must be within the last {DATE_MAX_YEARS_PAST} year."
+        )
+    
+    if date > max_date:
+        return False, (
+            f"Date {date.strftime('%Y-%m-%d')} is too far in the future. "
+            f"Dates must be within the next {DATE_MAX_YEARS_FUTURE} years."
+        )
+    
+    return True, None
 
 
 def format_date(date: datetime) -> str:

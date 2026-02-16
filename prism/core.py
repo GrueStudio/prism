@@ -34,7 +34,7 @@ from prism.constants import (
     ARCHIVED_STATUS,
     DATE_FORMAT_ERROR,
 )
-from prism.utils import parse_date
+from prism.utils import parse_date, validate_date_range
 
 
 class Core:
@@ -214,6 +214,11 @@ class Core:
             parsed_date = parse_date(due_date)
             if parsed_date is None:
                 raise ValidationError(DATE_FORMAT_ERROR)
+            
+            is_valid, error_msg = validate_date_range(parsed_date)
+            if not is_valid:
+                raise ValidationError(error_msg)
+            
             item_to_update.due_date = parsed_date
             updated = True
 
