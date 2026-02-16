@@ -99,7 +99,7 @@ def setup_test_project(tmp_path):
             pass
 
 
-@patch('prism.commands.status.Tracker')
+@patch('prism.commands.status.Core')
 def test_status_command_output(mock_core, tmp_path):
     """Test the output formatting of the 'status' command."""
 
@@ -113,7 +113,7 @@ def test_status_command_output(mock_core, tmp_path):
     }
     mock_core.return_value.get_current_action.return_value = None
     mock_core.return_value.calculate_completion_percentage.return_value = {"overall": 0.0}
-    mock_core.return_value.get_item_path.return_value = None
+    mock_core.return_value.navigator.get_item_path.return_value = None
 
     mock_summary = {
         "item_counts": {
@@ -159,7 +159,7 @@ def test_status_command_output(mock_core, tmp_path):
     assert "Path: test-phase-1/test-milesto/test-object/orphaned-de" in result.output
     assert "(Type: Deliverable)" in result.output
 
-@patch('prism.commands.status.Tracker')
+@patch('prism.commands.status.Core')
 def test_status_command_no_issues(mock_core):
     """Test the output when there are no overdue or orphaned items."""
     
@@ -185,7 +185,7 @@ def test_status_command_no_issues(mock_core):
     assert "No overdue actions." in result.output
     assert "No orphaned items found." in result.output
 
-@patch('prism.commands.status.Tracker')
+@patch('prism.commands.status.Core')
 def test_status_command_with_phase_filter(mock_core):
     """Test the 'status' command with a --phase filter."""
     
@@ -212,7 +212,7 @@ def test_status_command_with_phase_filter(mock_core):
     assert "Phases: 0 completed / 1 total" in result.output
     assert "Milestones: 0 completed / 1 total" in result.output
 
-@patch('prism.commands.status.Tracker')
+@patch('prism.commands.status.Core')
 def test_status_command_with_milestone_filter(mock_core):
     """Test the 'status' command with a --milestone filter."""
     

@@ -87,7 +87,7 @@ def test_exec_show(mock_core):
         updated_at=datetime.now(),
         actions=[],
     )
-    mock_core.return_value.get_item_by_path.return_value = mock_deliverable
+    mock_core.return_value.navigator.get_item_by_path.return_value = mock_deliverable
 
     runner = CliRunner()
     result = runner.invoke(
@@ -100,7 +100,7 @@ def test_exec_show(mock_core):
         ],
     )
     assert result.exit_code == 0
-    mock_core.return_value.get_item_by_path.assert_called_once_with(
+    mock_core.return_value.navigator.get_item_by_path.assert_called_once_with(
         "test-phase/test-milestone/test-objective/test-deliverable"
     )
     assert "Name: Test Deliverable" in result.output
@@ -269,13 +269,13 @@ def test_exec_show_json_output(mock_core):
         updated_at=now,
         actions=[],
     )
-    mock_core.return_value.get_item_by_path.return_value = mock_deliverable
+    mock_core.return_value.navigator.get_item_by_path.return_value = mock_deliverable
 
     runner = CliRunner()
     result = runner.invoke(cli, ["exec", "show", "--path", "dummy/path", "--json"])
 
     assert result.exit_code == 0
-    mock_core.return_value.get_item_by_path.assert_called_once_with("dummy/path")
+    mock_core.return_value.navigator.get_item_by_path.assert_called_once_with("dummy/path")
 
     try:
         output_json = json.loads(result.output)
@@ -303,7 +303,7 @@ def test_exec_edit_completed_item_raises_error(mock_core):
         updated_at=datetime.now(),
         actions=[],
     )
-    mock_core.return_value.get_item_by_path.return_value = mock_deliverable
+    mock_core.return_value.navigator.get_item_by_path.return_value = mock_deliverable
     mock_core.return_value.update_item.side_effect = ValueError(
         "Cannot update item 'dummy/path' because it is already in 'completed' status."
     )
@@ -337,7 +337,7 @@ def test_exec_delete_completed_item_raises_error(mock_core):
         updated_at=datetime.now(),
         actions=[],
     )
-    mock_core.return_value.get_item_by_path.return_value = mock_deliverable
+    mock_core.return_value.navigator.get_item_by_path.return_value = mock_deliverable
     mock_core.return_value.delete_item.side_effect = ValueError(
         "Cannot update item 'dummy/path' because it is already in 'completed' status."
     )

@@ -114,12 +114,13 @@ def test_strat_show(mock_core):
         updated_at=datetime.now(),
         milestones=[],
     )
-    mock_core.return_value.get_item_by_path.return_value = mock_phase
+    # Set up the mock to return the mock_phase when navigator.get_item_by_path is called
+    mock_core.return_value.navigator.get_item_by_path.return_value = mock_phase
 
     runner = CliRunner()
     result = runner.invoke(cli, ["strat", "show", "--path", "test-phase"])
     assert result.exit_code == 0
-    mock_core.return_value.get_item_by_path.assert_called_once_with("test-phase")
+    mock_core.return_value.navigator.get_item_by_path.assert_called_once_with("test-phase")
     assert "Name: Test Phase" in result.output
     assert "Description: A test phase" in result.output
     assert "Status: in-progress" in result.output
@@ -142,7 +143,7 @@ def test_strat_add_validation_incomplete_exec_tree(mock_core):
         updated_at=datetime.now(),
         deliverables=[],
     )
-    mock_core.return_value.get_item_by_path.return_value = mock_objective
+    mock_core.return_value.navigator.get_item_by_path.return_value = mock_objective
 
     runner = CliRunner()
     result = runner.invoke(
@@ -256,7 +257,7 @@ def test_strat_show_json_output(mock_core):
         updated_at=datetime.now(),
         milestones=[],
     )
-    mock_core.return_value.get_item_by_path.return_value = mock_phase_data
+    mock_core.return_value.navigator.get_item_by_path.return_value = mock_phase_data
 
     runner = CliRunner()
     result = runner.invoke(cli, ["strat", "show", "--path", "test-phase", "--json"])
@@ -264,7 +265,7 @@ def test_strat_show_json_output(mock_core):
 
     assert result.exit_code == 0
     mock_core.assert_called_once()  # Ensure Tracker class was instantiated
-    mock_core.return_value.get_item_by_path.assert_called_once_with("test-phase")
+    mock_core.return_value.navigator.get_item_by_path.assert_called_once_with("test-phase")
 
     try:
         output_json = json.loads(result.output)
