@@ -376,9 +376,9 @@
                       "name": "Implement Flexible Date Parsing",
                       "description": "Add support for multiple date formats in addition to YYYY-MM-DD.",
                       "slug": "implement-flexi",
-                      "status": "in-progress",
+                      "status": "completed",
                       "created_at": "2026-02-15T13:09:36.360941",
-                      "updated_at": "2026-02-15T13:09:36.360945",
+                      "updated_at": "2026-02-16T14:50:33.104728",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -386,9 +386,9 @@
                       "name": "Enhance Date Validation",
                       "description": "Improve date validation with better error messages and range checking.",
                       "slug": "enhance-date-va",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-15T13:09:40.338638",
-                      "updated_at": "2026-02-15T13:09:40.338641",
+                      "updated_at": "2026-02-16T14:55:28.384750",
                       "time_spent": null,
                       "due_date": null
                     }
@@ -406,7 +406,7 @@
                       "name": "Research Atomic Write Patterns",
                       "description": "Investigate atomic write patterns in Python to prevent data corruption.",
                       "slug": "research-atomic",
-                      "status": "pending",
+                      "status": "in-progress",
                       "created_at": "2026-02-15T13:10:10.624786",
                       "updated_at": "2026-02-15T13:10:10.624790",
                       "time_spent": null,
@@ -581,5 +581,5 @@
       ]
     }
   ],
-  "cursor": "alpha/cli-operational/refactor-persis/improve-date-ha/implement-flexi"
+  "cursor": "alpha/cli-operational/refactor-persis/implement-atomi/research-atomic"
 }

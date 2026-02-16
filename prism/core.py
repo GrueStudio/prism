@@ -32,9 +32,9 @@ from prism.constants import (
     VALID_STATUSES,
     COMPLETED_STATUS,
     ARCHIVED_STATUS,
-    DATE_FORMAT,
     DATE_FORMAT_ERROR,
 )
+from prism.utils import parse_date, validate_date_range
 
 
 class Core:
@@ -211,11 +211,16 @@ class Core:
             item_to_update.description = description
             updated = True
         if due_date is not None and isinstance(item_to_update, (Action, Deliverable)):
-            try:
-                item_to_update.due_date = datetime.strptime(due_date, DATE_FORMAT)
-                updated = True
-            except ValueError:
+            parsed_date = parse_date(due_date)
+            if parsed_date is None:
                 raise ValidationError(DATE_FORMAT_ERROR)
+            
+            is_valid, error_msg = validate_date_range(parsed_date)
+            if not is_valid:
+                raise ValidationError(error_msg)
+            
+            item_to_update.due_date = parsed_date
+            updated = True
 
         if updated:
             item_to_update.updated_at = datetime.now()
