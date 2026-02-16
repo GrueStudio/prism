@@ -3,11 +3,12 @@ from typing import List, Optional
 from datetime import datetime
 import re
 import uuid
+from prism.constants import SLUG_MAX_LENGTH, SLUG_REGEX_PATTERN, SLUG_ERROR_MESSAGE
 
 class BaseItem(BaseModel):
     name: str
     description: Optional[str] = None
-    slug: str = Field(min_length=1, max_length=15)
+    slug: str = Field(min_length=1, max_length=SLUG_MAX_LENGTH)
     status: str = "pending"  # e.g., pending, in-progress, completed, cancelled
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
@@ -16,12 +17,13 @@ class BaseItem(BaseModel):
     @classmethod
     def validate_slug(cls, v, info):
         if v:
-            if not re.fullmatch(r"[a-z0-9\-]{1,15}", v):
-                raise ValueError("Slug must be kebab-case, alphanumeric with hyphens, and max 15 characters.")
+            pattern = f"{SLUG_REGEX_PATTERN}{{1,{SLUG_MAX_LENGTH}}}"
+            if not re.fullmatch(pattern, v):
+                raise ValueError(SLUG_ERROR_MESSAGE)
             return v
         if 'name' in info.data:
             slug = re.sub(r'[^a-z0-9]+', '-', info.data['name'].lower()).strip('-')
-            return slug[:15]
+            return slug[:SLUG_MAX_LENGTH]
         return "" # Should not happen if name is always present
 
 class Action(BaseItem):

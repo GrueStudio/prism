@@ -19,6 +19,7 @@ from prism.models import (
 )
 from prism.navigator import Navigator
 from prism.data_store import DataStore
+from prism.constants import SLUG_MAX_LENGTH
 
 
 class Core:
@@ -46,7 +47,7 @@ class Core:
         self, existing_items: List[BaseItem], base_name: str
     ) -> str:
         """Generate a unique slug for an item."""
-        base_slug = re.sub(r"[^a-z0-9]+", "-", base_name.lower()).strip("-")[:15]
+        base_slug = re.sub(r"[^a-z0-9]+", "-", base_name.lower()).strip("-")[:SLUG_MAX_LENGTH]
         if not base_slug:
             base_slug = "item"
 
@@ -56,8 +57,8 @@ class Core:
         count = 1
         while slug in existing_slugs:
             slug = (
-                f"{base_slug[: (15 - len(str(count)) - 1)]}-{count}"
-                if len(base_slug) > (15 - len(str(count)) - 1)
+                f"{base_slug[: (SLUG_MAX_LENGTH - len(str(count)) - 1)]}-{count}"
+                if len(base_slug) > (SLUG_MAX_LENGTH - len(str(count)) - 1)
                 else f"{base_slug}-{count}"
             )
             count += 1

@@ -2,6 +2,7 @@ import click
 import json
 from prism.core import Core
 from datetime import datetime
+from prism.constants import STATUS_HEADER_WIDTH
 
 
 def display_exec_tree(core, objective, current_action_path=None, indent_level=0, current_deliverable_only=False):
@@ -171,7 +172,7 @@ def status(phase_path, milestone_path, current_deliverable_only, json_output):
         title += f" for Milestone '{milestone_path}'"
 
     click.echo(click.style(title, bold=True, fg='cyan'))
-    click.echo("=" * (len(title) if len(title) > 25 else 25))
+    click.echo("=" * (len(title) if len(title) > STATUS_HEADER_WIDTH else STATUS_HEADER_WIDTH))
 
     # Show current strategic items if not filtered by phase or milestone
     if not phase_path and not milestone_path:
