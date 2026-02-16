@@ -81,14 +81,14 @@ class Core:
             "deliverable",
             "action",
         ]:
-            raise ValueError(f"Invalid item type: {item_type}")
+            raise ValueError(f"Invalid item type: '{item_type}'. Valid types are: phase, milestone, objective, deliverable, action.")
 
         # Determine the list of items to check for slug uniqueness
         items_to_check: List[BaseItem]
         if parent_path:
             parent_item = self.navigator.get_item_by_path(parent_path)
             if not parent_item:
-                raise ValueError(f"Parent item not found at path: {parent_path}")
+                raise ValueError(f"Parent item not found at path: '{parent_path}'. Please verify the path is correct and the parent item exists.")
 
             if item_type == "milestone" and isinstance(parent_item, Phase):
                 items_to_check = parent_item.milestones
@@ -100,13 +100,14 @@ class Core:
                 items_to_check = parent_item.actions
             else:
                 raise ValueError(
-                    f"Cannot add {item_type} to parent of type {type(parent_item).__name__}"
+                    f"Cannot add {item_type} to parent of type {type(parent_item).__name__}. "
+                    f"Valid parent-child relationships are: phase->milestone, milestone->objective, objective->deliverable, deliverable->action."
                 )
         else:
             if item_type == "phase":
                 items_to_check = self.project_data.phases
             else:
-                raise ValueError(f"Cannot add {item_type} without a parent path.")
+                raise ValueError(f"Cannot add {item_type} without a parent path. Only phases can be added at the top level.")
 
         slug = self._generate_unique_slug(items_to_check, name)
 
@@ -136,7 +137,7 @@ class Core:
             # Re-fetch parent_item as it might have been modified by adding slug
             parent_item = self.navigator.get_item_by_path(parent_path)
             if not parent_item:  # Should not happen if it was found before
-                raise ValueError(f"Parent item not found at path: {parent_path}")
+                raise ValueError(f"Parent item not found at path: '{parent_path}'. Please verify the path is correct and the parent item exists.")
 
             if item_type == "milestone" and isinstance(parent_item, Phase):
                 parent_item.milestones.append(new_item)
@@ -163,11 +164,12 @@ class Core:
         """Update an existing item."""
         item_to_update = self.navigator.get_item_by_path(path)
         if not item_to_update:
-            raise ValueError(f"Item not found at path: {path}")
+            raise ValueError(f"Item not found at path: '{path}'. Please verify the path is correct and the item exists.")
 
         if item_to_update.status in ["completed", "archived"]:
             raise ValueError(
-                f"Cannot update item '{path}' because it is already in '{item_to_update.status}' status."
+                f"Cannot update item '{path}' because it is already in '{item_to_update.status}' status. "
+                f"Items in 'completed' or 'archived' status cannot be modified to maintain historical accuracy."
             )
 
         updated = False
@@ -194,7 +196,7 @@ class Core:
             item_to_update.updated_at = datetime.now()
             self._save_project_data()
         else:
-            raise ValueError("No update parameters provided.")
+            raise ValueError("No update parameters provided. Please specify at least one field to update: --name, --desc, or --due-date.")
 
     def _get_parent_items_for_slug_check(self, path: str) -> List[BaseItem]:
         """Helper to get the list of siblings for slug uniqueness check."""
@@ -228,7 +230,8 @@ class Core:
 
         if item_to_delete.status in ["completed", "archived"]:
             raise ValueError(
-                f"Cannot delete item '{path}' because it is already in '{item_to_delete.status}' status."
+                f"Cannot delete item '{path}' because it is already in '{item_to_delete.status}' status. "
+                f"Items in 'completed' or 'archived' status cannot be deleted for record-keeping purposes."
             )
 
         item_slug_to_delete = segments[-1]
@@ -237,7 +240,7 @@ class Core:
         if parent_path:
             parent_item = self.navigator.get_item_by_path(parent_path)
             if not parent_item:
-                raise ValueError(f"Parent item not found at path: {parent_path}")
+                raise ValueError(f"Parent item not found at path: '{parent_path}'. Please verify the path is correct and the parent item exists.")
 
             # Determine the list of children to remove from
             target_list: Optional[List[BaseItem]] = None

@@ -19,7 +19,7 @@ class BaseItem(BaseModel):
         if v:
             pattern = f"{SLUG_REGEX_PATTERN}{{1,{SLUG_MAX_LENGTH}}}"
             if not re.fullmatch(pattern, v):
-                raise ValueError(SLUG_ERROR_MESSAGE)
+                raise ValueError(f"{SLUG_ERROR_MESSAGE} {SLUG_ERROR_DETAILED}")
             return v
         if 'name' in info.data:
             slug = re.sub(r'[^a-z0-9]+', '-', info.data['name'].lower()).strip('-')
