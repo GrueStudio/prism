@@ -30,6 +30,22 @@ COMPLETED_STATUS = "completed"
 ARCHIVED_STATUS = "archived"
 IN_PROGRESS_STATUS = "in-progress"
 
-# Date format
-DATE_FORMAT = "%Y-%m-%d"
-DATE_FORMAT_ERROR = f"Invalid date format. Expected YYYY-MM-DD (e.g., 2024-12-31)."
+# Date formats
+DATE_FORMATS = [
+    "%Y-%m-%d",      # YYYY-MM-DD (ISO 8601)
+    "%Y/%m/%d",      # YYYY/MM/DD
+    "%d-%m-%Y",      # DD-MM-YYYY
+    "%d/%m/%Y",      # DD/MM/YYYY
+    "%m-%d-%Y",      # MM-DD-YYYY
+    "%m/%d/%Y",      # MM/DD/YYYY
+    "%Y%m%d",        # YYYYMMDD
+    "%d %B %Y",      # DD Month YYYY (e.g., 31 December 2024)
+    "%d %b %Y",      # DD Mon YYYY (e.g., 31 Dec 2024)
+    "%B %d, %Y",     # Month DD, YYYY (e.g., December 31, 2024)
+    "%b %d, %Y",     # Mon DD, YYYY (e.g., Dec 31, 2024)
+]
+DATE_FORMAT_ERROR = (
+    f"Invalid date format. Supported formats: YYYY-MM-DD, YYYY/MM/DD, DD-MM-YYYY, DD/MM/YYYY, "
+    f"MM-DD-YYYY, MM/DD/YYYY, YYYYMMDD, 'DD Month YYYY', 'Month DD, YYYY'. "
+    f"Examples: 2024-12-31, 31/12/2024, 12-31-2024, '31 December 2024', 'December 31, 2024'."
+)
