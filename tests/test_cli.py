@@ -8,7 +8,7 @@ import pytest
 from click.testing import CliRunner
 
 from prism.cli import cli
-from prism.models import Deliverable, Objective, Phase
+from prism.models import Deliverable, Milestone, Objective, Phase
 
 
 def test_cli_registers_strat_and_exec_groups():
@@ -104,6 +104,16 @@ def test_strat_add_no_item_type(mock_core):
 
 @patch("prism.commands.strat.Core")
 def test_strat_show(mock_core):
+    mock_milestone = Milestone(
+        id=uuid.uuid4(),
+        name="Test Milestone",
+        description="A test milestone",
+        slug="test-milestone",
+        status="pending",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+        objectives=[],
+    )
     mock_phase = Phase(
         id=uuid.uuid4(),
         name="Test Phase",
@@ -112,7 +122,7 @@ def test_strat_show(mock_core):
         status="in-progress",
         created_at=datetime.now(),
         updated_at=datetime.now(),
-        milestones=[],
+        milestones=[mock_milestone],
     )
     # Set up the mock to return the mock_phase when navigator.get_item_by_path is called
     mock_core.return_value.navigator.get_item_by_path.return_value = mock_phase
@@ -125,6 +135,111 @@ def test_strat_show(mock_core):
     assert "Description: A test phase" in result.output
     assert "Status: in-progress" in result.output
     assert "Type: Phase" in result.output
+    assert "Milestones:" in result.output
+    assert "1. Test Milestone (test-milestone)" in result.output
+
+
+@patch("prism.commands.strat.Core")
+def test_strat_show_with_children(mock_core):
+    """Test strat show displays child items correctly."""
+    mock_milestone = Milestone(
+        id=uuid.uuid4(),
+        name="Milestone 1",
+        description="First milestone",
+        slug="milestone-1",
+        status="completed",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+        objectives=[],
+    )
+    mock_milestone2 = Milestone(
+        id=uuid.uuid4(),
+        name="Milestone 2",
+        description="Second milestone",
+        slug="milestone-2",
+        status="pending",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+        objectives=[],
+    )
+    mock_phase = Phase(
+        id=uuid.uuid4(),
+        name="Test Phase",
+        description="A test phase",
+        slug="test-phase",
+        status="in-progress",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+        milestones=[mock_milestone, mock_milestone2],
+    )
+    mock_core.return_value.navigator.get_item_by_path.return_value = mock_phase
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["strat", "show", "--path", "test-phase"])
+    
+    assert result.exit_code == 0
+    assert "Milestones:" in result.output
+    assert "1. Milestone 1 (milestone-1)" in result.output
+    assert "2. Milestone 2 (milestone-2)" in result.output
+
+
+@patch("prism.commands.strat.Core")
+def test_strat_show_no_children(mock_core):
+    """Test strat show displays 'no children' message."""
+    mock_phase = Phase(
+        id=uuid.uuid4(),
+        name="Empty Phase",
+        description="A phase with no milestones",
+        slug="empty-phase",
+        status="pending",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+        milestones=[],
+    )
+    mock_core.return_value.navigator.get_item_by_path.return_value = mock_phase
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["strat", "show", "--path", "empty-phase"])
+    
+    assert result.exit_code == 0
+    assert "No milestones." in result.output
+
+
+@patch("prism.commands.strat.Core")
+def test_strat_show_json_with_children(mock_core):
+    """Test strat show JSON output includes children."""
+    mock_deliverable = Deliverable(
+        id=uuid.uuid4(),
+        name="Test Deliverable",
+        description="A test deliverable",
+        slug="test-del",
+        status="pending",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+        actions=[],
+    )
+    mock_objective = Objective(
+        id=uuid.uuid4(),
+        name="Test Objective",
+        description="A test objective",
+        slug="test-obj",
+        status="pending",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+        deliverables=[mock_deliverable],
+    )
+    mock_core.return_value.navigator.get_item_by_path.return_value = mock_objective
+
+    runner = CliRunner()
+    result = runner.invoke(cli, ["strat", "show", "--path", "test-obj", "--json"])
+    
+    assert result.exit_code == 0
+    import json as json_module
+    output_data = json_module.loads(result.output)
+    assert "deliverables" in output_data
+    assert len(output_data["deliverables"]) == 1
+    assert output_data["deliverables"][0]["name"] == "Test Deliverable"
+    assert output_data["deliverables"][0]["slug"] == "test-del"
 
 
 @patch("prism.commands.strat.Core")
