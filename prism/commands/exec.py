@@ -1,12 +1,11 @@
 import json
-import uuid
-from datetime import datetime
 from pathlib import Path
 
 import click
 
 from prism.core import Core
 from prism.exceptions import PrismError, NotFoundError, ValidationError, InvalidOperationError
+from prism.models import Deliverable
 
 
 @click.group(name="exec")
@@ -57,7 +56,7 @@ def add(item_type, name, desc, parent_path):
     "--json", "json_output", is_flag=True, help="Output item details in JSON format."
 )
 def show(path_str, json_output):
-    """Shows details for an execution item."""
+    """Shows details for an execution item including child actions."""
     core = Core()
     try:
         item = core.navigator.get_item_by_path(path_str)
@@ -65,13 +64,11 @@ def show(path_str, json_output):
             raise NotFoundError(f"Item not found at path '{path_str}'.")
 
         if json_output:
-            item_dict = item.model_dump()
-            # Convert UUID and datetime objects to strings for JSON serialization
-            for key, value in item_dict.items():
-                if isinstance(value, uuid.UUID):
-                    item_dict[key] = str(value)
-                elif isinstance(value, datetime):
-                    item_dict[key] = value.isoformat()
+            item_dict = _serialize_item(item)
+
+            # Add children for deliverables
+            if isinstance(item, Deliverable):
+                item_dict["actions"] = [_serialize_action(a) for a in item.actions]
 
             click.echo(json.dumps(item_dict, indent=2))
         else:
@@ -79,10 +76,30 @@ def show(path_str, json_output):
             click.echo(f"Description: {item.description}")
             click.echo(f"Status: {item.status}")
             click.echo(f"Type: {type(item).__name__}")
+
+            # Display children for deliverables
+            if isinstance(item, Deliverable):
+                children = [(a.name, a.slug) for a in item.actions]
+                if children:
+                    click.echo(f"\nActions:")
+                    for i, (name, slug) in enumerate(children, 1):
+                        click.echo(f"  {i}. {name} ({slug})")
+                else:
+                    click.echo("\nNo actions.")
     except NotFoundError as e:
         raise click.ClickException(str(e))
     except PrismError as e:
         raise click.ClickException(f"Error: {e}")
+
+
+def _serialize_item(item):
+    """Serialize any item to a dict with string values for JSON output."""
+    return item.model_dump(mode='json')
+
+
+def _serialize_action(action):
+    """Serialize an action to a dict with string values for JSON output."""
+    return action.model_dump(mode='json')
 
 
 @exec.command(name="addtree")

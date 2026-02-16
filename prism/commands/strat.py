@@ -1,11 +1,9 @@
 import json
-import uuid  # Import uuid
-from datetime import datetime
 from pathlib import Path
 
 import click
 
-from prism.models import Objective
+from prism.models import Objective, Phase, Milestone
 from prism.core import Core
 from prism.exceptions import PrismError, NotFoundError, ValidationError, InvalidOperationError
 
@@ -66,7 +64,7 @@ def add(item_type, name, desc, parent_path):
     "--json", "json_output", is_flag=True, help="Output item details in JSON format."
 )
 def show(path_str, json_output):
-    """Shows details for a strategic item."""
+    """Shows details for a strategic item including child items."""
     core = Core()
     try:
         item = core.navigator.get_item_by_path(path_str)
@@ -74,14 +72,49 @@ def show(path_str, json_output):
             raise click.ClickException(f"Item not found at path '{path_str}'.")
 
         if json_output:
-            click.echo(item.model_dump_json(indent=2))
+            item_dict = _serialize_item(item)
+            
+            # Add children based on item type
+            if isinstance(item, Phase):
+                item_dict["milestones"] = [_serialize_item(m) for m in item.milestones]
+            elif isinstance(item, Milestone):
+                item_dict["objectives"] = [_serialize_item(o) for o in item.objectives]
+            elif isinstance(item, Objective):
+                item_dict["deliverables"] = [_serialize_item(d) for d in item.deliverables]
+
+            click.echo(json.dumps(item_dict, indent=2))
         else:
             click.echo(f"Name: {item.name}")
             click.echo(f"Description: {item.description}")
             click.echo(f"Status: {item.status}")
             click.echo(f"Type: {type(item).__name__}")
+            
+            # Display children based on item type
+            children = []
+            child_type = ""
+            if isinstance(item, Phase):
+                children = [(m.name, m.slug) for m in item.milestones]
+                child_type = "Milestones"
+            elif isinstance(item, Milestone):
+                children = [(o.name, o.slug) for o in item.objectives]
+                child_type = "Objectives"
+            elif isinstance(item, Objective):
+                children = [(d.name, d.slug) for d in item.deliverables]
+                child_type = "Deliverables"
+            
+            if children:
+                click.echo(f"\n{child_type}:")
+                for i, (name, slug) in enumerate(children, 1):
+                    click.echo(f"  {i}. {name} ({slug})")
+            else:
+                click.echo(f"\nNo {child_type.lower()}.")
     except Exception as e:
         raise click.ClickException(f"Error: {e}")
+
+
+def _serialize_item(item):
+    """Serialize an item to a dict with string values for JSON output."""
+    return item.model_dump(mode='json')
 
 
 @strat.command(name="edit")
