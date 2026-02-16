@@ -395,46 +395,6 @@
                   ]
                 },
                 {
-                  "name": "Add Comprehensive Unit Tests",
-                  "description": "Add more comprehensive unit tests for the refactored classes and new functionality.",
-                  "slug": "add-comprehensi",
-                  "status": "pending",
-                  "created_at": "2026-02-15T13:10:27.709937",
-                  "updated_at": "2026-02-15T13:10:27.709940",
-                  "actions": [
-                    {
-                      "name": "Create Tests for DataStore Class",
-                      "description": "Write comprehensive unit tests for the DataStore class and its methods.",
-                      "slug": "create-tests-fo",
-                      "status": "pending",
-                      "created_at": "2026-02-15T13:10:36.219023",
-                      "updated_at": "2026-02-15T13:10:36.219027",
-                      "time_spent": null,
-                      "due_date": null
-                    },
-                    {
-                      "name": "Create Tests for CoreTracker Class",
-                      "description": "Write comprehensive unit tests for the CoreTracker class and its navigation methods.",
-                      "slug": "create-tests--1",
-                      "status": "pending",
-                      "created_at": "2026-02-15T13:10:42.166931",
-                      "updated_at": "2026-02-15T13:10:42.166935",
-                      "time_spent": null,
-                      "due_date": null
-                    },
-                    {
-                      "name": "Update Existing Tests for Refactored Code",
-                      "description": "Update existing tests to work with the refactored Tracker and new CoreTracker/DataStore classes.",
-                      "slug": "update-existing",
-                      "status": "pending",
-                      "created_at": "2026-02-15T13:10:50.970282",
-                      "updated_at": "2026-02-15T13:10:50.970287",
-                      "time_spent": null,
-                      "due_date": null
-                    }
-                  ]
-                },
-                {
                   "name": "Enhance Show Commands with Child Listings",
                   "description": "Improve the strat show and exec show commands to display names/slugs of child items when applicable.",
                   "slug": "enhance-show-co",
@@ -446,7 +406,7 @@
                       "name": "Update strat show to Display Children",
                       "description": "Modify the strat show command to display names/slugs of child items when showing strategic items.",
                       "slug": "update-strat-sh",
-                      "status": "pending",
+                      "status": "in-progress",
                       "created_at": "2026-02-15T13:13:07.722942",
                       "updated_at": "2026-02-15T13:13:07.722946",
                       "time_spent": null,
@@ -541,5 +501,5 @@
       ]
     }
   ],
-  "cursor": "alpha/cli-operational/refactor-persis/implement-atomi/research-atomic"
+  "cursor": "alpha/cli-operational/refactor-persis/enhance-show-co/update-strat-sh"
 }
