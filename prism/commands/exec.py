@@ -5,6 +5,7 @@ import click
 
 from prism.core import Core
 from prism.exceptions import PrismError, NotFoundError, ValidationError, InvalidOperationError
+from prism.models import Deliverable
 
 
 @click.group(name="exec")
@@ -64,9 +65,8 @@ def show(path_str, json_output):
 
         if json_output:
             item_dict = _serialize_item(item)
-            
+
             # Add children for deliverables
-            from prism.models import Deliverable
             if isinstance(item, Deliverable):
                 item_dict["actions"] = [_serialize_action(a) for a in item.actions]
 
@@ -76,9 +76,8 @@ def show(path_str, json_output):
             click.echo(f"Description: {item.description}")
             click.echo(f"Status: {item.status}")
             click.echo(f"Type: {type(item).__name__}")
-            
+
             # Display children for deliverables
-            from prism.models import Deliverable
             if isinstance(item, Deliverable):
                 children = [(a.name, a.slug) for a in item.actions]
                 if children:
