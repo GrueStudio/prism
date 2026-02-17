@@ -407,12 +407,12 @@ class Core:
         
         When all actions in a deliverable are complete, mark deliverable complete.
         When all deliverables in an objective are complete, mark objective complete.
-        When all objectives in a milestone are complete, mark milestone complete.
-        When all milestones in a phase are complete, mark phase complete.
+        
+        Does NOT cascade to milestones or phases to allow adding new children.
         
         Prints a notification when a parent item is marked complete.
         """
-        from prism.models import Action, Deliverable, Objective, Milestone
+        from prism.models import Action, Deliverable, Objective
         import click
         
         # Get the parent of the completed item
@@ -438,19 +438,17 @@ class Core:
         elif isinstance(item, Deliverable) and isinstance(parent, Objective):
             # Check if all deliverables in objective are complete
             all_children_complete = all(d.status == "completed" for d in parent.deliverables)
-        elif isinstance(item, Objective) and isinstance(parent, Milestone):
-            # Check if all objectives in milestone are complete
-            all_children_complete = all(o.status == "completed" for o in parent.objectives)
-        elif isinstance(item, Milestone) and isinstance(parent, Phase):
-            # Check if all milestones in phase are complete
-            all_children_complete = all(m.status == "completed" for m in parent.milestones)
         
         # If all children are complete, mark parent as complete and continue cascading
+        # Only cascade up to objective level (not milestones or phases)
         if all_children_complete and parent.status != "completed":
             parent.status = "completed"
             parent.updated_at = datetime.now()
             click.echo(f"  ✓ {type(parent).__name__} '{parent.name}' marked complete")
-            self._cascade_completion(parent)
+            
+            # Continue cascading only if parent is a deliverable (cascade to objective)
+            if isinstance(parent, Deliverable):
+                self._cascade_completion(parent)
 
     def complete_current_and_start_next(self) -> tuple[Optional[Action], Optional[Action]]:
         """Completes the current action and starts the next pending one.
