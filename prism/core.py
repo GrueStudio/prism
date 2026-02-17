@@ -8,6 +8,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import click
+
 from prism.models import (
     Action,
     BaseItem,
@@ -334,6 +336,38 @@ class Core:
             return item
         return None
 
+    def _find_next_pending_action_in_deliverable(self, deliverable: Deliverable) -> Optional[Action]:
+        """Find the next pending action within a specific deliverable."""
+        for action in deliverable.actions:
+            if action.status == "pending":
+                return action
+        return None
+
+    def _find_next_pending_action_in_objective(self, objective: Objective) -> Optional[Action]:
+        """Find the next pending action within an objective, prioritizing current deliverable."""
+        # First, try to find pending actions in non-completed deliverables
+        for deliverable in objective.deliverables:
+            if deliverable.status != "completed":
+                pending_action = self._find_next_pending_action_in_deliverable(deliverable)
+                if pending_action:
+                    return pending_action
+        return None
+
+    def _find_next_pending_action(self) -> Optional[Action]:
+        """Find the next pending action across the current objective."""
+        current_objective = self.navigator.get_current_objective()
+        if not current_objective:
+            return None
+        
+        return self._find_next_pending_action_in_objective(current_objective)
+
+    def _start_action(self, action: Action) -> None:
+        """Mark an action as in-progress and update the cursor."""
+        action.status = "in-progress"
+        action_path = self.navigator.get_item_path(action)
+        self.project_data.cursor = action_path
+        self._save_project_data()
+
     def start_next_action(self) -> Optional[Action]:
         """
         If there's an action in progress, returns it.
@@ -345,46 +379,91 @@ class Core:
             return current_action
 
         # If no action in progress, find the next pending one
-        current_objective = self.navigator.get_current_objective()
-        if not current_objective:
-            self.project_data.cursor = None
-            self._save_project_data()
-            return None
-
-        next_pending_action = None
-        for deliverable in current_objective.deliverables:
-            if deliverable.status != "completed":
-                for action in deliverable.actions:
-                    if action.status == "pending":
-                        next_pending_action = action
-                        break
-            if next_pending_action:
-                break
-
+        next_pending_action = self._find_next_pending_action()
+        
         if next_pending_action:
-            next_pending_action.status = "in-progress"
-            action_path = self.navigator.get_item_path(next_pending_action)
-            self.project_data.cursor = action_path
+            self._start_action(next_pending_action)
         else:
             self.project_data.cursor = None
+            self._save_project_data()
 
-        self._save_project_data()
         return next_pending_action
 
     def complete_current_action(self) -> Optional[Action]:
-        """Completes the current action and advances the cursor by finding the next pending action."""
+        """Completes the current action without advancing to the next one."""
         current_action = self.get_current_action()
         if not current_action or current_action.status != "in-progress":
-            return None  # Or raise an error if no action is in progress
+            return None
 
         current_action.status = "completed"
         current_action.updated_at = datetime.now()
-
-        # Now find the next action and update the cursor
-        self.start_next_action()
-
+        
+        # Cascade completion up the tree
+        self._cascade_completion(current_action)
+        
         self._save_project_data()
         return current_action
+
+    def _cascade_completion(self, item: BaseItem) -> None:
+        """Cascade completion status up the tree when all children are complete.
+        
+        When all actions in a deliverable are complete, mark deliverable complete.
+        When all deliverables in an objective are complete, mark objective complete.
+        
+        Does NOT cascade to milestones or phases to allow adding new children.
+        
+        Prints a notification when a parent item is marked complete.
+        """
+        # Get the parent of the completed item
+        item_path = self.navigator.get_item_path(item)
+        if not item_path:
+            return
+            
+        segments = item_path.split("/")
+        if len(segments) < 2:
+            return  # Top-level item, no parent to update
+            
+        parent_path = "/".join(segments[:-1])
+        parent = self.navigator.get_item_by_path(parent_path)
+        if not parent:
+            return
+        
+        # Check if all children are complete and update parent status
+        all_children_complete = False
+        
+        if isinstance(item, Action) and isinstance(parent, Deliverable):
+            # Check if all actions in deliverable are complete
+            # Only cascade if deliverable has actions and all are complete
+            if parent.actions:
+                all_children_complete = all(a.status == "completed" for a in parent.actions)
+        elif isinstance(item, Deliverable) and isinstance(parent, Objective):
+            # Check if all deliverables in objective are complete
+            if parent.deliverables:
+                all_children_complete = all(d.status == "completed" for d in parent.deliverables)
+        
+        # If all children are complete, mark parent as complete and continue cascading
+        # Only cascade up to objective level (not milestones or phases)
+        if all_children_complete and parent.status != "completed":
+            parent.status = "completed"
+            parent.updated_at = datetime.now()
+            click.echo(f"  ✓ {type(parent).__name__} '{parent.name}' marked complete")
+            
+            # Continue cascading only if parent is a deliverable (cascade to objective)
+            if isinstance(parent, Deliverable):
+                self._cascade_completion(parent)
+
+    def complete_current_and_start_next(self) -> tuple[Optional[Action], Optional[Action]]:
+        """Completes the current action and starts the next pending one.
+        
+        Returns:
+            Tuple of (completed_action, next_action)
+        """
+        completed_action = self.complete_current_action()
+        if not completed_action:
+            return (None, None)
+        
+        next_action = self.start_next_action()
+        return (completed_action, next_action)
 
     def add_exec_tree(self, tree_data: List[Dict[str, Any]], mode: str):
         """

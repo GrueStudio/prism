@@ -4,7 +4,11 @@ from prism.core import Core
 
 @click.group()
 def task():
-    """Commands for managing tasks."""
+    """Commands for managing tasks.
+    
+    When completing tasks, parent deliverables and objectives are automatically
+    marked complete when all their children are done.
+    """
     pass
 
 @task.command()
@@ -13,36 +17,35 @@ def start():
     core = Core()
     action = core.start_next_action()
     if action:
-        if action.status == "in-progress":
-            click.echo(f"Currently working on: {action.name}")
-        else: # Should not happen with new logic, but good for safety
-            click.echo(f"Started task: {action.name}")
+        click.echo(f"Currently working on: {action.name}")
     else:
         click.echo("No pending tasks found.")
 
 @task.command()
 def done():
-    """Mark the current task as done."""
+    """Mark the current task as done.
+    
+    If all actions in a deliverable are complete, the deliverable is marked done.
+    If all deliverables in an objective are complete, the objective is marked done.
+    """
     core = Core()
     action = core.complete_current_action()
     if action:
         click.echo(f"Completed task: {action.name}")
-        next_action = core.get_current_action()
-        if next_action:
-            click.echo(f"Next task: {next_action.name}")
-        else:
-            click.echo("All tasks completed!")
     else:
         click.echo("No task in progress.")
 
 @task.command()
 def next():
-    """Complete the current task and start the next one."""
+    """Complete the current task and start the next one.
+    
+    If all actions in a deliverable are complete, the deliverable is marked done.
+    If all deliverables in an objective are complete, the objective is marked done.
+    """
     core = Core()
-    completed_action = core.complete_current_action()
+    completed_action, next_action = core.complete_current_and_start_next()
     if completed_action:
         click.echo(f"Completed task: {completed_action.name}")
-        next_action = core.get_current_action()
         if next_action:
             click.echo(f"Started next task: {next_action.name}")
         else:

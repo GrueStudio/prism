@@ -438,17 +438,17 @@
                   "name": "Task System Behavior Fix",
                   "description": "Correct the behavior of task commands: prism task done should only complete current task, prism task next should complete and start next task, and add proper deliverable boundary management.",
                   "slug": "task-system-beh",
-                  "status": "pending",
+                  "status": "completed",
                   "created_at": "2026-02-15T16:07:45.160442",
-                  "updated_at": "2026-02-15T16:07:45.160445",
+                  "updated_at": "2026-02-16T20:15:56.607016",
                   "actions": [
                     {
                       "name": "Task logic separation",
                       "description": "Modify the Tracker class to separate the logic for completing a task from starting a new task.",
                       "slug": "task-logic-sepa",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-15T16:07:45.160463",
-                      "updated_at": "2026-02-15T16:07:45.160464",
+                      "updated_at": "2026-02-16T19:56:52.226978",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -456,9 +456,9 @@
                       "name": "Task done behavior",
                       "description": "Change prism task done to only complete the current task without starting the next one.",
                       "slug": "task-done-behav",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-15T16:07:45.160484",
-                      "updated_at": "2026-02-15T16:07:45.160485",
+                      "updated_at": "2026-02-16T19:59:07.910592",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -466,9 +466,9 @@
                       "name": "Task next behavior",
                       "description": "Change prism task next to complete current task and then start the next one.",
                       "slug": "task-next-behav",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-15T16:07:45.160495",
-                      "updated_at": "2026-02-15T16:07:45.160495",
+                      "updated_at": "2026-02-16T19:59:16.416091",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -476,9 +476,9 @@
                       "name": "Boundary management",
                       "description": "Implement logic to respect deliverable boundaries and warn when crossing them.",
                       "slug": "boundary-manage",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-15T16:07:45.160508",
-                      "updated_at": "2026-02-15T16:07:45.160508",
+                      "updated_at": "2026-02-16T19:59:23.209643",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -486,9 +486,9 @@
                       "name": "Task start behavior",
                       "description": "Ensure prism task start only starts the next pending task without completing anything.",
                       "slug": "task-start-beha",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-15T16:07:45.160517",
-                      "updated_at": "2026-02-15T16:07:45.160518",
+                      "updated_at": "2026-02-16T20:15:56.606833",
                       "time_spent": null,
                       "due_date": null
                     }
@@ -501,5 +501,5 @@
       ]
     }
   ],
-  "cursor": "alpha/cli-operational/refactor-persis/implement-atomi/research-atomic"
+  "cursor": null
 }
