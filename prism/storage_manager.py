@@ -26,7 +26,7 @@ from prism.newmodels import (
 class StorageManager:
     """
     Manages persistence of project data to JSON files in the .prism/ directory.
-    
+
     Handles atomic writes to prevent data corruption.
     """
 
@@ -38,11 +38,13 @@ class StorageManager:
             prism_dir: Path to the .prism/ directory. Defaults to .prism/ in current directory.
         """
         self.prism_dir = prism_dir if prism_dir else Path(".prism")
+        self.archive_dir = self.prism_dir / "archive"
         self._ensure_prism_dir()
 
     def _ensure_prism_dir(self) -> None:
-        """Create the .prism/ directory if it doesn't exist."""
+        """Create the .prism/ directory and archive subdirectory if they don't exist."""
         self.prism_dir.mkdir(parents=True, exist_ok=True)
+        self.archive_dir.mkdir(exist_ok=True)
 
     def _get_file_path(self, filename: str) -> Path:
         """Get the full path for a file in the .prism/ directory.
@@ -54,6 +56,17 @@ class StorageManager:
             Full path to the file.
         """
         return self.prism_dir / filename
+
+    def _get_archive_file_path(self, filename: str) -> Path:
+        """Get the full path for a file in the .prism/archive/ directory.
+
+        Args:
+            filename: Name of the file.
+
+        Returns:
+            Full path to the archive file.
+        """
+        return self.archive_dir / filename
 
     def _atomic_write(self, file_path: Path, data: Dict[str, Any]) -> None:
         """Write data to a JSON file atomically to prevent corruption.
@@ -189,3 +202,91 @@ class StorageManager:
         """
         file_path = self._get_file_path("orphans.json")
         self._atomic_write(file_path, data.model_dump())
+
+    def archive_strategic(self, item_uuid: str, item_data: Dict[str, Any]) -> None:
+        """
+        Archive a strategic item to the archive folder.
+
+        Args:
+            item_uuid: UUID of the item being archived.
+            item_data: Dictionary data of the item to archive.
+        """
+        file_path = self._get_archive_file_path(f"strategic-{item_uuid}.json")
+        self._atomic_write(file_path, item_data)
+
+    def archive_execution_tree(self, objective_slug: str, tree_data: Dict[str, Any]) -> None:
+        """
+        Archive an execution tree (deliverables and actions) to the archive folder.
+
+        Args:
+            objective_slug: Slug of the objective being archived.
+            tree_data: Dictionary data containing deliverables and actions to archive.
+        """
+        file_path = self._get_archive_file_path(f"objective-{objective_slug}.exec.json")
+        self._atomic_write(file_path, tree_data)
+
+    def load_archived_strategic(self, item_uuid: str) -> Optional[Dict[str, Any]]:
+        """
+        Load an archived strategic item by UUID.
+
+        Args:
+            item_uuid: UUID of the archived item.
+
+        Returns:
+            Dictionary data of the archived item, or None if not found.
+        """
+        file_path = self._get_archive_file_path(f"strategic-{item_uuid}.json")
+        if file_path.exists():
+            try:
+                with open(file_path, "r") as f:
+                    return json.load(f)
+            except (json.JSONDecodeError, Exception):
+                return None
+        return None
+
+    def load_archived_execution_tree(self, objective_slug: str) -> Optional[Dict[str, Any]]:
+        """
+        Load an archived execution tree by objective slug.
+
+        Args:
+            objective_slug: Slug of the archived objective.
+
+        Returns:
+            Dictionary data of the archived execution tree, or None if not found.
+        """
+        file_path = self._get_archive_file_path(f"objective-{objective_slug}.exec.json")
+        if file_path.exists():
+            try:
+                with open(file_path, "r") as f:
+                    return json.load(f)
+            except (json.JSONDecodeError, Exception):
+                return None
+        return None
+
+    def list_archived_strategic(self) -> List[str]:
+        """
+        List all archived strategic item UUIDs.
+
+        Returns:
+            List of UUIDs of archived strategic items.
+        """
+        archived = []
+        for file_path in self.archive_dir.glob("strategic-*.json"):
+            # Extract UUID from filename: strategic-{uuid}.json
+            uuid = file_path.stem.replace("strategic-", "")
+            archived.append(uuid)
+        return archived
+
+    def list_archived_execution_trees(self) -> List[str]:
+        """
+        List all archived objective slugs.
+
+        Returns:
+            List of objective slugs with archived execution trees.
+        """
+        archived = []
+        for file_path in self.archive_dir.glob("objective-*.exec.json"):
+            # Extract slug from filename: objective-{slug}.exec.json
+            slug = file_path.stem.replace("objective-", "").replace(".exec", "")
+            archived.append(slug)
+        return archived

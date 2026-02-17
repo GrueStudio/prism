@@ -2,6 +2,7 @@
 Tests for the StorageManager class in prism.storage_manager module.
 """
 import json
+import shutil
 import tempfile
 from pathlib import Path
 
@@ -50,9 +51,9 @@ class TestStorageManagerInitialization:
         """Test that StorageManager uses default .prism/ path."""
         manager = StorageManager()
         assert manager.prism_dir == Path(".prism")
-        # Clean up
+        # Clean up - use rmtree since directory now contains archive subdirectory
         if Path(".prism").exists():
-            Path(".prism").rmdir()
+            shutil.rmtree(".prism")
 
     def test_storage_manager_initializes_with_existing_dir(self, temp_prism_dir):
         """Test that StorageManager works with existing directory."""
@@ -381,3 +382,133 @@ class TestErrorHandling:
 
         with pytest.raises(Exception, match="Error loading orphans data"):
             storage_manager.load_orphans()
+
+
+class TestArchiveStorage:
+    """Tests for archive folder functionality."""
+
+    def test_archive_strategic(self, storage_manager, temp_prism_dir):
+        """Test archiving a strategic item."""
+        item_data = {
+            "uuid": "test-uuid-123",
+            "name": "Archived Phase",
+            "slug": "archived-phase",
+            "status": "completed"
+        }
+
+        storage_manager.archive_strategic("test-uuid-123", item_data)
+
+        # Verify archive file was created
+        archive_path = temp_prism_dir / "archive" / "strategic-test-uuid-123.json"
+        assert archive_path.exists()
+
+        # Verify content
+        with open(archive_path, 'r') as f:
+            content = json.load(f)
+        assert content["uuid"] == "test-uuid-123"
+        assert content["name"] == "Archived Phase"
+
+    def test_archive_execution_tree(self, storage_manager, temp_prism_dir):
+        """Test archiving an execution tree."""
+        tree_data = {
+            "deliverables": [
+                {
+                    "uuid": "del-uuid",
+                    "name": "Completed Deliverable",
+                    "slug": "completed-deliverable"
+                }
+            ],
+            "actions": [
+                {
+                    "uuid": "act-uuid",
+                    "name": "Completed Action",
+                    "slug": "completed-action"
+                }
+            ]
+        }
+
+        storage_manager.archive_execution_tree("my-objective", tree_data)
+
+        # Verify archive file was created
+        archive_path = temp_prism_dir / "archive" / "objective-my-objective.exec.json"
+        assert archive_path.exists()
+
+        # Verify content
+        with open(archive_path, 'r') as f:
+            content = json.load(f)
+        assert len(content["deliverables"]) == 1
+        assert len(content["actions"]) == 1
+
+    def test_load_archived_strategic(self, storage_manager, temp_prism_dir):
+        """Test loading an archived strategic item."""
+        item_data = {
+            "uuid": "load-test-uuid",
+            "name": "Loaded Phase",
+            "slug": "loaded-phase"
+        }
+
+        # First archive the item
+        storage_manager.archive_strategic("load-test-uuid", item_data)
+
+        # Then load it back
+        loaded = storage_manager.load_archived_strategic("load-test-uuid")
+        assert loaded is not None
+        assert loaded["uuid"] == "load-test-uuid"
+        assert loaded["name"] == "Loaded Phase"
+
+    def test_load_archived_strategic_not_found(self, storage_manager):
+        """Test loading a non-existent archived strategic item."""
+        loaded = storage_manager.load_archived_strategic("non-existent-uuid")
+        assert loaded is None
+
+    def test_load_archived_execution_tree(self, storage_manager, temp_prism_dir):
+        """Test loading an archived execution tree."""
+        tree_data = {
+            "deliverables": [],
+            "actions": []
+        }
+
+        # First archive the tree
+        storage_manager.archive_execution_tree("test-obj", tree_data)
+
+        # Then load it back
+        loaded = storage_manager.load_archived_execution_tree("test-obj")
+        assert loaded is not None
+        assert "deliverables" in loaded
+        assert "actions" in loaded
+
+    def test_load_archived_execution_tree_not_found(self, storage_manager):
+        """Test loading a non-existent archived execution tree."""
+        loaded = storage_manager.load_archived_execution_tree("non-existent")
+        assert loaded is None
+
+    def test_list_archived_strategic(self, storage_manager, temp_prism_dir):
+        """Test listing all archived strategic items."""
+        # Archive multiple items
+        storage_manager.archive_strategic("uuid-1", {"uuid": "uuid-1", "name": "Item 1"})
+        storage_manager.archive_strategic("uuid-2", {"uuid": "uuid-2", "name": "Item 2"})
+        storage_manager.archive_strategic("uuid-3", {"uuid": "uuid-3", "name": "Item 3"})
+
+        archived = storage_manager.list_archived_strategic()
+        assert len(archived) == 3
+        assert "uuid-1" in archived
+        assert "uuid-2" in archived
+        assert "uuid-3" in archived
+
+    def test_list_archived_execution_trees(self, storage_manager, temp_prism_dir):
+        """Test listing all archived execution trees."""
+        # Archive multiple trees
+        storage_manager.archive_execution_tree("obj-1", {"deliverables": [], "actions": []})
+        storage_manager.archive_execution_tree("obj-2", {"deliverables": [], "actions": []})
+
+        archived = storage_manager.list_archived_execution_trees()
+        assert len(archived) == 2
+        assert "obj-1" in archived
+        assert "obj-2" in archived
+
+    def test_archive_dir_created(self, temp_prism_dir):
+        """Test that archive directory is created on initialization."""
+        manager = StorageManager(temp_prism_dir)
+        archive_path = temp_prism_dir / "archive"
+        assert archive_path.exists()
+        assert archive_path.is_dir()
