@@ -11,5 +11,13 @@ This package contains focused manager classes that handle specific aspects of Pr
 from prism.managers.item_manager import ItemManager
 from prism.managers.task_manager import TaskManager
 from prism.managers.completion_tracker import CompletionTracker
+from prism.managers.navigation_manager import NavigationManager
+from prism.exceptions import NavigationError
 
-__all__ = ["ItemManager", "TaskManager", "CompletionTracker"]
+__all__ = [
+    "ItemManager",
+    "TaskManager",
+    "CompletionTracker",
+    "NavigationManager",
+    "NavigationError",
+]

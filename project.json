@@ -736,9 +736,9 @@
                       "name": "Create CompletionTracker for cascade and percentages",
                       "description": "Handle automatic parent completion and progress calculation.",
                       "slug": "create-completi",
-                      "status": "in-progress",
+                      "status": "completed",
                       "created_at": "2026-02-17T01:30:00.534225",
-                      "updated_at": "2026-02-17T01:30:00.534226",
+                      "updated_at": "2026-02-17T16:00:42.247536",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -746,7 +746,7 @@
                       "name": "Create NavigationManager for path resolution",
                       "description": "Handle path-to-UUID resolution and tree traversal.",
                       "slug": "create-navigati",
-                      "status": "pending",
+                      "status": "in-progress",
                       "created_at": "2026-02-17T01:30:00.534238",
                       "updated_at": "2026-02-17T01:30:00.534239",
                       "time_spent": null,
@@ -1071,5 +1071,5 @@
       ]
     }
   ],
-  "cursor": "alpha/adopt-orphan-id/revamp-data-sto/refactor-core-c/create-completi"
+  "cursor": "alpha/adopt-orphan-id/revamp-data-sto/refactor-core-c/create-navigati"
 }

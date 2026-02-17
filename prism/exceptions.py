@@ -31,3 +31,8 @@ class DuplicateError(PrismError):
 class ConfigurationError(PrismError):
     """Raised when there's a configuration or setup issue."""
     pass
+
+
+class NavigationError(PrismError):
+    """Raised when navigation or path resolution fails."""
+    pass
