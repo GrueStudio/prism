@@ -90,35 +90,46 @@ _config_manager_instance: Optional['ConfigManager'] = None
 
 class ConfigManager:
     """
-    Manages loading configuration from .prism/config.json with fallback to defaults.
+    Manages loading configuration from a config.json file with fallback to defaults.
     
-    Thread-safe singleton pattern with lazy loading.
+    This class is independent of StorageManager to avoid cyclic dependencies.
+    StorageManager handles persistence; ConfigManager handles runtime access.
 
     Usage:
+        # With default path (.prism/config.json)
         config = ConfigManager()
         slug_max_length = config.get('slug_max_length', DEFAULT_SLUG_MAX_LENGTH)
+        
+        # With custom path
+        config = ConfigManager(config_path=Path("/custom/path/config.json"))
         date_formats = config.get('date_formats', DEFAULT_DATE_FORMATS)
     """
     
-    def __init__(self, prism_dir: Optional[Path] = None) -> None:
+    def __init__(self, config_path: Optional[Path] = None, prism_dir: Optional[Path] = None) -> None:
         """
         Initialize ConfigManager.
         
         Args:
-            prism_dir: Path to .prism/ directory. Defaults to .prism/ in current directory.
+            config_path: Direct path to config.json file. Takes precedence over prism_dir.
+            prism_dir: Path to .prism/ directory. Config path will be prism_dir/config.json.
         """
         self._config: Optional[dict] = None
-        self._prism_dir = prism_dir if prism_dir else Path(".prism")
+        
+        if config_path is not None:
+            self._config_path = config_path
+        elif prism_dir is not None:
+            self._config_path = prism_dir / "config.json"
+        else:
+            self._config_path = Path(".prism") / "config.json"
     
     def _load_config(self) -> dict:
-        """Load config from .prism/config.json."""
+        """Load config from config.json file."""
         if self._config is not None:
             return self._config
         
-        config_path = self._prism_dir / "config.json"
-        if config_path.exists():
+        if self._config_path.exists():
             try:
-                with open(config_path, "r") as f:
+                with open(self._config_path, "r") as f:
                     self._config = json.load(f)
             except (json.JSONDecodeError, IOError):
                 self._config = {}
@@ -160,21 +171,26 @@ class ConfigManager:
         """Force reload of config from disk."""
         self._config = None
         return self._load_config()
+    
+    @property
+    def config_path(self) -> Path:
+        """Get the config file path."""
+        return self._config_path
 
 
-def get_config_manager(prism_dir: Optional[Path] = None) -> ConfigManager:
+def get_config_manager(reset: bool = False) -> ConfigManager:
     """
-    Get the singleton ConfigManager instance.
+    Get the singleton ConfigManager instance with default path.
     
     Args:
-        prism_dir: Optional path to .prism/ directory.
+        reset: If True, reset the singleton and create a new instance.
     
     Returns:
         ConfigManager singleton instance.
     """
     global _config_manager_instance
-    if _config_manager_instance is None:
-        _config_manager_instance = ConfigManager(prism_dir)
+    if _config_manager_instance is None or reset:
+        _config_manager_instance = ConfigManager()
     return _config_manager_instance
 
 
@@ -185,6 +201,7 @@ def reset_config_manager() -> None:
 
 
 # Convenience functions for common config access
+# These use the singleton with default path (.prism/config.json)
 def get_slug_max_length() -> int:
     """Get slug max length from config or default."""
     return get_config_manager().get_int('slug_max_length', DEFAULT_SLUG_MAX_LENGTH)
