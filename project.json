@@ -716,9 +716,9 @@
                       "name": "Create ItemManager for CRUD operations",
                       "description": "Handle add/update/delete for all item types.",
                       "slug": "create-itemmana",
-                      "status": "in-progress",
+                      "status": "completed",
                       "created_at": "2026-02-17T01:30:00.534205",
-                      "updated_at": "2026-02-17T01:30:00.534205",
+                      "updated_at": "2026-02-17T15:56:31.041488",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -726,7 +726,7 @@
                       "name": "Create TaskManager for task operations",
                       "description": "Handle start/done/next task commands with cascade.",
                       "slug": "create-taskmana",
-                      "status": "pending",
+                      "status": "in-progress",
                       "created_at": "2026-02-17T01:30:00.534215",
                       "updated_at": "2026-02-17T01:30:00.534215",
                       "time_spent": null,
@@ -1071,5 +1071,5 @@
       ]
     }
   ],
-  "cursor": "alpha/adopt-orphan-id/revamp-data-sto/refactor-core-c/create-itemmana"
+  "cursor": "alpha/adopt-orphan-id/revamp-data-sto/refactor-core-c/create-taskmana"
 }

@@ -9,5 +9,6 @@ This package contains focused manager classes that handle specific aspects of Pr
 """
 
 from prism.managers.item_manager import ItemManager
+from prism.managers.task_manager import TaskManager
 
-__all__ = ["ItemManager"]
+__all__ = ["ItemManager", "TaskManager"]
