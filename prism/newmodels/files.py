@@ -44,7 +44,7 @@ class ConfigFile(BaseModel):
     
     # Slug settings
     slug_max_length: int = 15
-    slug_regex_pattern: str = r"^[a-z0-9-]+$"
+    slug_regex_pattern: str = r"[a-z0-9\-]"  # Character class, combined with length in validation
     slug_word_limit: int = 3
     slug_filler_words: List[str] = Field(default_factory=lambda: [
         "a", "an", "and", "as", "at", "by", "for", "from", "if", "in",

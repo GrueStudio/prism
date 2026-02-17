@@ -666,9 +666,9 @@
                       "name": "Add date settings to config (DATE_FORMATS, DATE_MAX_YEARS_*)",
                       "description": "Make date parsing and validation configurable.",
                       "slug": "add-date-settin",
-                      "status": "in-progress",
+                      "status": "completed",
                       "created_at": "2026-02-17T01:30:00.534161",
-                      "updated_at": "2026-02-17T01:30:00.534162",
+                      "updated_at": "2026-02-17T13:40:15.787224",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -676,9 +676,9 @@
                       "name": "Add display settings to config (STATUS_HEADER_WIDTH, PERCENTAGE_ROUND_PRECISION)",
                       "description": "Make output formatting configurable.",
                       "slug": "add-display-set",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-17T01:30:00.534173",
-                      "updated_at": "2026-02-17T01:30:00.534174",
+                      "updated_at": "2026-02-17T13:40:26.510230",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -686,7 +686,7 @@
                       "name": "Update constants.py to use config values with fallbacks",
                       "description": "Load from config, fall back to defaults if not set.",
                       "slug": "update-constant",
-                      "status": "pending",
+                      "status": "in-progress",
                       "created_at": "2026-02-17T01:30:00.534184",
                       "updated_at": "2026-02-17T01:30:00.534185",
                       "time_spent": null,
@@ -1071,5 +1071,5 @@
       ]
     }
   ],
-  "cursor": "alpha/adopt-orphan-id/revamp-data-sto/migrate-constan/add-date-settin"
+  "cursor": "alpha/adopt-orphan-id/revamp-data-sto/migrate-constan/update-constant"
 }
