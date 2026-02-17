@@ -513,7 +513,538 @@
               "status": "pending",
               "created_at": "2026-02-16T23:45:44.026487",
               "updated_at": "2026-02-16T23:45:44.026490",
-              "deliverables": []
+              "deliverables": [
+                {
+                  "name": "Design New Data Model Structure",
+                  "description": "Define Pydantic models for new folder-based storage with UUID references.",
+                  "slug": "design-new-data",
+                  "status": "pending",
+                  "created_at": "2026-02-17T01:30:00.533966",
+                  "updated_at": "2026-02-17T01:30:00.533970",
+                  "actions": [
+                    {
+                      "name": "Create strategic item models with UUID and parent_uuid fields",
+                      "description": "Phase, Milestone, Objective models with flat structure and UUID references.",
+                      "slug": "create-strategi",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.533993",
+                      "updated_at": "2026-02-17T01:30:00.533994",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Create execution item models with UUID and parent_uuid fields",
+                      "description": "Deliverable and Action models with UUID references.",
+                      "slug": "create-executio",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534010",
+                      "updated_at": "2026-02-17T01:30:00.534011",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Create orphan model with UUID, name, description only",
+                      "description": "Simple orphan model without timestamps or status.",
+                      "slug": "create-orphan-m",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534024",
+                      "updated_at": "2026-02-17T01:30:00.534024",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Create config model for project settings",
+                      "description": "Config model with slug settings, date settings, and schema version.",
+                      "slug": "create-config-m",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534035",
+                      "updated_at": "2026-02-17T01:30:00.534035",
+                      "time_spent": null,
+                      "due_date": null
+                    }
+                  ]
+                },
+                {
+                  "name": "Implement File-Based Storage Layer",
+                  "description": "Build storage manager for reading/writing .prism folder structure.",
+                  "slug": "implement-file-",
+                  "status": "pending",
+                  "created_at": "2026-02-17T01:30:00.534047",
+                  "updated_at": "2026-02-17T01:30:00.534048",
+                  "actions": [
+                    {
+                      "name": "Create StorageManager class with load/save methods",
+                      "description": "Main storage orchestrator for all file operations.",
+                      "slug": "create-storagem",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534059",
+                      "updated_at": "2026-02-17T01:30:00.534060",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Implement strategic.json read/write with flat list format",
+                      "description": "Store all strategic items in single file with parent_uuid references.",
+                      "slug": "implement-strat",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534071",
+                      "updated_at": "2026-02-17T01:30:00.534072",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Implement execution.json read/write for active items",
+                      "description": "Store all active deliverables/actions in single file.",
+                      "slug": "implement-execu",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534082",
+                      "updated_at": "2026-02-17T01:30:00.534083",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Implement config.json read/write for project settings",
+                      "description": "Store configurable settings like slug length, date formats.",
+                      "slug": "implement-confi",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534098",
+                      "updated_at": "2026-02-17T01:30:00.534098",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Implement orphans.json read/write for orphan ideas",
+                      "description": "Store orphan ideas with minimal fields (uuid, name, description).",
+                      "slug": "implement-orpha",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534109",
+                      "updated_at": "2026-02-17T01:30:00.534110",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Implement archive folder structure and migration",
+                      "description": "Archive completed objectives with their execution trees.",
+                      "slug": "implement-archi",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534124",
+                      "updated_at": "2026-02-17T01:30:00.534125",
+                      "time_spent": null,
+                      "due_date": null
+                    }
+                  ]
+                },
+                {
+                  "name": "Migrate Constants to Config",
+                  "description": "Move configurable constants from constants.py to config.json.",
+                  "slug": "migrate-constan",
+                  "status": "pending",
+                  "created_at": "2026-02-17T01:30:00.534136",
+                  "updated_at": "2026-02-17T01:30:00.534137",
+                  "actions": [
+                    {
+                      "name": "Add slug settings to config (SLUG_MAX_LENGTH, SLUG_REGEX_PATTERN)",
+                      "description": "Make slug validation configurable per project.",
+                      "slug": "add-slug-settin",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534149",
+                      "updated_at": "2026-02-17T01:30:00.534150",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Add date settings to config (DATE_FORMATS, DATE_MAX_YEARS_*)",
+                      "description": "Make date parsing and validation configurable.",
+                      "slug": "add-date-settin",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534161",
+                      "updated_at": "2026-02-17T01:30:00.534162",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Add display settings to config (STATUS_HEADER_WIDTH, PERCENTAGE_ROUND_PRECISION)",
+                      "description": "Make output formatting configurable.",
+                      "slug": "add-display-set",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534173",
+                      "updated_at": "2026-02-17T01:30:00.534174",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Update constants.py to use config values with fallbacks",
+                      "description": "Load from config, fall back to defaults if not set.",
+                      "slug": "update-constant",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534184",
+                      "updated_at": "2026-02-17T01:30:00.534185",
+                      "time_spent": null,
+                      "due_date": null
+                    }
+                  ]
+                },
+                {
+                  "name": "Refactor Core Class into Managers",
+                  "description": "Split monolithic Core class into focused manager classes.",
+                  "slug": "refactor-core-c",
+                  "status": "pending",
+                  "created_at": "2026-02-17T01:30:00.534195",
+                  "updated_at": "2026-02-17T01:30:00.534196",
+                  "actions": [
+                    {
+                      "name": "Create ItemManager for CRUD operations",
+                      "description": "Handle add/update/delete for all item types.",
+                      "slug": "create-itemmana",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534205",
+                      "updated_at": "2026-02-17T01:30:00.534205",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Create TaskManager for task operations",
+                      "description": "Handle start/done/next task commands with cascade.",
+                      "slug": "create-taskmana",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534215",
+                      "updated_at": "2026-02-17T01:30:00.534215",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Create CompletionTracker for cascade and percentages",
+                      "description": "Handle automatic parent completion and progress calculation.",
+                      "slug": "create-completi",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534225",
+                      "updated_at": "2026-02-17T01:30:00.534226",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Create NavigationManager for path resolution",
+                      "description": "Handle path-to-UUID resolution and tree traversal.",
+                      "slug": "create-navigati",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534238",
+                      "updated_at": "2026-02-17T01:30:00.534239",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Update Core to orchestrate managers",
+                      "description": "Core becomes thin wrapper coordinating all managers.",
+                      "slug": "update-core-to-",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534266",
+                      "updated_at": "2026-02-17T01:30:00.534267",
+                      "time_spent": null,
+                      "due_date": null
+                    }
+                  ]
+                },
+                {
+                  "name": "Implement UUID and Slug Dual System",
+                  "description": "Support both UUID (internal) and slug (user-facing) references.",
+                  "slug": "implement-uuid-",
+                  "status": "pending",
+                  "created_at": "2026-02-17T01:30:00.534278",
+                  "updated_at": "2026-02-17T01:30:00.534279",
+                  "actions": [
+                    {
+                      "name": "Add UUID field to all item models",
+                      "description": "Generate UUID on item creation.",
+                      "slug": "add-uuid-field-",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534290",
+                      "updated_at": "2026-02-17T01:30:00.534291",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Update slug generation to use config settings",
+                      "description": "Use configurable slug length and pattern.",
+                      "slug": "update-slug-gen",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534301",
+                      "updated_at": "2026-02-17T01:30:00.534302",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Create UUID-to-slug lookup methods",
+                      "description": "Resolve UUID to slug for user-facing output.",
+                      "slug": "create-uuid-to-",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534316",
+                      "updated_at": "2026-02-17T01:30:00.534317",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Create slug-to-UUID lookup methods",
+                      "description": "Resolve slug to UUID for internal operations.",
+                      "slug": "create-slug-to-",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534331",
+                      "updated_at": "2026-02-17T01:30:00.534332",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Update CLI commands to accept both UUID and slug",
+                      "description": "User can use either format in commands.",
+                      "slug": "update-cli-comm",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534344",
+                      "updated_at": "2026-02-17T01:30:00.534345",
+                      "time_spent": null,
+                      "due_date": null
+                    }
+                  ]
+                },
+                {
+                  "name": "Implement Auto-Archive on Completion",
+                  "description": "Automatically archive completed strategic items with their execution trees.",
+                  "slug": "implement-auto-",
+                  "status": "pending",
+                  "created_at": "2026-02-17T01:30:00.534356",
+                  "updated_at": "2026-02-17T01:30:00.534357",
+                  "actions": [
+                    {
+                      "name": "Detect when strategic item is completed",
+                      "description": "Hook into status change to completed.",
+                      "slug": "detect-when-str",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534368",
+                      "updated_at": "2026-02-17T01:30:00.534368",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Move strategic item to archive/strategic.json",
+                      "description": "Archive the completed strategic item.",
+                      "slug": "move-strategic-",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534379",
+                      "updated_at": "2026-02-17T01:30:00.534380",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Move execution tree to archive/objective-slug.exec.json",
+                      "description": "Archive associated execution items.",
+                      "slug": "move-execution-",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534391",
+                      "updated_at": "2026-02-17T01:30:00.534392",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Remove archived items from active files",
+                      "description": "Clean up active strategic.json and execution.json.",
+                      "slug": "remove-archived",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534402",
+                      "updated_at": "2026-02-17T01:30:00.534403",
+                      "time_spent": null,
+                      "due_date": null
+                    }
+                  ]
+                },
+                {
+                  "name": "Implement Migration from project.json",
+                  "description": "Migrate existing project.json to new folder-based structure.",
+                  "slug": "implement-migra",
+                  "status": "pending",
+                  "created_at": "2026-02-17T01:30:00.534414",
+                  "updated_at": "2026-02-17T01:30:00.534415",
+                  "actions": [
+                    {
+                      "name": "Create migration script for project.json to .prism/",
+                      "description": "Convert nested structure to flat lists with UUIDs.",
+                      "slug": "create-migratio",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534448",
+                      "updated_at": "2026-02-17T01:30:00.534450",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Generate UUIDs for all existing items",
+                      "description": "Add UUID field to all migrated items.",
+                      "slug": "generate-uuids-",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534464",
+                      "updated_at": "2026-02-17T01:30:00.534465",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Create initial config.json from current constants",
+                      "description": "Populate config with default values.",
+                      "slug": "create-initial-",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534476",
+                      "updated_at": "2026-02-17T01:30:00.534476",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Backup project.json before migration",
+                      "description": "Keep original file as backup during development.",
+                      "slug": "backup-project-",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534486",
+                      "updated_at": "2026-02-17T01:30:00.534487",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Test migration with existing project data",
+                      "description": "Verify all data migrates correctly.",
+                      "slug": "test-migration-",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534521",
+                      "updated_at": "2026-02-17T01:30:00.534522",
+                      "time_spent": null,
+                      "due_date": null
+                    }
+                  ]
+                },
+                {
+                  "name": "Update CLI Commands for New Storage",
+                  "description": "Update all CLI commands to work with new storage system.",
+                  "slug": "update-cli-comm",
+                  "status": "pending",
+                  "created_at": "2026-02-17T01:30:00.534544",
+                  "updated_at": "2026-02-17T01:30:00.534545",
+                  "actions": [
+                    {
+                      "name": "Update strat commands to use new storage",
+                      "description": "strat add/show/edit/delete with UUID/slug support.",
+                      "slug": "update-strat-co",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534564",
+                      "updated_at": "2026-02-17T01:30:00.534565",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Update exec commands to use new storage",
+                      "description": "exec add/show/edit/delete with UUID/slug support.",
+                      "slug": "update-exec-com",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534596",
+                      "updated_at": "2026-02-17T01:30:00.534597",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Update task commands to use new storage",
+                      "description": "task start/done/next with new managers.",
+                      "slug": "update-task-com",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534614",
+                      "updated_at": "2026-02-17T01:30:00.534615",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Update status command to use new storage",
+                      "description": "status with lazy loading for performance.",
+                      "slug": "update-status-c",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534626",
+                      "updated_at": "2026-02-17T01:30:00.534627",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Add config command group",
+                      "description": "config show/set for project settings.",
+                      "slug": "add-config-comm",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534647",
+                      "updated_at": "2026-02-17T01:30:00.534648",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Add orphan command group",
+                      "description": "orphan add/list/adopt for orphan management.",
+                      "slug": "add-orphan-comm",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534667",
+                      "updated_at": "2026-02-17T01:30:00.534668",
+                      "time_spent": null,
+                      "due_date": null
+                    }
+                  ]
+                },
+                {
+                  "name": "Add Comprehensive Tests for New Storage",
+                  "description": "Test all new storage functionality thoroughly.",
+                  "slug": "add-comprehensi",
+                  "status": "pending",
+                  "created_at": "2026-02-17T01:30:00.534680",
+                  "updated_at": "2026-02-17T01:30:00.534681",
+                  "actions": [
+                    {
+                      "name": "Create tests for new model classes",
+                      "description": "Test Phase, Milestone, Objective, Deliverable, Action models.",
+                      "slug": "create-tests-fo",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534690",
+                      "updated_at": "2026-02-17T01:30:00.534691",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Create tests for StorageManager",
+                      "description": "Test load/save for all file types.",
+                      "slug": "create-tests--1",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534704",
+                      "updated_at": "2026-02-17T01:30:00.534705",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Create tests for manager classes",
+                      "description": "Test ItemManager, TaskManager, CompletionTracker, NavigationManager.",
+                      "slug": "create-tests--2",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534719",
+                      "updated_at": "2026-02-17T01:30:00.534719",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Create tests for migration logic",
+                      "description": "Test project.json to .prism/ migration.",
+                      "slug": "create-tests--3",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534731",
+                      "updated_at": "2026-02-17T01:30:00.534732",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Create integration tests for CLI commands",
+                      "description": "Test all CLI commands with new storage.",
+                      "slug": "create-integrat",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534741",
+                      "updated_at": "2026-02-17T01:30:00.534742",
+                      "time_spent": null,
+                      "due_date": null
+                    }
+                  ]
+                }
+              ]
             }
           ]
         }
