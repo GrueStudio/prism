@@ -656,9 +656,9 @@
                       "name": "Add slug settings to config (SLUG_MAX_LENGTH, SLUG_REGEX_PATTERN)",
                       "description": "Make slug validation configurable per project.",
                       "slug": "add-slug-settin",
-                      "status": "in-progress",
+                      "status": "completed",
                       "created_at": "2026-02-17T01:30:00.534149",
-                      "updated_at": "2026-02-17T01:30:00.534150",
+                      "updated_at": "2026-02-17T13:39:23.433688",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -666,7 +666,7 @@
                       "name": "Add date settings to config (DATE_FORMATS, DATE_MAX_YEARS_*)",
                       "description": "Make date parsing and validation configurable.",
                       "slug": "add-date-settin",
-                      "status": "pending",
+                      "status": "in-progress",
                       "created_at": "2026-02-17T01:30:00.534161",
                       "updated_at": "2026-02-17T01:30:00.534162",
                       "time_spent": null,
@@ -689,6 +689,16 @@
                       "status": "pending",
                       "created_at": "2026-02-17T01:30:00.534184",
                       "updated_at": "2026-02-17T01:30:00.534185",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Improve slug generation with filler word filtering",
+                      "description": "Generate slugs from first N words (configurable, default 3), excluding common filler words (to, and, in, if, etc.). Make word limit and filler word list configurable in config.",
+                      "slug": "improve-slug-ge",
+                      "status": "pending",
+                      "created_at": "2026-02-17T13:24:38.284399",
+                      "updated_at": "2026-02-17T13:24:38.284403",
                       "time_spent": null,
                       "due_date": null
                     }
@@ -1061,5 +1071,5 @@
       ]
     }
   ],
-  "cursor": "alpha/adopt-orphan-id/revamp-data-sto/migrate-constan/add-slug-settin"
+  "cursor": "alpha/adopt-orphan-id/revamp-data-sto/migrate-constan/add-date-settin"
 }

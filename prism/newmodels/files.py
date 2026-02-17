@@ -37,14 +37,29 @@ class OrphansFile(BaseModel):
 
 class ConfigFile(BaseModel):
     """Model for config.json file.
-    
+
     Project settings and configuration.
     """
     schema_version: str = "0.2.0"
+    
+    # Slug settings
     slug_max_length: int = 15
     slug_regex_pattern: str = r"^[a-z0-9-]+$"
-    date_formats: List[str] = Field(default_factory=lambda: ["%Y-%m-%d"])
+    slug_word_limit: int = 3
+    slug_filler_words: List[str] = Field(default_factory=lambda: [
+        "a", "an", "and", "as", "at", "by", "for", "from", "if", "in",
+        "into", "of", "on", "or", "the", "to", "with"
+    ])
+    
+    # Date settings (defaults, will be populated from constants)
+    date_formats: List[str] = Field(default_factory=lambda: [
+        "%Y-%m-%d", "%Y/%m/%d", "%d-%m-%Y", "%d/%m/%Y",
+        "%m-%d-%Y", "%m/%d/%Y", "%Y%m%d", "%d %B %Y",
+        "%d %b %Y", "%B %d, %Y", "%b %d, %Y"
+    ])
     date_max_years_future: int = 10
     date_max_years_past: int = 1
+    
+    # Display settings
     status_header_width: int = 25
     percentage_round_precision: int = 1
