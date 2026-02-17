@@ -334,6 +334,38 @@ class Core:
             return item
         return None
 
+    def _find_next_pending_action_in_deliverable(self, deliverable: Deliverable) -> Optional[Action]:
+        """Find the next pending action within a specific deliverable."""
+        for action in deliverable.actions:
+            if action.status == "pending":
+                return action
+        return None
+
+    def _find_next_pending_action_in_objective(self, objective: Objective) -> Optional[Action]:
+        """Find the next pending action within an objective, prioritizing current deliverable."""
+        # First, try to find pending actions in non-completed deliverables
+        for deliverable in objective.deliverables:
+            if deliverable.status != "completed":
+                pending_action = self._find_next_pending_action_in_deliverable(deliverable)
+                if pending_action:
+                    return pending_action
+        return None
+
+    def _find_next_pending_action(self) -> Optional[Action]:
+        """Find the next pending action across the current objective."""
+        current_objective = self.navigator.get_current_objective()
+        if not current_objective:
+            return None
+        
+        return self._find_next_pending_action_in_objective(current_objective)
+
+    def _start_action(self, action: Action) -> None:
+        """Mark an action as in-progress and update the cursor."""
+        action.status = "in-progress"
+        action_path = self.navigator.get_item_path(action)
+        self.project_data.cursor = action_path
+        self._save_project_data()
+
     def start_next_action(self) -> Optional[Action]:
         """
         If there's an action in progress, returns it.
@@ -345,46 +377,39 @@ class Core:
             return current_action
 
         # If no action in progress, find the next pending one
-        current_objective = self.navigator.get_current_objective()
-        if not current_objective:
-            self.project_data.cursor = None
-            self._save_project_data()
-            return None
-
-        next_pending_action = None
-        for deliverable in current_objective.deliverables:
-            if deliverable.status != "completed":
-                for action in deliverable.actions:
-                    if action.status == "pending":
-                        next_pending_action = action
-                        break
-            if next_pending_action:
-                break
-
+        next_pending_action = self._find_next_pending_action()
+        
         if next_pending_action:
-            next_pending_action.status = "in-progress"
-            action_path = self.navigator.get_item_path(next_pending_action)
-            self.project_data.cursor = action_path
+            self._start_action(next_pending_action)
         else:
             self.project_data.cursor = None
+            self._save_project_data()
 
-        self._save_project_data()
         return next_pending_action
 
     def complete_current_action(self) -> Optional[Action]:
-        """Completes the current action and advances the cursor by finding the next pending action."""
+        """Completes the current action without advancing to the next one."""
         current_action = self.get_current_action()
         if not current_action or current_action.status != "in-progress":
-            return None  # Or raise an error if no action is in progress
+            return None
 
         current_action.status = "completed"
         current_action.updated_at = datetime.now()
-
-        # Now find the next action and update the cursor
-        self.start_next_action()
-
         self._save_project_data()
         return current_action
+
+    def complete_current_and_start_next(self) -> tuple[Optional[Action], Optional[Action]]:
+        """Completes the current action and starts the next pending one.
+        
+        Returns:
+            Tuple of (completed_action, next_action)
+        """
+        completed_action = self.complete_current_action()
+        if not completed_action:
+            return (None, None)
+        
+        next_action = self.start_next_action()
+        return (completed_action, next_action)
 
     def add_exec_tree(self, tree_data: List[Dict[str, Any]], mode: str):
         """
