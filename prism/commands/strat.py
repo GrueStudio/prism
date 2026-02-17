@@ -1,12 +1,11 @@
 import json
-import uuid  # Import uuid
-from datetime import datetime
 from pathlib import Path
 
 import click
 
-from prism.models import Objective
-from prism.tracker import Tracker
+from prism.models import Objective, Phase, Milestone
+from prism.core import Core
+from prism.exceptions import PrismError, NotFoundError, ValidationError, InvalidOperationError
 
 
 @click.group()
@@ -31,25 +30,31 @@ def add(item_type, name, desc, parent_path):
     if not item_type:
         raise click.ClickException("Please specify an item type to add.")
 
-    tracker = Tracker()
+    core = Core()
     try:
         if parent_path:
-            parent_item = tracker.get_item_by_path(parent_path)
+            parent_item = core.navigator.get_item_by_path(parent_path)
             if not parent_item:
-                raise click.ClickException(
-                    f"Parent item not found at path: {parent_path}"
+                raise NotFoundError(
+                    f"Parent item not found at path: '{parent_path}'"
                 )
             if isinstance(parent_item, Objective):
-                if not tracker.is_exec_tree_complete(parent_path):
-                    raise click.ClickException(
+                if not core.is_exec_tree_complete(parent_path):
+                    raise InvalidOperationError(
                         f"Cannot add strategic item. Execution tree for '{parent_path}' is not complete or does not exist."
                     )
 
-        tracker.add_item(
+        core.add_item(
             item_type=item_type, name=name, description=desc, parent_path=parent_path, status=None
         )
         click.echo(f"{item_type.capitalize()} '{name}' created successfully.")
-    except Exception as e:
+    except NotFoundError as e:
+        raise click.ClickException(str(e))
+    except ValidationError as e:
+        raise click.ClickException(f"Validation Error: {e}")
+    except InvalidOperationError as e:
+        raise click.ClickException(f"Operation Error: {e}")
+    except PrismError as e:
         raise click.ClickException(f"Error: {e}")
 
 
@@ -59,22 +64,57 @@ def add(item_type, name, desc, parent_path):
     "--json", "json_output", is_flag=True, help="Output item details in JSON format."
 )
 def show(path_str, json_output):
-    """Shows details for a strategic item."""
-    tracker = Tracker()
+    """Shows details for a strategic item including child items."""
+    core = Core()
     try:
-        item = tracker.get_item_by_path(path_str)
+        item = core.navigator.get_item_by_path(path_str)
         if not item:
             raise click.ClickException(f"Item not found at path '{path_str}'.")
 
         if json_output:
-            click.echo(item.model_dump_json(indent=2))
+            item_dict = _serialize_item(item)
+            
+            # Add children based on item type
+            if isinstance(item, Phase):
+                item_dict["milestones"] = [_serialize_item(m) for m in item.milestones]
+            elif isinstance(item, Milestone):
+                item_dict["objectives"] = [_serialize_item(o) for o in item.objectives]
+            elif isinstance(item, Objective):
+                item_dict["deliverables"] = [_serialize_item(d) for d in item.deliverables]
+
+            click.echo(json.dumps(item_dict, indent=2))
         else:
             click.echo(f"Name: {item.name}")
             click.echo(f"Description: {item.description}")
             click.echo(f"Status: {item.status}")
             click.echo(f"Type: {type(item).__name__}")
+            
+            # Display children based on item type
+            children = []
+            child_type = ""
+            if isinstance(item, Phase):
+                children = [(m.name, m.slug) for m in item.milestones]
+                child_type = "Milestones"
+            elif isinstance(item, Milestone):
+                children = [(o.name, o.slug) for o in item.objectives]
+                child_type = "Objectives"
+            elif isinstance(item, Objective):
+                children = [(d.name, d.slug) for d in item.deliverables]
+                child_type = "Deliverables"
+            
+            if children:
+                click.echo(f"\n{child_type}:")
+                for i, (name, slug) in enumerate(children, 1):
+                    click.echo(f"  {i}. {name} ({slug})")
+            else:
+                click.echo(f"\nNo {child_type.lower()}.")
     except Exception as e:
         raise click.ClickException(f"Error: {e}")
+
+
+def _serialize_item(item):
+    """Serialize an item to a dict with string values for JSON output."""
+    return item.model_dump(mode='json')
 
 
 @strat.command(name="edit")
@@ -114,9 +154,9 @@ def edit(path_str, name, desc, json_file_path):
             "No update parameters provided. Use --name, --desc, or --file."
         )
 
-    tracker = Tracker()
+    core = Core()
     try:
-        tracker.update_item(
+        core.update_item(
             path=path_str, **update_data, status=None
         )  # status is removed as per the deliverable
         click.echo(f"Item at '{path_str}' updated successfully.")
@@ -130,9 +170,9 @@ def edit(path_str, name, desc, json_file_path):
 )
 def delete(path_str):
     """Deletes a strategic item."""
-    tracker = Tracker()
+    core = Core()
     try:
-        tracker.delete_item(path=path_str)
+        core.delete_item(path=path_str)
         click.echo(f"Item at '{path_str}' deleted successfully.")
     except Exception as e:
         raise click.ClickException(f"Error: {e}")

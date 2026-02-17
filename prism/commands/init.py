@@ -3,6 +3,7 @@ from pathlib import Path
 import json
 
 from prism.models import ProjectData
+from prism.data_store import DataStore
 
 @click.command()
 @click.option('--force', is_flag=True, help="Force re-initialization, overwriting existing project.json.")
@@ -14,11 +15,12 @@ def init(force):
 
     # Create a default project structure
     default_project = ProjectData()
-
+    
+    # Use DataStore for consistent file handling
+    data_store = DataStore(project_file)
     try:
-        with open(project_file, 'w') as f:
-            f.write(default_project.model_dump_json(indent=2))
+        data_store.save_project_data(default_project)
         click.echo(f"Prism project initialized at {project_file.resolve()}")
-    except IOError as e:
+    except Exception as e:
         click.echo(f"Error: Could not write to project file at {project_file.resolve()}: {e}", err=True)
 

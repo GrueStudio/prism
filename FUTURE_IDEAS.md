@@ -57,3 +57,17 @@ This file tracks future ideas and enhancements for the Prism CLI that are not cu
 7.  **Input Validation for Path-Based Commands:**
     *   **Concern:** While `get_item_by_path` handles invalid paths by returning `None`, the CLI commands that use it might benefit from more explicit validation and user feedback.
     *   **Future:** Provide immediate feedback when a user inputs a non-existent path.
+
+---
+## Beta Enhancements (Post-Alpha):
+
+1.  **`--no-cascade` flag for `prism task done`:**
+    *   **Idea:** Add optional `--no-cascade` flag to prevent automatic parent completion.
+    *   **Use case:** Advanced users who want fine-grained control over status propagation.
+    *   **Implementation:** Pass flag through to `complete_current_action(no_cascade=True)`.
+
+2.  **Complete empty deliverables/objectives (non-action items):**
+    *   **Idea:** Allow manual completion of deliverables or objectives that have no children.
+    *   **Use case:** Some deliverables may be documentation or research tasks with no sub-actions.
+    *   **Implementation:** Add `prism exec complete <path>` command for manual completion of any execution item.
+    *   **Note:** Currently empty deliverables don't auto-complete to prevent accidental completion.

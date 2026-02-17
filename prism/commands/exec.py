@@ -1,11 +1,11 @@
 import json
-import uuid
-from datetime import datetime
 from pathlib import Path
 
 import click
 
-from prism.tracker import Tracker
+from prism.core import Core
+from prism.exceptions import PrismError, NotFoundError, ValidationError, InvalidOperationError
+from prism.models import Deliverable
 
 
 @click.group(name="exec")
@@ -30,9 +30,9 @@ def add(item_type, name, desc, parent_path):
     if not item_type:
         raise click.ClickException("Please specify an item type to add.")
 
-    tracker = Tracker()
+    core = Core()
     try:
-        tracker.add_item(
+        core.add_item(
             item_type=item_type,
             name=name,
             description=desc,
@@ -40,7 +40,13 @@ def add(item_type, name, desc, parent_path):
             status=None,
         )
         click.echo(f"{item_type.capitalize()} '{name}' created successfully.")
-    except Exception as e:
+    except NotFoundError as e:
+        raise click.ClickException(str(e))
+    except ValidationError as e:
+        raise click.ClickException(f"Validation Error: {e}")
+    except InvalidOperationError as e:
+        raise click.ClickException(f"Operation Error: {e}")
+    except PrismError as e:
         raise click.ClickException(f"Error: {e}")
 
 
@@ -50,21 +56,19 @@ def add(item_type, name, desc, parent_path):
     "--json", "json_output", is_flag=True, help="Output item details in JSON format."
 )
 def show(path_str, json_output):
-    """Shows details for an execution item."""
-    tracker = Tracker()
+    """Shows details for an execution item including child actions."""
+    core = Core()
     try:
-        item = tracker.get_item_by_path(path_str)
+        item = core.navigator.get_item_by_path(path_str)
         if not item:
-            raise click.ClickException(f"Item not found at path '{path_str}'.")
+            raise NotFoundError(f"Item not found at path '{path_str}'.")
 
         if json_output:
-            item_dict = item.model_dump()
-            # Convert UUID and datetime objects to strings for JSON serialization
-            for key, value in item_dict.items():
-                if isinstance(value, uuid.UUID):
-                    item_dict[key] = str(value)
-                elif isinstance(value, datetime):
-                    item_dict[key] = value.isoformat()
+            item_dict = _serialize_item(item)
+
+            # Add children for deliverables
+            if isinstance(item, Deliverable):
+                item_dict["actions"] = [_serialize_action(a) for a in item.actions]
 
             click.echo(json.dumps(item_dict, indent=2))
         else:
@@ -72,8 +76,30 @@ def show(path_str, json_output):
             click.echo(f"Description: {item.description}")
             click.echo(f"Status: {item.status}")
             click.echo(f"Type: {type(item).__name__}")
-    except Exception as e:
+
+            # Display children for deliverables
+            if isinstance(item, Deliverable):
+                children = [(a.name, a.slug) for a in item.actions]
+                if children:
+                    click.echo(f"\nActions:")
+                    for i, (name, slug) in enumerate(children, 1):
+                        click.echo(f"  {i}. {name} ({slug})")
+                else:
+                    click.echo("\nNo actions.")
+    except NotFoundError as e:
+        raise click.ClickException(str(e))
+    except PrismError as e:
         raise click.ClickException(f"Error: {e}")
+
+
+def _serialize_item(item):
+    """Serialize any item to a dict with string values for JSON output."""
+    return item.model_dump(mode='json')
+
+
+def _serialize_action(action):
+    """Serialize an action to a dict with string values for JSON output."""
+    return action.model_dump(mode='json')
 
 
 @exec.command(name="addtree")
@@ -88,19 +114,25 @@ def show(path_str, json_output):
 )
 def addtree(json_file_path, mode):
     """Adds an entire execution tree from a JSON file."""
-    tracker = Tracker()
+    core = Core()
     try:
         file_path = Path(json_file_path)
         with open(file_path, "r") as f:
             tree_data = json.load(f)
 
-        tracker.add_exec_tree(tree_data, mode)
+        core.add_exec_tree(tree_data, mode)
         click.echo(f"Execution tree added successfully in '{mode}' mode.")
     except FileNotFoundError:
         raise click.ClickException(f"File '{json_file_path}' not found.")
     except json.JSONDecodeError as e:
         raise click.ClickException(f"Invalid JSON format in '{json_file_path}': {e}")
-    except Exception as e:
+    except NotFoundError as e:
+        raise click.ClickException(str(e))
+    except ValidationError as e:
+        raise click.ClickException(f"Validation Error: {e}")
+    except InvalidOperationError as e:
+        raise click.ClickException(f"Operation Error: {e}")
+    except PrismError as e:
         raise click.ClickException(f"Error adding execution tree: {e}")
 
 
@@ -144,11 +176,17 @@ def edit(path_str, name, desc, due_date, json_file_path):
             "No update parameters provided. Use --name, --desc, --due-date, or --file."
         )
 
-    tracker = Tracker()
+    core = Core()
     try:
-        tracker.update_item(path=path_str, **update_data, status=None)
+        core.update_item(path=path_str, **update_data, status=None)
         click.echo(f"Item at '{path_str}' updated successfully.")
-    except Exception as e:
+    except NotFoundError as e:
+        raise click.ClickException(str(e))
+    except ValidationError as e:
+        raise click.ClickException(f"Validation Error: {e}")
+    except InvalidOperationError as e:
+        raise click.ClickException(f"Operation Error: {e}")
+    except PrismError as e:
         raise click.ClickException(f"Error: {e}")
 
 
@@ -158,9 +196,13 @@ def edit(path_str, name, desc, due_date, json_file_path):
 )
 def delete(path_str):
     """Deletes an execution item."""
-    tracker = Tracker()
+    core = Core()
     try:
-        tracker.delete_item(path=path_str)
+        core.delete_item(path=path_str)
         click.echo(f"Item at '{path_str}' deleted successfully.")
-    except Exception as e:
+    except NotFoundError as e:
+        raise click.ClickException(str(e))
+    except InvalidOperationError as e:
+        raise click.ClickException(f"Operation Error: {e}")
+    except PrismError as e:
         raise click.ClickException(f"Error: {e}")
