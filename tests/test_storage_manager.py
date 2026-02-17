@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from prism.storage_manager import StorageManager, StorageError
+from prism.managers.storage_manager import StorageManager, StorageError
 from prism.newmodels import (
     StrategicFile,
     ExecutionFile,
