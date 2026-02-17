@@ -409,8 +409,11 @@ class Core:
         When all deliverables in an objective are complete, mark objective complete.
         When all objectives in a milestone are complete, mark milestone complete.
         When all milestones in a phase are complete, mark phase complete.
+        
+        Prints a notification when a parent item is marked complete.
         """
         from prism.models import Action, Deliverable, Objective, Milestone
+        import click
         
         # Get the parent of the completed item
         item_path = self.navigator.get_item_path(item)
@@ -446,6 +449,7 @@ class Core:
         if all_children_complete and parent.status != "completed":
             parent.status = "completed"
             parent.updated_at = datetime.now()
+            click.echo(f"  ✓ {type(parent).__name__} '{parent.name}' marked complete")
             self._cascade_completion(parent)
 
     def complete_current_and_start_next(self) -> tuple[Optional[Action], Optional[Action]]:
