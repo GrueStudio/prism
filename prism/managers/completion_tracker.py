@@ -10,6 +10,7 @@ import click
 from prism.models import Action, BaseItem, Deliverable, Objective
 from prism.navigator import Navigator
 from prism.constants import COMPLETED_STATUS, PERCENTAGE_ROUND_PRECISION
+from prism.managers.events import ItemEvent, EventType, publish_event
 
 
 class CompletionTracker:
@@ -20,12 +21,14 @@ class CompletionTracker:
     - Cascading completion up the hierarchy
     - Calculating completion percentages for objectives and deliverables
     - Checking if execution trees are complete
+    - Emitting events on strategic item completion
     """
 
     def __init__(
         self,
         navigator: Navigator,
         round_precision: int = None,
+        emit_events: bool = True,
     ) -> None:
         """
         Initialize CompletionTracker.
@@ -33,9 +36,11 @@ class CompletionTracker:
         Args:
             navigator: Navigator instance for path resolution.
             round_precision: Decimal places for percentage rounding. Defaults to config value.
+            emit_events: Whether to emit completion events.
         """
         self.navigator = navigator
         self._round_precision = round_precision or PERCENTAGE_ROUND_PRECISION
+        self._emit_events = emit_events
 
     def cascade_completion(self, item: BaseItem) -> None:
         """Cascade completion status up the tree when all children are complete.
@@ -46,6 +51,7 @@ class CompletionTracker:
         Does NOT cascade to milestones or phases to allow adding new children.
 
         Prints a notification when a parent item is marked complete.
+        Emits STRATEGIC_COMPLETED event for objectives.
 
         Args:
             item: The completed item.
@@ -91,9 +97,30 @@ class CompletionTracker:
                 f"  ✓ {type(parent).__name__} '{parent.name}' marked complete"
             )
 
+            # Emit event for strategic item completion
+            if self._emit_events and isinstance(parent, Objective):
+                self._emit_strategic_completed(parent)
+
             # Continue cascading only if parent is a deliverable (cascade to objective)
             if isinstance(parent, Deliverable):
                 self.cascade_completion(parent)
+
+    def _emit_strategic_completed(self, objective: Objective) -> None:
+        """Emit STRATEGIC_COMPLETED event for an objective.
+
+        Args:
+            objective: The completed objective.
+        """
+        event = ItemEvent(
+            type=EventType.STRATEGIC_COMPLETED,
+            item_uuid=objective.uuid,
+            item_type="objective",
+            item_slug=objective.slug,
+            item_name=objective.name,
+            status=objective.status,
+            parent_uuid=objective.parent_uuid,
+        )
+        publish_event(event)
 
     def calculate_completion_percentage(
         self, item: BaseItem

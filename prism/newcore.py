@@ -3,6 +3,7 @@ NewPrismCore - Core business logic for the Prism CLI using new storage.
 
 Orchestrates manager classes for all business operations.
 Uses StorageManager for .prism/ folder-based storage.
+Uses EventBus for decoupled event-driven architecture.
 """
 from datetime import datetime
 from pathlib import Path
@@ -15,6 +16,9 @@ from prism.managers import (
     CompletionTracker,
     NavigationManager,
     StorageManager,
+    AutoArchiveListener,
+    get_event_bus,
+    subscribe_listener,
 )
 from prism.exceptions import (
     PrismError,
@@ -28,36 +32,58 @@ from prism.exceptions import (
 class NewPrismCore:
     """
     Core class for business logic operations with new storage.
-    
+
     Orchestrates manager classes:
     - StorageManager: Persistence to .prism/ folder
     - NavigationManager: Path resolution
     - ItemManager: CRUD operations
     - TaskManager: Task operations (start, complete, next)
     - CompletionTracker: Cascade completion and percentages
+    - EventBus: Event-driven communication
+    - AutoArchiveListener: Auto-archive completed items
     """
 
-    def __init__(self, prism_dir: Optional[Path] = None):
+    def __init__(
+        self, 
+        prism_dir: Optional[Path] = None,
+        auto_archive_enabled: bool = True,
+    ):
         """
         Initialize the NewPrismCore with a .prism/ directory.
 
         Args:
             prism_dir: Path to .prism/ directory. Defaults to .prism/ in current directory.
+            auto_archive_enabled: Whether to enable auto-archive on completion.
         """
         self.storage = StorageManager(prism_dir)
-        
+
         # Load project data from storage
         self._load_project_data()
-        
+
         # Initialize managers
         self.navigator = NavigationManager(self.project_data)
         self.item_manager = ItemManager(self.project_data, self.navigator)
         self.task_manager = TaskManager(
-            self.project_data, 
-            self.navigator, 
+            self.project_data,
+            self.navigator,
             self._save_project_data
         )
-        self.completion_tracker = CompletionTracker(self.navigator)
+        self.completion_tracker = CompletionTracker(
+            self.navigator, 
+            emit_events=True
+        )
+
+        # Set up event-driven architecture
+        self.event_bus = get_event_bus()
+        
+        # Subscribe auto-archive listener
+        if auto_archive_enabled:
+            self.auto_archive_listener = AutoArchiveListener(
+                self.storage, 
+                self.navigator,
+                auto_archive_enabled=True,
+            )
+            subscribe_listener(self.auto_archive_listener)
 
     def _load_project_data(self) -> None:
         """Load project data from storage."""
