@@ -85,30 +85,37 @@ DATE_MAX_YEARS_PAST = DEFAULT_DATE_MAX_YEARS_PAST
 # Load values from .prism/config.json at runtime.
 # =============================================================================
 
+_config_manager_instance: Optional['ConfigManager'] = None
+
+
 class ConfigManager:
     """
     Manages loading configuration from .prism/config.json with fallback to defaults.
     
+    Thread-safe singleton pattern with lazy loading.
+
     Usage:
         config = ConfigManager()
         slug_max_length = config.get('slug_max_length', DEFAULT_SLUG_MAX_LENGTH)
         date_formats = config.get('date_formats', DEFAULT_DATE_FORMATS)
     """
     
-    _instance: Optional['ConfigManager'] = None
-    _config: Optional[dict] = None
-    
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
+    def __init__(self, prism_dir: Optional[Path] = None) -> None:
+        """
+        Initialize ConfigManager.
+        
+        Args:
+            prism_dir: Path to .prism/ directory. Defaults to .prism/ in current directory.
+        """
+        self._config: Optional[dict] = None
+        self._prism_dir = prism_dir if prism_dir else Path(".prism")
     
     def _load_config(self) -> dict:
         """Load config from .prism/config.json."""
         if self._config is not None:
             return self._config
         
-        config_path = Path(".prism") / "config.json"
+        config_path = self._prism_dir / "config.json"
         if config_path.exists():
             try:
                 with open(config_path, "r") as f:
@@ -123,27 +130,27 @@ class ConfigManager:
     def get(self, key: str, default: Any = None) -> Any:
         """
         Get a config value with fallback to default.
-        
+
         Args:
             key: Configuration key name.
             default: Default value if key not found.
-            
+
         Returns:
             Config value or default.
         """
         config = self._load_config()
         return config.get(key, default)
-    
+
     def get_int(self, key: str, default: int) -> int:
         """Get an integer config value with fallback."""
         value = self.get(key, default)
         return int(value) if value is not None else default
-    
+
     def get_list(self, key: str, default: list) -> list:
         """Get a list config value with fallback."""
         value = self.get(key, default)
         return list(value) if isinstance(value, (list, tuple)) else default
-    
+
     def get_str(self, key: str, default: str) -> str:
         """Get a string config value with fallback."""
         value = self.get(key, default)
@@ -155,52 +162,69 @@ class ConfigManager:
         return self._load_config()
 
 
+def get_config_manager(prism_dir: Optional[Path] = None) -> ConfigManager:
+    """
+    Get the singleton ConfigManager instance.
+    
+    Args:
+        prism_dir: Optional path to .prism/ directory.
+    
+    Returns:
+        ConfigManager singleton instance.
+    """
+    global _config_manager_instance
+    if _config_manager_instance is None:
+        _config_manager_instance = ConfigManager(prism_dir)
+    return _config_manager_instance
+
+
+def reset_config_manager() -> None:
+    """Reset the singleton ConfigManager instance (useful for testing)."""
+    global _config_manager_instance
+    _config_manager_instance = None
+
+
 # Convenience functions for common config access
-def get_config() -> ConfigManager:
-    """Get the singleton ConfigManager instance."""
-    return ConfigManager()
-
-
 def get_slug_max_length() -> int:
     """Get slug max length from config or default."""
-    return ConfigManager().get_int('slug_max_length', DEFAULT_SLUG_MAX_LENGTH)
+    return get_config_manager().get_int('slug_max_length', DEFAULT_SLUG_MAX_LENGTH)
 
 
 def get_slug_regex_pattern() -> str:
     """Get slug regex pattern from config or default."""
-    return ConfigManager().get_str('slug_regex_pattern', DEFAULT_SLUG_REGEX_PATTERN)
+    return get_config_manager().get_str('slug_regex_pattern', DEFAULT_SLUG_REGEX_PATTERN)
 
 
 def get_slug_word_limit() -> int:
     """Get slug word limit from config or default."""
-    return ConfigManager().get_int('slug_word_limit', DEFAULT_SLUG_WORD_LIMIT)
+    return get_config_manager().get_int('slug_word_limit', DEFAULT_SLUG_WORD_LIMIT)
 
 
 def get_slug_filler_words() -> list:
     """Get slug filler words from config or default."""
-    return ConfigManager().get_list('slug_filler_words', DEFAULT_SLUG_FILLER_WORDS)
+    return get_config_manager().get_list('slug_filler_words', DEFAULT_SLUG_FILLER_WORDS)
 
 
 def get_date_formats() -> list:
     """Get date formats from config or default."""
-    return ConfigManager().get_list('date_formats', DEFAULT_DATE_FORMATS)
+    return get_config_manager().get_list('date_formats', DEFAULT_DATE_FORMATS)
 
 
 def get_date_max_years_future() -> int:
     """Get date max years future from config or default."""
-    return ConfigManager().get_int('date_max_years_future', DEFAULT_DATE_MAX_YEARS_FUTURE)
+    return get_config_manager().get_int('date_max_years_future', DEFAULT_DATE_MAX_YEARS_FUTURE)
 
 
 def get_date_max_years_past() -> int:
     """Get date max years past from config or default."""
-    return ConfigManager().get_int('date_max_years_past', DEFAULT_DATE_MAX_YEARS_PAST)
+    return get_config_manager().get_int('date_max_years_past', DEFAULT_DATE_MAX_YEARS_PAST)
 
 
 def get_status_header_width() -> int:
     """Get status header width from config or default."""
-    return ConfigManager().get_int('status_header_width', DEFAULT_STATUS_HEADER_WIDTH)
+    return get_config_manager().get_int('status_header_width', DEFAULT_STATUS_HEADER_WIDTH)
 
 
 def get_percentage_round_precision() -> int:
     """Get percentage round precision from config or default."""
-    return ConfigManager().get_int('percentage_round_precision', DEFAULT_PERCENTAGE_ROUND_PRECISION)
+    return get_config_manager().get_int('percentage_round_precision', DEFAULT_PERCENTAGE_ROUND_PRECISION)
