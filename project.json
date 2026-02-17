@@ -497,6 +497,25 @@
               ]
             }
           ]
+        },
+        {
+          "name": "Adopt Orphan Ideas",
+          "description": "Create a system for managing orphan ideas that can be adopted into the project structure as phases, milestones, objectives, deliverables, or actions.",
+          "slug": "adopt-orphan-id",
+          "status": "pending",
+          "created_at": "2026-02-16T23:43:36.694109",
+          "updated_at": "2026-02-16T23:43:36.694113",
+          "objectives": [
+            {
+              "name": "Revamp Data Storage",
+              "description": "Replace single project.json with folder-based storage using .prism directory structure for better organization and scalability.",
+              "slug": "revamp-data-sto",
+              "status": "pending",
+              "created_at": "2026-02-16T23:45:44.026487",
+              "updated_at": "2026-02-16T23:45:44.026490",
+              "deliverables": []
+            }
+          ]
         }
       ]
     }
