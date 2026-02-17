@@ -401,7 +401,7 @@ class TestGetStatusSummary:
     def test_status_summary_counts_items(self, core_with_data):
         """Test that status summary correctly counts items."""
         summary = core_with_data.get_status_summary()
-        
+
         assert summary["item_counts"]["Phase"]["total"] >= 1
         assert summary["item_counts"]["Milestone"]["total"] >= 1
         assert summary["item_counts"]["Objective"]["total"] >= 1
@@ -411,12 +411,90 @@ class TestGetStatusSummary:
         core_with_data.add_item("objective", "Objective 2", "Desc", "test-phase/test-milestone")
         core_with_data.add_item("deliverable", "Deliverable 1", "Desc", "test-phase/test-milestone/objective-2")
         core_with_data.add_item("action", "Overdue Action", "Desc", "test-phase/test-milestone/objective-2/deliverable-1")
-        
+
         # Set a past due date
         action = core_with_data.navigator.get_item_by_path("test-phase/test-milestone/objective-2/deliverable-1/overdue-action")
         action.due_date = datetime(2020, 1, 1)
         core_with_data._save_project_data()
-        
+
         summary = core_with_data.get_status_summary()
-        
+
         assert len(summary["overdue_actions"]) >= 1
+
+
+class TestCascadeCompletion:
+    """Tests for cascading completion functionality."""
+
+    def test_cascade_action_to_deliverable(self, temp_project_file):
+        """Test that completing all actions marks deliverable as complete."""
+        core = Core(temp_project_file)
+        
+        # Create structure: phase -> milestone -> objective -> deliverable -> 2 actions
+        core.add_item("phase", "Test Phase", "Desc", None)
+        core.add_item("milestone", "Test Milestone", "Desc", "test-phase")
+        core.add_item("objective", "Test Objective", "Desc", "test-phase/test-milestone")
+        core.add_item("deliverable", "Test Deliverable", "Desc", "test-phase/test-milestone/test-objective")
+        core.add_item("action", "Action 1", "Desc", "test-phase/test-milestone/test-objective/1")
+        core.add_item("action", "Action 2", "Desc", "test-phase/test-milestone/test-objective/1")
+        
+        # Start and complete first action
+        core.start_next_action()
+        core.complete_current_action()
+        
+        # Deliverable should NOT be complete yet (1 of 2 actions complete)
+        deliverable = core.navigator.get_item_by_path("test-phase/test-milestone/test-objective/1")
+        assert deliverable.status != "completed"
+        
+        # Start and complete second action
+        core.start_next_action()
+        core.complete_current_action()
+        
+        # Now deliverable should be complete
+        deliverable = core.navigator.get_item_by_path("test-phase/test-milestone/test-objective/1")
+        assert deliverable.status == "completed"
+
+    def test_cascade_deliverable_to_objective(self, temp_project_file):
+        """Test that completing all deliverables marks objective as complete."""
+        core = Core(temp_project_file)
+        
+        # Create structure with 2 deliverables, each with 1 action
+        core.add_item("phase", "Test Phase", "Desc", None)
+        core.add_item("milestone", "Test Milestone", "Desc", "test-phase")
+        core.add_item("objective", "Test Objective", "Desc", "test-phase/test-milestone")
+        core.add_item("deliverable", "Deliverable 1", "Desc", "test-phase/test-milestone/test-objective")
+        core.add_item("deliverable", "Deliverable 2", "Desc", "test-phase/test-milestone/test-objective")
+        core.add_item("action", "Action 1", "Desc", "test-phase/test-milestone/test-objective/deliverable-1")
+        core.add_item("action", "Action 2", "Desc", "test-phase/test-milestone/test-objective/deliverable-2")
+        
+        # Complete all actions (which cascades to deliverables)
+        core.start_next_action()
+        core.complete_current_action()
+        core.start_next_action()
+        core.complete_current_action()
+        
+        # Objective should now be complete (all deliverables complete)
+        objective = core.navigator.get_item_by_path("test-phase/test-milestone/test-objective")
+        assert objective.status == "completed"
+
+    def test_partial_completion_no_cascade(self, temp_project_file):
+        """Test that partial completion doesn't cascade."""
+        core = Core(temp_project_file)
+        
+        # Create structure with 2 actions
+        core.add_item("phase", "Test Phase", "Desc", None)
+        core.add_item("milestone", "Test Milestone", "Desc", "test-phase")
+        core.add_item("objective", "Test Objective", "Desc", "test-phase/test-milestone")
+        core.add_item("deliverable", "Test Deliverable", "Desc", "test-phase/test-milestone/test-objective")
+        core.add_item("action", "Action 1", "Desc", "test-phase/test-milestone/test-objective/1")
+        core.add_item("action", "Action 2", "Desc", "test-phase/test-milestone/test-objective/1")
+        
+        # Complete only first action
+        core.start_next_action()
+        core.complete_current_action()
+        
+        # Nothing should be marked complete (only 1 of 2 actions)
+        deliverable = core.navigator.get_item_by_path("test-phase/test-milestone/test-objective/1")
+        assert deliverable.status != "completed"
+        
+        objective = core.navigator.get_item_by_path("test-phase/test-milestone/test-objective")
+        assert objective.status != "completed"
