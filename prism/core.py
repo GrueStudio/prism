@@ -8,6 +8,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import click
+
 from prism.models import (
     Action,
     BaseItem,
@@ -412,9 +414,6 @@ class Core:
         
         Prints a notification when a parent item is marked complete.
         """
-        from prism.models import Action, Deliverable, Objective
-        import click
-        
         # Get the parent of the completed item
         item_path = self.navigator.get_item_path(item)
         if not item_path:
@@ -434,10 +433,13 @@ class Core:
         
         if isinstance(item, Action) and isinstance(parent, Deliverable):
             # Check if all actions in deliverable are complete
-            all_children_complete = all(a.status == "completed" for a in parent.actions)
+            # Only cascade if deliverable has actions and all are complete
+            if parent.actions:
+                all_children_complete = all(a.status == "completed" for a in parent.actions)
         elif isinstance(item, Deliverable) and isinstance(parent, Objective):
             # Check if all deliverables in objective are complete
-            all_children_complete = all(d.status == "completed" for d in parent.deliverables)
+            if parent.deliverables:
+                all_children_complete = all(d.status == "completed" for d in parent.deliverables)
         
         # If all children are complete, mark parent as complete and continue cascading
         # Only cascade up to objective level (not milestones or phases)

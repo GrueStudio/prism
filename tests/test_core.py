@@ -498,3 +498,62 @@ class TestCascadeCompletion:
         
         objective = core.navigator.get_item_by_path("test-phase/test-milestone/test-objective")
         assert objective.status != "completed"
+
+    def test_empty_deliverable_no_cascade(self, temp_project_file):
+        """Test that empty deliverable (no actions) doesn't auto-complete."""
+        core = Core(temp_project_file)
+        
+        # Create structure with empty deliverable
+        core.add_item("phase", "Test Phase", "Desc", None)
+        core.add_item("milestone", "Test Milestone", "Desc", "test-phase")
+        core.add_item("objective", "Test Objective", "Desc", "test-phase/test-milestone")
+        core.add_item("deliverable", "Empty Deliverable", "Desc", "test-phase/test-milestone/test-objective")
+        
+        # Complete another deliverable with actions
+        core.add_item("deliverable", "Deliverable 2", "Desc", "test-phase/test-milestone/test-objective")
+        core.add_item("action", "Action 1", "Desc", "test-phase/test-milestone/test-objective/deliverable-2")
+        
+        # Complete the action
+        core.start_next_action()
+        core.complete_current_action()
+        
+        # Empty deliverable should NOT be auto-completed
+        empty_del = core.navigator.get_item_by_path("test-phase/test-milestone/test-objective/empty-deliverab")
+        assert empty_del.status != "completed"
+        
+        # Deliverable with completed action should be complete
+        del2 = core.navigator.get_item_by_path("test-phase/test-milestone/test-objective/deliverable-2")
+        assert del2.status == "completed"
+
+    def test_stays_within_deliverable_boundary(self, temp_project_file):
+        """Test that task progression completes all actions in deliverable first."""
+        core = Core(temp_project_file)
+        
+        # Create structure with 2 deliverables, each with 2 actions
+        core.add_item("phase", "Test Phase", "Desc", None)
+        core.add_item("milestone", "Test Milestone", "Desc", "test-phase")
+        core.add_item("objective", "Test Objective", "Desc", "test-phase/test-milestone")
+        core.add_item("deliverable", "Deliverable 1", "Desc", "test-phase/test-milestone/test-objective")
+        core.add_item("deliverable", "Deliverable 2", "Desc", "test-phase/test-milestone/test-objective")
+        core.add_item("action", "Action 1", "Desc", "test-phase/test-milestone/test-objective/deliverable-1")
+        core.add_item("action", "Action 2", "Desc", "test-phase/test-milestone/test-objective/deliverable-1")
+        core.add_item("action", "Action 3", "Desc", "test-phase/test-milestone/test-objective/deliverable-2")
+        core.add_item("action", "Action 4", "Desc", "test-phase/test-milestone/test-objective/deliverable-2")
+        
+        # Start first action
+        action = core.start_next_action()
+        assert action.name == "Action 1"
+        
+        # Complete it
+        core.complete_current_action()
+        
+        # Next action should be from same deliverable (Action 2), not Deliverable 2
+        action = core.start_next_action()
+        assert action.name == "Action 2"
+        
+        # Complete it - now deliverable 1 should be complete
+        core.complete_current_action()
+        
+        # Now should move to Deliverable 2
+        action = core.start_next_action()
+        assert action.name == "Action 3"

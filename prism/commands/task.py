@@ -4,7 +4,11 @@ from prism.core import Core
 
 @click.group()
 def task():
-    """Commands for managing tasks."""
+    """Commands for managing tasks.
+    
+    When completing tasks, parent deliverables and objectives are automatically
+    marked complete when all their children are done.
+    """
     pass
 
 @task.command()
@@ -19,7 +23,11 @@ def start():
 
 @task.command()
 def done():
-    """Mark the current task as done."""
+    """Mark the current task as done.
+    
+    If all actions in a deliverable are complete, the deliverable is marked done.
+    If all deliverables in an objective are complete, the objective is marked done.
+    """
     core = Core()
     action = core.complete_current_action()
     if action:
@@ -29,7 +37,11 @@ def done():
 
 @task.command()
 def next():
-    """Complete the current task and start the next one."""
+    """Complete the current task and start the next one.
+    
+    If all actions in a deliverable are complete, the deliverable is marked done.
+    If all deliverables in an objective are complete, the objective is marked done.
+    """
     core = Core()
     completed_action, next_action = core.complete_current_and_start_next()
     if completed_action:
