@@ -37,6 +37,9 @@ from prism.constants import (
     DATE_FORMAT_ERROR,
     DEFAULT_STATUS,
     VALIDATION_INVALID_STATUS,
+    get_slug_max_length,
+    get_slug_word_limit,
+    get_slug_filler_words,
 )
 from prism.utils import parse_date, validate_date_range
 
@@ -65,8 +68,32 @@ class Core:
     def _generate_unique_slug(
         self, existing_items: List[BaseItem], base_name: str
     ) -> str:
-        """Generate a unique slug for an item."""
-        base_slug = re.sub(r"[^a-z0-9]+", "-", base_name.lower()).strip("-")[:SLUG_MAX_LENGTH]
+        """Generate a unique slug for an item.
+        
+        Uses configurable word limit and filler word filtering.
+        """
+        # Get config values
+        max_length = get_slug_max_length()
+        word_limit = get_slug_word_limit()
+        filler_words = set(get_slug_filler_words())
+        
+        # Split name into words, convert to lowercase
+        words = base_name.lower().split()
+        
+        # Filter out filler words and take first N words
+        filtered_words = [w for w in words if w not in filler_words][:word_limit]
+        
+        # If all words were filtered out, use original words
+        if not filtered_words:
+            filtered_words = words[:word_limit]
+        
+        # Join with hyphens and remove non-alphanumeric chars
+        base_slug = "-".join(filtered_words)
+        base_slug = re.sub(r"[^a-z0-9\-]+", "-", base_slug).strip("-")
+        
+        # Truncate to max length
+        base_slug = base_slug[:max_length]
+        
         if not base_slug:
             base_slug = "item"
 
@@ -76,8 +103,8 @@ class Core:
         count = 1
         while slug in existing_slugs:
             slug = (
-                f"{base_slug[: (SLUG_MAX_LENGTH - len(str(count)) - 1)]}-{count}"
-                if len(base_slug) > (SLUG_MAX_LENGTH - len(str(count)) - 1)
+                f"{base_slug[: (max_length - len(str(count)) - 1)]}-{count}"
+                if len(base_slug) > (max_length - len(str(count)) - 1)
                 else f"{base_slug}-{count}"
             )
             count += 1
