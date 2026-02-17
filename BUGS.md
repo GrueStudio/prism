@@ -11,6 +11,8 @@ This file tracks bugs and issues for the Prism CLI.
 
 * **No timezone awareness:** All datetime operations use `datetime.now()` without timezone information. This could cause issues with due date comparisons across timezones or daylight saving time changes.
 
+* **Task progression crosses deliverable boundaries (Issue #4):** `prism task next` does not respect deliverable boundaries when finding the next task. When completing the last action in a deliverable, it immediately starts an action from the next deliverable instead of staying within the current deliverable context. This breaks the intended workflow of completing all actions within a deliverable before moving to the next one.
+
 ## Fixed Bugs:
 
 * **Parent completion not cascading (Issue #1):** ✓ Fixed - Completing all actions in a deliverable now marks the deliverable complete, and completing all deliverables in an objective marks the objective complete.
