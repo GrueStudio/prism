@@ -264,9 +264,10 @@ class TestDeleteItem:
         """Test deleting a phase."""
         core = Core(temp_project_file)
         core.add_item("phase", "Phase to Delete", "Description", None)
-        
+
         assert len(core.project_data.phases) == 1
-        core.delete_item("phase-to-delete")
+        # Slug filters out filler word "to": "phase-delete"
+        core.delete_item("phase-delete")
         assert len(core.project_data.phases) == 0
 
     def test_delete_action(self, core_with_data):
@@ -278,8 +279,8 @@ class TestDeleteItem:
         deliverable = core_with_data.navigator.get_item_by_path("test-phase/test-milestone/objective-2/deliverable-1")
         assert len(deliverable.actions) == 1
 
-        # Slug is truncated to 15 chars: "action-to-delet"
-        core_with_data.delete_item("test-phase/test-milestone/objective-2/deliverable-1/action-to-delet")
+        # Slug filters out filler word "to": "action-delete"
+        core_with_data.delete_item("test-phase/test-milestone/objective-2/deliverable-1/action-delete")
 
         deliverable = core_with_data.navigator.get_item_by_path("test-phase/test-milestone/objective-2/deliverable-1")
         assert len(deliverable.actions) == 0
