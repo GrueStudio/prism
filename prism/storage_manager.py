@@ -9,18 +9,25 @@ import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from prism.newmodels import (
-    StrategicFile,
-    ExecutionFile,
-    OrphansFile,
-    ConfigFile,
-    Phase,
-    Milestone,
-    Objective,
-    Deliverable,
-    Action,
-    Orphan,
-)
+from pydantic import ValidationError
+
+from prism.exceptions import PrismError
+from prism.newmodels import StrategicFile, ExecutionFile, OrphansFile, ConfigFile
+
+
+# File name constants
+STRATEGIC_FILE = "strategic.json"
+EXECUTION_FILE = "execution.json"
+CONFIG_FILE = "config.json"
+ORPHANS_FILE = "orphans.json"
+ARCHIVE_STRATEGIC_PREFIX = "strategic-"
+ARCHIVE_EXECUTION_PREFIX = "objective-"
+ARCHIVE_EXECUTION_SUFFIX = ".exec.json"
+
+
+class StorageError(PrismError):
+    """Exception raised for storage-related errors."""
+    pass
 
 
 class StorageManager:
@@ -28,9 +35,17 @@ class StorageManager:
     Manages persistence of project data to JSON files in the .prism/ directory.
 
     Handles atomic writes to prevent data corruption.
+    Supports archiving of completed items to .prism/archive/ subdirectory.
+
+    Files managed:
+        - strategic.json: Phases, milestones, objectives
+        - execution.json: Deliverables and actions
+        - config.json: Project configuration
+        - orphans.json: Orphan ideas
+        - archive/: Archived completed items
     """
 
-    def __init__(self, prism_dir: Optional[Path] = None):
+    def __init__(self, prism_dir: Optional[Path] = None) -> None:
         """
         Initialize the StorageManager with a .prism/ directory path.
 
@@ -76,7 +91,7 @@ class StorageManager:
             data: Dictionary data to write as JSON.
 
         Raises:
-            Exception: Re-raises any exception after cleaning up temp file.
+            StorageError: If writing to file fails.
         """
         temp_fd, temp_path = tempfile.mkstemp(
             dir=self.prism_dir,
@@ -93,7 +108,7 @@ class StorageManager:
                 os.unlink(temp_path)
             except OSError:
                 pass  # Ignore errors during cleanup
-            raise e
+            raise StorageError(f"Failed to write to {file_path}: {e}")
 
     def load_strategic(self) -> StrategicFile:
         """
@@ -101,15 +116,18 @@ class StorageManager:
 
         Returns:
             StrategicFile: The loaded strategic file data, or empty if file doesn't exist.
+
+        Raises:
+            StorageError: If loading from file fails.
         """
-        file_path = self._get_file_path("strategic.json")
+        file_path = self._get_file_path(STRATEGIC_FILE)
         if file_path.exists():
             try:
                 with open(file_path, "r") as f:
                     data = json.load(f)
                 return StrategicFile.model_validate(data)
-            except (json.JSONDecodeError, Exception) as e:
-                raise Exception(f"Error loading strategic data from {file_path}: {e}")
+            except (json.JSONDecodeError, ValidationError) as e:
+                raise StorageError(f"Failed to load strategic data from {file_path}: {e}")
         return StrategicFile()
 
     def save_strategic(self, data: StrategicFile) -> None:
@@ -119,7 +137,7 @@ class StorageManager:
         Args:
             data: StrategicFile data to save.
         """
-        file_path = self._get_file_path("strategic.json")
+        file_path = self._get_file_path(STRATEGIC_FILE)
         self._atomic_write(file_path, data.model_dump())
 
     def load_execution(self) -> ExecutionFile:
@@ -128,15 +146,18 @@ class StorageManager:
 
         Returns:
             ExecutionFile: The loaded execution file data, or empty if file doesn't exist.
+
+        Raises:
+            StorageError: If loading from file fails.
         """
-        file_path = self._get_file_path("execution.json")
+        file_path = self._get_file_path(EXECUTION_FILE)
         if file_path.exists():
             try:
                 with open(file_path, "r") as f:
                     data = json.load(f)
                 return ExecutionFile.model_validate(data)
-            except (json.JSONDecodeError, Exception) as e:
-                raise Exception(f"Error loading execution data from {file_path}: {e}")
+            except (json.JSONDecodeError, ValidationError) as e:
+                raise StorageError(f"Failed to load execution data from {file_path}: {e}")
         return ExecutionFile()
 
     def save_execution(self, data: ExecutionFile) -> None:
@@ -146,7 +167,7 @@ class StorageManager:
         Args:
             data: ExecutionFile data to save.
         """
-        file_path = self._get_file_path("execution.json")
+        file_path = self._get_file_path(EXECUTION_FILE)
         self._atomic_write(file_path, data.model_dump())
 
     def load_config(self) -> ConfigFile:
@@ -155,15 +176,18 @@ class StorageManager:
 
         Returns:
             ConfigFile: The loaded config data, or default config if file doesn't exist.
+
+        Raises:
+            StorageError: If loading from file fails.
         """
-        file_path = self._get_file_path("config.json")
+        file_path = self._get_file_path(CONFIG_FILE)
         if file_path.exists():
             try:
                 with open(file_path, "r") as f:
                     data = json.load(f)
                 return ConfigFile.model_validate(data)
-            except (json.JSONDecodeError, Exception) as e:
-                raise Exception(f"Error loading config from {file_path}: {e}")
+            except (json.JSONDecodeError, ValidationError) as e:
+                raise StorageError(f"Failed to load config from {file_path}: {e}")
         return ConfigFile()
 
     def save_config(self, data: ConfigFile) -> None:
@@ -173,7 +197,7 @@ class StorageManager:
         Args:
             data: ConfigFile data to save.
         """
-        file_path = self._get_file_path("config.json")
+        file_path = self._get_file_path(CONFIG_FILE)
         self._atomic_write(file_path, data.model_dump())
 
     def load_orphans(self) -> OrphansFile:
@@ -182,15 +206,18 @@ class StorageManager:
 
         Returns:
             OrphansFile: The loaded orphans file data, or empty if file doesn't exist.
+
+        Raises:
+            StorageError: If loading from file fails.
         """
-        file_path = self._get_file_path("orphans.json")
+        file_path = self._get_file_path(ORPHANS_FILE)
         if file_path.exists():
             try:
                 with open(file_path, "r") as f:
                     data = json.load(f)
                 return OrphansFile.model_validate(data)
-            except (json.JSONDecodeError, Exception) as e:
-                raise Exception(f"Error loading orphans data from {file_path}: {e}")
+            except (json.JSONDecodeError, ValidationError) as e:
+                raise StorageError(f"Failed to load orphans data from {file_path}: {e}")
         return OrphansFile()
 
     def save_orphans(self, data: OrphansFile) -> None:
@@ -200,7 +227,7 @@ class StorageManager:
         Args:
             data: OrphansFile data to save.
         """
-        file_path = self._get_file_path("orphans.json")
+        file_path = self._get_file_path(ORPHANS_FILE)
         self._atomic_write(file_path, data.model_dump())
 
     def archive_strategic(self, item_uuid: str, item_data: Dict[str, Any]) -> None:
@@ -211,7 +238,7 @@ class StorageManager:
             item_uuid: UUID of the item being archived.
             item_data: Dictionary data of the item to archive.
         """
-        file_path = self._get_archive_file_path(f"strategic-{item_uuid}.json")
+        file_path = self._get_archive_file_path(f"{ARCHIVE_STRATEGIC_PREFIX}{item_uuid}.json")
         self._atomic_write(file_path, item_data)
 
     def archive_execution_tree(self, objective_slug: str, tree_data: Dict[str, Any]) -> None:
@@ -222,7 +249,9 @@ class StorageManager:
             objective_slug: Slug of the objective being archived.
             tree_data: Dictionary data containing deliverables and actions to archive.
         """
-        file_path = self._get_archive_file_path(f"objective-{objective_slug}.exec.json")
+        file_path = self._get_archive_file_path(
+            f"{ARCHIVE_EXECUTION_PREFIX}{objective_slug}{ARCHIVE_EXECUTION_SUFFIX}"
+        )
         self._atomic_write(file_path, tree_data)
 
     def load_archived_strategic(self, item_uuid: str) -> Optional[Dict[str, Any]]:
@@ -235,12 +264,12 @@ class StorageManager:
         Returns:
             Dictionary data of the archived item, or None if not found.
         """
-        file_path = self._get_archive_file_path(f"strategic-{item_uuid}.json")
+        file_path = self._get_archive_file_path(f"{ARCHIVE_STRATEGIC_PREFIX}{item_uuid}.json")
         if file_path.exists():
             try:
                 with open(file_path, "r") as f:
                     return json.load(f)
-            except (json.JSONDecodeError, Exception):
+            except (json.JSONDecodeError, ValidationError):
                 return None
         return None
 
@@ -254,12 +283,14 @@ class StorageManager:
         Returns:
             Dictionary data of the archived execution tree, or None if not found.
         """
-        file_path = self._get_archive_file_path(f"objective-{objective_slug}.exec.json")
+        file_path = self._get_archive_file_path(
+            f"{ARCHIVE_EXECUTION_PREFIX}{objective_slug}{ARCHIVE_EXECUTION_SUFFIX}"
+        )
         if file_path.exists():
             try:
                 with open(file_path, "r") as f:
                     return json.load(f)
-            except (json.JSONDecodeError, Exception):
+            except (json.JSONDecodeError, ValidationError):
                 return None
         return None
 
@@ -271,9 +302,10 @@ class StorageManager:
             List of UUIDs of archived strategic items.
         """
         archived = []
-        for file_path in self.archive_dir.glob("strategic-*.json"):
+        pattern = f"{ARCHIVE_STRATEGIC_PREFIX}*.json"
+        for file_path in self.archive_dir.glob(pattern):
             # Extract UUID from filename: strategic-{uuid}.json
-            uuid = file_path.stem.replace("strategic-", "")
+            uuid = file_path.stem.replace(ARCHIVE_STRATEGIC_PREFIX, "")
             archived.append(uuid)
         return archived
 
@@ -285,8 +317,13 @@ class StorageManager:
             List of objective slugs with archived execution trees.
         """
         archived = []
-        for file_path in self.archive_dir.glob("objective-*.exec.json"):
+        pattern = f"{ARCHIVE_EXECUTION_PREFIX}*{ARCHIVE_EXECUTION_SUFFIX}"
+        for file_path in self.archive_dir.glob(pattern):
             # Extract slug from filename: objective-{slug}.exec.json
-            slug = file_path.stem.replace("objective-", "").replace(".exec", "")
+            # stem gives us "objective-{slug}.exec", need to remove both prefix and suffix
+            name = file_path.name  # "objective-{slug}.exec.json"
+            slug = name.replace(ARCHIVE_EXECUTION_PREFIX, "").replace(
+                ARCHIVE_EXECUTION_SUFFIX, ""
+            )
             archived.append(slug)
         return archived

@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from prism.storage_manager import StorageManager
+from prism.storage_manager import StorageManager, StorageError
 from prism.newmodels import (
     StrategicFile,
     ExecutionFile,
@@ -356,7 +356,7 @@ class TestErrorHandling:
         file_path = temp_prism_dir / "strategic.json"
         file_path.write_text("{invalid json}")
 
-        with pytest.raises(Exception, match="Error loading strategic data"):
+        with pytest.raises(StorageError, match="Failed to load strategic data"):
             storage_manager.load_strategic()
 
     def test_load_execution_invalid_json(self, storage_manager, temp_prism_dir):
@@ -364,7 +364,7 @@ class TestErrorHandling:
         file_path = temp_prism_dir / "execution.json"
         file_path.write_text("{invalid json}")
 
-        with pytest.raises(Exception, match="Error loading execution data"):
+        with pytest.raises(StorageError, match="Failed to load execution data"):
             storage_manager.load_execution()
 
     def test_load_config_invalid_json(self, storage_manager, temp_prism_dir):
@@ -372,7 +372,7 @@ class TestErrorHandling:
         file_path = temp_prism_dir / "config.json"
         file_path.write_text("{invalid json}")
 
-        with pytest.raises(Exception, match="Error loading config"):
+        with pytest.raises(StorageError, match="Failed to load config"):
             storage_manager.load_config()
 
     def test_load_orphans_invalid_json(self, storage_manager, temp_prism_dir):
@@ -380,7 +380,7 @@ class TestErrorHandling:
         file_path = temp_prism_dir / "orphans.json"
         file_path.write_text("{invalid json}")
 
-        with pytest.raises(Exception, match="Error loading orphans data"):
+        with pytest.raises(StorageError, match="Failed to load orphans data"):
             storage_manager.load_orphans()
 
 
