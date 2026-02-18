@@ -7,10 +7,10 @@ Uses NewPrismCore and managers exclusively.
 import click
 
 from prism.commands.crud import crud
-# TODO: Add new task commands
+from prism.commands.task_new import task
+from prism.commands.config import config
+from prism.commands.orphan import orphan
 # TODO: Add new status command
-# TODO: Add new config command group
-# TODO: Add new orphan command group (stubs)
 
 
 @click.group()
@@ -20,10 +20,10 @@ def newcli():
 
 
 newcli.add_command(crud)
-# TODO: newcli.add_command(task)
+newcli.add_command(task)
+newcli.add_command(config)
+newcli.add_command(orphan)
 # TODO: newcli.add_command(status)
-# TODO: newcli.add_command(config)
-# TODO: newcli.add_command(orphan)
 
 
 if __name__ == '__main__':

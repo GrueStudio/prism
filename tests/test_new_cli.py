@@ -107,6 +107,12 @@ def mock_core():
     core.delete_item = Mock()
     core.is_exec_tree_complete = Mock(return_value=True)
     
+    # Setup mock task manager
+    core.task_manager = Mock()
+    core.task_manager.start_next_action = Mock(return_value=None)
+    core.task_manager.complete_current_action = Mock(return_value=None)
+    core.task_manager.complete_current_and_start_next = Mock(return_value=(None, None))
+    
     return core
 
 
@@ -249,3 +255,113 @@ class TestCrudAdd:
             
             assert result.exit_code == 1
             assert 'Cannot add milestone without a parent' in result.output
+
+
+class TestTaskCommands:
+    """Tests for task commands."""
+    
+    def test_task_start(self, runner, mock_core):
+        """Test task start command."""
+        mock_action = Mock()
+        mock_action.name = "Test Action"
+        mock_core.task_manager.start_next_action = Mock(return_value=mock_action)
+        
+        with patch('prism.commands.task_new.NewPrismCore', return_value=mock_core):
+            result = runner.invoke(newcli, ['task', 'start'])
+            
+            assert result.exit_code == 0
+            assert 'Test Action' in result.output
+    
+    def test_task_start_no_tasks(self, runner, mock_core):
+        """Test task start with no pending tasks."""
+        mock_core.task_manager.start_next_action = Mock(return_value=None)
+        
+        with patch('prism.commands.task_new.NewPrismCore', return_value=mock_core):
+            result = runner.invoke(newcli, ['task', 'start'])
+            
+            assert result.exit_code == 0
+            assert 'No pending tasks' in result.output
+    
+    def test_task_done(self, runner, mock_core):
+        """Test task done command."""
+        mock_action = Mock()
+        mock_action.name = "Test Action"
+        mock_core.task_manager.complete_current_action = Mock(return_value=mock_action)
+        
+        with patch('prism.commands.task_new.NewPrismCore', return_value=mock_core):
+            result = runner.invoke(newcli, ['task', 'done'])
+            
+            assert result.exit_code == 0
+            assert 'Test Action' in result.output
+    
+    def test_task_next(self, runner, mock_core):
+        """Test task next command."""
+        completed = Mock()
+        completed.name = "Completed Task"
+        next_action = Mock()
+        next_action.name = "Next Task"
+        mock_core.task_manager.complete_current_and_start_next = Mock(return_value=(completed, next_action))
+        
+        with patch('prism.commands.task_new.NewPrismCore', return_value=mock_core):
+            result = runner.invoke(newcli, ['task', 'next'])
+            
+            assert result.exit_code == 0
+            assert 'Completed Task' in result.output
+            assert 'Next Task' in result.output
+
+
+class TestConfigCommands:
+    """Tests for config command stubs."""
+    
+    def test_config_show(self, runner):
+        """Test config show command (stub)."""
+        result = runner.invoke(newcli, ['config', 'show'])
+        
+        assert result.exit_code == 0
+        assert 'TODO' in result.output
+    
+    def test_config_set(self, runner):
+        """Test config set command (stub)."""
+        result = runner.invoke(newcli, ['config', 'set', 'key', 'value'])
+        
+        assert result.exit_code == 0
+        assert 'TODO' in result.output
+    
+    def test_config_get(self, runner):
+        """Test config get command (stub)."""
+        result = runner.invoke(newcli, ['config', 'get', 'key'])
+        
+        assert result.exit_code == 0
+        assert 'TODO' in result.output
+
+
+class TestOrphanCommands:
+    """Tests for orphan command stubs."""
+    
+    def test_orphan_list(self, runner):
+        """Test orphan list command (stub)."""
+        result = runner.invoke(newcli, ['orphan', 'list'])
+        
+        assert result.exit_code == 0
+        assert 'TODO' in result.output
+    
+    def test_orphan_add(self, runner):
+        """Test orphan add command (stub)."""
+        result = runner.invoke(newcli, ['orphan', 'add', '-n', 'Test Idea'])
+        
+        assert result.exit_code == 0
+        assert 'TODO' in result.output
+    
+    def test_orphan_adopt(self, runner):
+        """Test orphan adopt command (stub)."""
+        result = runner.invoke(newcli, ['orphan', 'adopt', '1', '-t', 'phase'])
+        
+        assert result.exit_code == 0
+        assert 'TODO' in result.output
+    
+    def test_orphan_delete(self, runner):
+        """Test orphan delete command (stub)."""
+        result = runner.invoke(newcli, ['orphan', 'delete', '1', '--yes'])
+        
+        assert result.exit_code == 0
+        assert 'TODO' in result.output
