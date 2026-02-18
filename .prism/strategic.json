@@ -1,0 +1,35 @@
+{
+  "phase": {
+    "uuid": "dd10a0d7-43ee-48a9-850e-9c4f77ea7a94",
+    "name": "Alpha",
+    "description": "Working towards feature completeness (bug tracking, time tracking, and orphan ideas)",
+    "slug": "alpha",
+    "status": "pending",
+    "parent_uuid": null,
+    "created_at": "2026-02-12T12:27:50.650935",
+    "updated_at": "2026-02-12T12:27:50.650938"
+  },
+  "milestone": {
+    "uuid": "5d7bfe9a-ab25-4d79-bcfc-aa73b6c655da",
+    "name": "Adopt Orphan Ideas",
+    "description": "Create a system for managing orphan ideas that can be adopted into the project structure as phases, milestones, objectives, deliverables, or actions.",
+    "slug": "adopt-orphan-id",
+    "status": "pending",
+    "parent_uuid": "dd10a0d7-43ee-48a9-850e-9c4f77ea7a94",
+    "created_at": "2026-02-16T23:43:36.694109",
+    "updated_at": "2026-02-16T23:43:36.694113"
+  },
+  "objective": {
+    "uuid": "915e40f7-23ce-4469-b5c3-08534f3fc6d9",
+    "name": "Revamp Data Storage",
+    "description": "Replace single project.json with folder-based storage using .prism directory structure for better organization and scalability.",
+    "slug": "revamp-data-sto",
+    "status": "pending",
+    "parent_uuid": "5d7bfe9a-ab25-4d79-bcfc-aa73b6c655da",
+    "created_at": "2026-02-16T23:45:44.026487",
+    "updated_at": "2026-02-16T23:45:44.026490"
+  },
+  "phase_index": 1,
+  "milestone_index": 2,
+  "objective_index": 1
+}

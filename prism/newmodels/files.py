@@ -3,7 +3,7 @@ File models for the Prism CLI.
 
 Models representing the structure of JSON files in the .prism/ directory.
 """
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -24,9 +24,27 @@ from prism.constants import (
 class StrategicFile(BaseModel):
     """Model for strategic.json file.
 
-    Flat list of all strategic items with parent_uuid references.
+    Contains the current active path: one phase, one milestone, one objective.
+    The index fields track the position for path resolution (e.g., phase[1], milestone[1]).
+    Indices are 1-based to match CLI path notation.
     """
-    items: List[Dict[str, Any]] = Field(default_factory=list)
+    phase: Optional[Dict[str, Any]] = None
+    milestone: Optional[Dict[str, Any]] = None
+    objective: Optional[Dict[str, Any]] = None
+    # Index tracking for path resolution - these are serialized to JSON
+    phase_index: int = Field(default=1, description="Index of current phase (1-based)")
+    milestone_index: int = Field(default=1, description="Index of current milestone within phase")
+    objective_index: int = Field(default=1, description="Index of current objective within milestone")
+
+
+class ArchivedStrategicFile(BaseModel):
+    """Model for archive/strategic.json file.
+
+    Contains archived strategic items grouped by type.
+    """
+    phases: List[Dict[str, Any]] = Field(default_factory=list)
+    milestones: List[Dict[str, Any]] = Field(default_factory=list)
+    objectives: List[Dict[str, Any]] = Field(default_factory=list)
 
 
 class ExecutionFile(BaseModel):

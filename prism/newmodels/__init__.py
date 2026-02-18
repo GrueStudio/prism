@@ -20,6 +20,7 @@ from .execution import (
 from .orphan import Orphan
 from .files import (
     StrategicFile,
+    ArchivedStrategicFile,
     ExecutionFile,
     OrphansFile,
     ConfigFile,
@@ -47,6 +48,7 @@ __all__ = [
     "Orphan",
     # File models
     "StrategicFile",
+    "ArchivedStrategicFile",
     "ExecutionFile",
     "OrphansFile",
     "ConfigFile",
