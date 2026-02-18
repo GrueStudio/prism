@@ -451,7 +451,7 @@ def migrate_project(project_file: Path, prism_dir: Path) -> None:
     config = {
         'schema_version': '0.2.0',
         'slug_max_length': 15,  # DEFAULT_SLUG_MAX_LENGTH
-        'slug_regex_pattern': r'[a-z0-9\-]',  # DEFAULT_SLUG_REGEX_PATTERN
+        'slug_regex_pattern': r'^[a-z0-9-]+$',  # DEFAULT_SLUG_REGEX_PATTERN
         'slug_word_limit': 3,  # DEFAULT_SLUG_WORD_LIMIT
         'slug_filler_words': [
             'a', 'an', 'and', 'as', 'at', 'by', 'for', 'from', 'if', 'in',

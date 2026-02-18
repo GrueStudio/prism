@@ -15,7 +15,7 @@ import json
 
 # Slug-related defaults
 DEFAULT_SLUG_MAX_LENGTH = 15
-DEFAULT_SLUG_REGEX_PATTERN = r"[a-z0-9\-]"  # Character class, combined with length in models.py
+DEFAULT_SLUG_REGEX_PATTERN = r"^[a-z0-9-]+$"  # Full pattern for slug validation
 DEFAULT_SLUG_WORD_LIMIT = 3
 DEFAULT_SLUG_FILLER_WORDS = [
     "a", "an", "and", "as", "at", "by", "for", "from", "if", "in",
