@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 import uuid
 from prism.constants import SLUG_MAX_LENGTH, SLUG_REGEX_PATTERN, SLUG_ERROR_MESSAGE, DEFAULT_STATUS
@@ -27,7 +27,7 @@ class BaseItem(BaseModel):
         return "" # Should not happen if name is always present
 
 class Action(BaseItem):
-    time_spent: Optional[int] = None  # in minutes
+    time_spent: Optional[timedelta] = None
     due_date: Optional[datetime] = None
 
 class Deliverable(BaseItem):

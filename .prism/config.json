@@ -1,0 +1,42 @@
+{
+  "schema_version": "0.2.0",
+  "slug_max_length": 15,
+  "slug_regex_pattern": "[a-z0-9\\-]",
+  "slug_word_limit": 3,
+  "slug_filler_words": [
+    "a",
+    "an",
+    "and",
+    "as",
+    "at",
+    "by",
+    "for",
+    "from",
+    "if",
+    "in",
+    "into",
+    "of",
+    "on",
+    "or",
+    "the",
+    "to",
+    "with"
+  ],
+  "date_formats": [
+    "%Y-%m-%d",
+    "%Y/%m/%d",
+    "%d-%m-%Y",
+    "%d/%m/%Y",
+    "%m-%d-%Y",
+    "%m/%d/%Y",
+    "%Y%m%d",
+    "%d %B %Y",
+    "%d %b %Y",
+    "%B %d, %Y",
+    "%b %d, %Y"
+  ],
+  "date_max_years_future": 10,
+  "date_max_years_past": 1,
+  "status_header_width": 25,
+  "percentage_round_precision": 1
+}

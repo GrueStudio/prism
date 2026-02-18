@@ -5,7 +5,7 @@ Common base for all strategic and execution items.
 """
 import re
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
 from typing import Optional
 
@@ -33,6 +33,7 @@ class BaseItem(BaseModel):
     - status: Current status (stored as string, property returns ItemStatus enum)
     - parent_uuid: Reference to parent item
     - timestamps: created_at, updated_at
+    - time_spent: Total time spent on this item (cascades from children)
     """
     uuid: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
@@ -42,6 +43,7 @@ class BaseItem(BaseModel):
     parent_uuid: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
+    time_spent: Optional[timedelta] = None
 
     def get_status(self) -> ItemStatus:
         """Get status as ItemStatus enum."""

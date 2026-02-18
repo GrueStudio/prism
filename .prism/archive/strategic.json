@@ -1,0 +1,37 @@
+{
+  "phases": [],
+  "milestones": [
+    {
+      "uuid": "275138b6-5b43-4e9f-9b52-12582d3f5f45",
+      "name": "CLI Operationalization",
+      "description": "Ensure the Prism CLI is fully operational and stable in its current state.",
+      "slug": "cli-operational",
+      "status": "pending",
+      "parent_uuid": "1b704514-92ca-4131-becf-90cb2fd148a4",
+      "created_at": "2026-02-12T12:35:36.694541",
+      "updated_at": "2026-02-12T12:35:36.694545"
+    }
+  ],
+  "objectives": [
+    {
+      "uuid": "5441003e-3530-4032-b534-4c97c93edc3f",
+      "name": "Dogfooding the Project",
+      "description": "Use the Prism CLI to manage its own development, migrating from DEVPLAN.md.",
+      "slug": "dogfooding-the-",
+      "status": "completed",
+      "parent_uuid": "275138b6-5b43-4e9f-9b52-12582d3f5f45",
+      "created_at": "2026-02-12T12:36:20.271536",
+      "updated_at": "2026-02-12T12:36:20.271539"
+    },
+    {
+      "uuid": "19511760-583b-429b-ad2c-ca50e7ea0d26",
+      "name": "Refactor Persistence Layer and Enhance Status Command",
+      "description": "Abstract the persistence layer for better modularity and enhance the status command to provide more detailed project insights.",
+      "slug": "refactor-persis",
+      "status": "pending",
+      "parent_uuid": "275138b6-5b43-4e9f-9b52-12582d3f5f45",
+      "created_at": "2026-02-15T02:35:31.108920",
+      "updated_at": "2026-02-15T02:35:31.108923"
+    }
+  ]
+}

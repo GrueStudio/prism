@@ -37,7 +37,6 @@ class Action(BaseItem):
 
     Actions cannot have children.
     """
-    time_spent: Optional[float] = None  # Hours spent
     due_date: Optional[datetime] = None
 
     def add_child(self, child_uuid: str, child_type: str) -> None:
