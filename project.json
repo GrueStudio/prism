@@ -708,17 +708,17 @@
                   "name": "Refactor Core Class into Managers",
                   "description": "Split monolithic Core class into focused manager classes.",
                   "slug": "refactor-core-c",
-                  "status": "pending",
+                  "status": "completed",
                   "created_at": "2026-02-17T01:30:00.534195",
-                  "updated_at": "2026-02-17T01:30:00.534196",
+                  "updated_at": "2026-02-17T16:23:17.389872",
                   "actions": [
                     {
                       "name": "Create ItemManager for CRUD operations",
                       "description": "Handle add/update/delete for all item types.",
                       "slug": "create-itemmana",
-                      "status": "in-progress",
+                      "status": "completed",
                       "created_at": "2026-02-17T01:30:00.534205",
-                      "updated_at": "2026-02-17T01:30:00.534205",
+                      "updated_at": "2026-02-17T15:56:31.041488",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -726,9 +726,9 @@
                       "name": "Create TaskManager for task operations",
                       "description": "Handle start/done/next task commands with cascade.",
                       "slug": "create-taskmana",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-17T01:30:00.534215",
-                      "updated_at": "2026-02-17T01:30:00.534215",
+                      "updated_at": "2026-02-17T15:58:50.122673",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -736,9 +736,9 @@
                       "name": "Create CompletionTracker for cascade and percentages",
                       "description": "Handle automatic parent completion and progress calculation.",
                       "slug": "create-completi",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-17T01:30:00.534225",
-                      "updated_at": "2026-02-17T01:30:00.534226",
+                      "updated_at": "2026-02-17T16:00:42.247536",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -746,9 +746,9 @@
                       "name": "Create NavigationManager for path resolution",
                       "description": "Handle path-to-UUID resolution and tree traversal.",
                       "slug": "create-navigati",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-17T01:30:00.534238",
-                      "updated_at": "2026-02-17T01:30:00.534239",
+                      "updated_at": "2026-02-17T16:13:07.496523",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -756,69 +756,9 @@
                       "name": "Update Core to orchestrate managers",
                       "description": "Core becomes thin wrapper coordinating all managers.",
                       "slug": "update-core-to-",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-17T01:30:00.534266",
-                      "updated_at": "2026-02-17T01:30:00.534267",
-                      "time_spent": null,
-                      "due_date": null
-                    }
-                  ]
-                },
-                {
-                  "name": "Implement UUID and Slug Dual System",
-                  "description": "Support both UUID (internal) and slug (user-facing) references.",
-                  "slug": "implement-uuid-",
-                  "status": "pending",
-                  "created_at": "2026-02-17T01:30:00.534278",
-                  "updated_at": "2026-02-17T01:30:00.534279",
-                  "actions": [
-                    {
-                      "name": "Add UUID field to all item models",
-                      "description": "Generate UUID on item creation.",
-                      "slug": "add-uuid-field-",
-                      "status": "pending",
-                      "created_at": "2026-02-17T01:30:00.534290",
-                      "updated_at": "2026-02-17T01:30:00.534291",
-                      "time_spent": null,
-                      "due_date": null
-                    },
-                    {
-                      "name": "Update slug generation to use config settings",
-                      "description": "Use configurable slug length and pattern.",
-                      "slug": "update-slug-gen",
-                      "status": "pending",
-                      "created_at": "2026-02-17T01:30:00.534301",
-                      "updated_at": "2026-02-17T01:30:00.534302",
-                      "time_spent": null,
-                      "due_date": null
-                    },
-                    {
-                      "name": "Create UUID-to-slug lookup methods",
-                      "description": "Resolve UUID to slug for user-facing output.",
-                      "slug": "create-uuid-to-",
-                      "status": "pending",
-                      "created_at": "2026-02-17T01:30:00.534316",
-                      "updated_at": "2026-02-17T01:30:00.534317",
-                      "time_spent": null,
-                      "due_date": null
-                    },
-                    {
-                      "name": "Create slug-to-UUID lookup methods",
-                      "description": "Resolve slug to UUID for internal operations.",
-                      "slug": "create-slug-to-",
-                      "status": "pending",
-                      "created_at": "2026-02-17T01:30:00.534331",
-                      "updated_at": "2026-02-17T01:30:00.534332",
-                      "time_spent": null,
-                      "due_date": null
-                    },
-                    {
-                      "name": "Update CLI commands to accept both UUID and slug",
-                      "description": "User can use either format in commands.",
-                      "slug": "update-cli-comm",
-                      "status": "pending",
-                      "created_at": "2026-02-17T01:30:00.534344",
-                      "updated_at": "2026-02-17T01:30:00.534345",
+                      "updated_at": "2026-02-17T16:23:17.389625",
                       "time_spent": null,
                       "due_date": null
                     }
@@ -836,9 +776,9 @@
                       "name": "Detect when strategic item is completed",
                       "description": "Hook into status change to completed.",
                       "slug": "detect-when-str",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-17T01:30:00.534368",
-                      "updated_at": "2026-02-17T01:30:00.534368",
+                      "updated_at": "2026-02-17T17:25:43.373390",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -846,9 +786,9 @@
                       "name": "Move strategic item to archive/strategic.json",
                       "description": "Archive the completed strategic item.",
                       "slug": "move-strategic-",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-17T01:30:00.534379",
-                      "updated_at": "2026-02-17T01:30:00.534380",
+                      "updated_at": "2026-02-17T21:37:58.283152",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -856,19 +796,9 @@
                       "name": "Move execution tree to archive/objective-slug.exec.json",
                       "description": "Archive associated execution items.",
                       "slug": "move-execution-",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-17T01:30:00.534391",
-                      "updated_at": "2026-02-17T01:30:00.534392",
-                      "time_spent": null,
-                      "due_date": null
-                    },
-                    {
-                      "name": "Remove archived items from active files",
-                      "description": "Clean up active strategic.json and execution.json.",
-                      "slug": "remove-archived",
-                      "status": "pending",
-                      "created_at": "2026-02-17T01:30:00.534402",
-                      "updated_at": "2026-02-17T01:30:00.534403",
+                      "updated_at": "2026-02-18T00:59:04.579104",
                       "time_spent": null,
                       "due_date": null
                     }
@@ -929,6 +859,66 @@
                       "status": "pending",
                       "created_at": "2026-02-17T01:30:00.534521",
                       "updated_at": "2026-02-17T01:30:00.534522",
+                      "time_spent": null,
+                      "due_date": null
+                    }
+                  ]
+                },
+                {
+                  "name": "Implement UUID and Slug Dual System",
+                  "description": "Support both UUID (internal) and slug (user-facing) references.",
+                  "slug": "implement-uuid-",
+                  "status": "pending",
+                  "created_at": "2026-02-17T01:30:00.534278",
+                  "updated_at": "2026-02-17T01:30:00.534279",
+                  "actions": [
+                    {
+                      "name": "Add UUID field to all item models",
+                      "description": "Generate UUID on item creation.",
+                      "slug": "add-uuid-field-",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534290",
+                      "updated_at": "2026-02-17T16:30:00",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Update slug generation to use config settings",
+                      "description": "Use configurable slug length and pattern.",
+                      "slug": "update-slug-gen",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534301",
+                      "updated_at": "2026-02-17T01:30:00.534302",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Create UUID-to-slug lookup methods",
+                      "description": "Resolve UUID to slug for user-facing output.",
+                      "slug": "create-uuid-to-",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534316",
+                      "updated_at": "2026-02-17T01:30:00.534317",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Create slug-to-UUID lookup methods",
+                      "description": "Resolve slug to UUID for internal operations.",
+                      "slug": "create-slug-to-",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534331",
+                      "updated_at": "2026-02-17T01:30:00.534332",
+                      "time_spent": null,
+                      "due_date": null
+                    },
+                    {
+                      "name": "Update CLI commands to accept both UUID and slug",
+                      "description": "User can use either format in commands.",
+                      "slug": "update-cli-comm",
+                      "status": "pending",
+                      "created_at": "2026-02-17T01:30:00.534344",
+                      "updated_at": "2026-02-17T01:30:00.534345",
                       "time_spent": null,
                       "due_date": null
                     }
@@ -1071,5 +1061,5 @@
       ]
     }
   ],
-  "cursor": "alpha/adopt-orphan-id/revamp-data-sto/refactor-core-c/create-itemmana"
+  "cursor": "alpha/adopt-orphan-id/revamp-data-sto/implement-auto-/remove-archived"
 }

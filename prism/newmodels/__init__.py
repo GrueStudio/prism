@@ -4,15 +4,16 @@ Data models for the Prism CLI.
 New model structure for .prism/ folder-based storage with UUID references.
 """
 
-from .strategic import (
+from .base import (
     ItemStatus,
-    BaseStrategicItem,
+    BaseItem,
+)
+from .strategic import (
     Phase,
     Milestone,
     Objective,
 )
 from .execution import (
-    BaseExecutionItem,
     Deliverable,
     Action,
 )
@@ -24,16 +25,22 @@ from .files import (
     ConfigFile,
 )
 
+# Rebuild models to resolve forward references between strategic and execution
+Phase.model_rebuild()
+Milestone.model_rebuild()
+Objective.model_rebuild()
+Deliverable.model_rebuild()
+Action.model_rebuild()
+
 __all__ = [
-    # Status
+    # Base
     "ItemStatus",
+    "BaseItem",
     # Strategic items
-    "BaseStrategicItem",
     "Phase",
     "Milestone",
     "Objective",
     # Execution items
-    "BaseExecutionItem",
     "Deliverable",
     "Action",
     # Orphan
