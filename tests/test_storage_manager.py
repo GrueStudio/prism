@@ -115,30 +115,49 @@ class TestStrategicStorage:
         result = storage_manager.load_strategic()
 
         assert isinstance(result, StrategicFile)
-        assert len(result.items) == 0
+        assert result.phase is None
+        assert result.milestone is None
+        assert result.objective is None
 
     def test_save_and_load_strategic(self, storage_manager):
         """Test saving and loading strategic data."""
-        # Create strategic data with a phase
-        strategic_data = StrategicFile(items=[
-            {
+        # Create strategic data with phase, milestone, objective
+        strategic_data = StrategicFile(
+            phase={
                 "uuid": "test-uuid-1",
                 "name": "Test Phase",
                 "description": "A test phase",
                 "slug": "test-phase",
                 "status": "pending",
                 "parent_uuid": None,
-                "children": []
-            }
-        ])
+            },
+            milestone={
+                "uuid": "test-uuid-2",
+                "name": "Test Milestone",
+                "description": "A test milestone",
+                "slug": "test-milestone",
+                "status": "pending",
+                "parent_uuid": "test-uuid-1",
+            },
+            objective={
+                "uuid": "test-uuid-3",
+                "name": "Test Objective",
+                "description": "A test objective",
+                "slug": "test-objective",
+                "status": "pending",
+                "parent_uuid": "test-uuid-2",
+            },
+        )
 
         storage_manager.save_strategic(strategic_data)
 
         # Load and verify
         loaded = storage_manager.load_strategic()
-        assert len(loaded.items) == 1
-        assert loaded.items[0]["name"] == "Test Phase"
-        assert loaded.items[0]["uuid"] == "test-uuid-1"
+        assert loaded.phase is not None
+        assert loaded.phase["name"] == "Test Phase"
+        assert loaded.phase["uuid"] == "test-uuid-1"
+        assert loaded.milestone["name"] == "Test Milestone"
+        assert loaded.objective["name"] == "Test Objective"
 
     def test_save_strategic_creates_file(self, storage_manager, temp_prism_dir):
         """Test that save_strategic creates strategic.json."""
@@ -283,16 +302,29 @@ class TestIntegration:
     def test_save_all_load_all(self, storage_manager):
         """Test saving and loading all file types together."""
         # Create all data types
-        strategic = StrategicFile(items=[
-            {
+        strategic = StrategicFile(
+            phase={
                 "uuid": "phase-uuid",
                 "name": "Alpha Phase",
                 "slug": "alpha",
                 "status": "pending",
                 "parent_uuid": None,
-                "children": []
-            }
-        ])
+            },
+            milestone={
+                "uuid": "milestone-uuid",
+                "name": "Test Milestone",
+                "slug": "test-milestone",
+                "status": "pending",
+                "parent_uuid": "phase-uuid",
+            },
+            objective={
+                "uuid": "objective-uuid",
+                "name": "Test Objective",
+                "slug": "test-objective",
+                "status": "pending",
+                "parent_uuid": "milestone-uuid",
+            },
+        )
         execution = ExecutionFile(
             deliverables=[
                 {
@@ -300,11 +332,18 @@ class TestIntegration:
                     "name": "Test Deliverable",
                     "slug": "test-deliverable",
                     "status": "pending",
-                    "parent_uuid": "obj-uuid",
-                    "children": []
+                    "parent_uuid": "objective-uuid",
                 }
             ],
-            actions=[]
+            actions=[
+                {
+                    "uuid": "act-uuid",
+                    "name": "Test Action",
+                    "slug": "test-action",
+                    "status": "pending",
+                    "parent_uuid": "del-uuid",
+                }
+            ]
         )
         config = ConfigFile(slug_max_length=20)
         orphans = OrphansFile(
@@ -329,7 +368,8 @@ class TestIntegration:
         loaded_config = storage_manager.load_config()
         loaded_orphans = storage_manager.load_orphans()
 
-        assert len(loaded_strategic.items) == 1
+        assert loaded_strategic.phase is not None
+        assert loaded_strategic.phase["name"] == "Alpha Phase"
         assert len(loaded_execution.deliverables) == 1
         assert loaded_config.slug_max_length == 20
         assert len(loaded_orphans.orphans) == 1
