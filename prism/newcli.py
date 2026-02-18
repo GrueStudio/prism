@@ -8,9 +8,9 @@ import click
 
 from prism.commands.crud import crud
 from prism.commands.task_new import task
+from prism.commands.status_new import status
 from prism.commands.config import config
 from prism.commands.orphan import orphan
-# TODO: Add new status command
 
 
 @click.group()
@@ -21,9 +21,9 @@ def newcli():
 
 newcli.add_command(crud)
 newcli.add_command(task)
+newcli.add_command(status)
 newcli.add_command(config)
 newcli.add_command(orphan)
-# TODO: newcli.add_command(status)
 
 
 if __name__ == '__main__':

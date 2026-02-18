@@ -199,7 +199,7 @@ class ProjectManager:
                 self.project.phases.append(item)
 
         self.project.build_maps()
-        self.project.cursor = self.storage.load_config().schema_version  # placeholder
+        self.project.cursor = None  # TODO: Load cursor from dedicated cursor file or config
         return self.project
     
     def save(self, project: Project) -> None:

@@ -1,7 +1,7 @@
 {
   "schema_version": "0.2.0",
   "slug_max_length": 15,
-  "slug_regex_pattern": "[a-z0-9\\-]",
+  "slug_regex_pattern": "^[a-z0-9-]+$",
   "slug_word_limit": 3,
   "slug_filler_words": [
     "a",

@@ -876,9 +876,9 @@
                       "name": "Update strat commands to use new storage",
                       "description": "strat add/show/edit/delete with UUID/slug support.",
                       "slug": "update-strat-co",
-                      "status": "in-progress",
+                      "status": "completed",
                       "created_at": "2026-02-17T01:30:00.534564",
-                      "updated_at": "2026-02-17T01:30:00.534565",
+                      "updated_at": "2026-02-18T17:26:00.848281",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -886,9 +886,9 @@
                       "name": "Update exec commands to use new storage",
                       "description": "exec add/show/edit/delete with UUID/slug support.",
                       "slug": "update-exec-com",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-17T01:30:00.534596",
-                      "updated_at": "2026-02-17T01:30:00.534597",
+                      "updated_at": "2026-02-18T17:26:55.956638",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -896,9 +896,9 @@
                       "name": "Update task commands to use new storage",
                       "description": "task start/done/next with new managers.",
                       "slug": "update-task-com",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-17T01:30:00.534614",
-                      "updated_at": "2026-02-17T01:30:00.534615",
+                      "updated_at": "2026-02-18T17:27:06.700882",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -906,7 +906,7 @@
                       "name": "Update status command to use new storage",
                       "description": "status with lazy loading for performance.",
                       "slug": "update-status-c",
-                      "status": "pending",
+                      "status": "in-progress",
                       "created_at": "2026-02-17T01:30:00.534626",
                       "updated_at": "2026-02-17T01:30:00.534627",
                       "time_spent": null,
@@ -1001,5 +1001,5 @@
       ]
     }
   ],
-  "cursor": "alpha/adopt-orphan-id/revamp-data-sto/update-cli-comm/update-strat-co"
+  "cursor": "alpha/adopt-orphan-id/revamp-data-sto/update-cli-comm/update-status-c"
 }
