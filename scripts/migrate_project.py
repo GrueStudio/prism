@@ -446,23 +446,34 @@ def migrate_project(project_file: Path, prism_dir: Path) -> None:
                 'actions': actions
             }, f, indent=2)
     
-    # Save config.json
+    # Save config.json with values from current constants
     config_file = prism_dir / 'config.json'
     config = {
         'schema_version': '0.2.0',
-        'slug_max_length': 64,
-        'slug_regex_pattern': '^[a-z0-9-]+$',
-        'slug_word_limit': 5,
+        'slug_max_length': 15,  # DEFAULT_SLUG_MAX_LENGTH
+        'slug_regex_pattern': r'[a-z0-9\-]',  # DEFAULT_SLUG_REGEX_PATTERN
+        'slug_word_limit': 3,  # DEFAULT_SLUG_WORD_LIMIT
         'slug_filler_words': [
-            'a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'for',
-            'from', 'has', 'he', 'in', 'is', 'it', 'its', 'of', 'on',
-            'that', 'the', 'to', 'was', 'were', 'will', 'with'
-        ],
-        'date_formats': ['%Y-%m-%d', '%Y/%m/%d', '%d-%m-%Y', '%d/%m/%Y'],
-        'date_max_years_future': 10,
-        'date_max_years_past': 50,
-        'status_header_width': 25,
-        'percentage_round_precision': 1,
+            'a', 'an', 'and', 'as', 'at', 'by', 'for', 'from', 'if', 'in',
+            'into', 'of', 'on', 'or', 'the', 'to', 'with'
+        ],  # DEFAULT_SLUG_FILLER_WORDS
+        'date_formats': [
+            '%Y-%m-%d',      # YYYY-MM-DD (ISO 8601)
+            '%Y/%m/%d',      # YYYY/MM/DD
+            '%d-%m-%Y',      # DD-MM-YYYY
+            '%d/%m/%Y',      # DD/MM/YYYY
+            '%m-%d-%Y',      # MM-DD-YYYY
+            '%m/%d/%Y',      # MM/DD/YYYY
+            '%Y%m%d',        # YYYYMMDD
+            '%d %B %Y',      # DD Month YYYY
+            '%d %b %Y',      # DD Mon YYYY
+            '%B %d, %Y',     # Month DD, YYYY
+            '%b %d, %Y',     # Mon DD, YYYY
+        ],  # DEFAULT_DATE_FORMATS
+        'date_max_years_future': 10,  # DEFAULT_DATE_MAX_YEARS_FUTURE
+        'date_max_years_past': 1,  # DEFAULT_DATE_MAX_YEARS_PAST
+        'status_header_width': 25,  # DEFAULT_STATUS_HEADER_WIDTH
+        'percentage_round_precision': 1,  # DEFAULT_PERCENTAGE_ROUND_PRECISION
     }
     with open(config_file, 'w') as f:
         json.dump(config, f, indent=2)
