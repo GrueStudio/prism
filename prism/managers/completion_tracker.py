@@ -7,8 +7,8 @@ from typing import Dict, List, Optional
 
 import click
 
-from prism.models import Action, BaseItem, Deliverable, Objective
-from prism.navigator import Navigator
+from prism.newmodels import Action, BaseItem, Deliverable, Objective
+from prism.managers.navigation_manager import NavigationManager
 from prism.constants import COMPLETED_STATUS, PERCENTAGE_ROUND_PRECISION
 from prism.managers.events import ItemEvent, EventType, publish_event
 
@@ -26,7 +26,7 @@ class CompletionTracker:
 
     def __init__(
         self,
-        navigator: Navigator,
+        navigator: NavigationManager,
         round_precision: int = None,
         emit_events: bool = True,
     ) -> None:
@@ -34,7 +34,7 @@ class CompletionTracker:
         Initialize CompletionTracker.
 
         Args:
-            navigator: Navigator instance for path resolution.
+            navigator: NavigationManager instance for path resolution.
             round_precision: Decimal places for percentage rounding. Defaults to config value.
             emit_events: Whether to emit completion events.
         """

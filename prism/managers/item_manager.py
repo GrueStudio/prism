@@ -7,16 +7,16 @@ import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from prism.models import (
+from prism.newmodels import (
     Action,
     BaseItem,
     Deliverable,
     Milestone,
     Objective,
     Phase,
-    ProjectData,
 )
-from prism.navigator import Navigator
+from prism.managers.project_manager import Project
+from prism.managers.navigation_manager import NavigationManager
 from prism.constants import (
     SLUG_MAX_LENGTH,
     VALID_STATUSES,
@@ -48,15 +48,15 @@ class ItemManager:
     - Slug generation with filler word filtering
     """
 
-    def __init__(self, project_data: ProjectData, navigator: Navigator) -> None:
+    def __init__(self, project: Project, navigator: NavigationManager) -> None:
         """
         Initialize ItemManager.
 
         Args:
-            project_data: ProjectData instance containing all items.
-            navigator: Navigator instance for path resolution.
+            project: Project instance containing all items.
+            navigator: NavigationManager instance for path resolution.
         """
-        self.project_data = project_data
+        self.project = project
         self.navigator = navigator
 
     def _generate_unique_slug(
@@ -149,7 +149,7 @@ class ItemManager:
                 )
         else:
             if item_type == "phase":
-                return self.project_data.phases
+                return self.project.phases
             else:
                 raise ValueError(
                     f"Cannot add {item_type} without a parent path. "
@@ -269,7 +269,10 @@ class ItemManager:
                 parent_item.actions.append(new_item)
         else:
             if item_type == "phase":
-                self.project_data.phases.append(new_item)
+                self.project.phases.append(new_item)
+
+        # Rebuild lookup maps
+        self.project.build_maps()
 
         return new_item
 
@@ -284,7 +287,7 @@ class ItemManager:
         """
         segments = path.split("/")
         if len(segments) == 1:  # Top-level phase
-            return self.project_data.phases
+            return self.project.phases
 
         parent_path = "/".join(segments[:-1])
         parent_item = self.navigator.get_item_by_path(parent_path)
@@ -439,11 +442,11 @@ class ItemManager:
                     f"Cannot delete child from parent of type {type(parent_item).__name__}"
                 )
         else:  # Top-level phase deletion
-            original_len = len(self.project_data.phases)
-            self.project_data.phases[:] = [
+            original_len = len(self.project.phases)
+            self.project.phases[:] = [
                 phase
-                for phase in self.project_data.phases
+                for phase in self.project.phases
                 if phase.slug != item_slug_to_delete
             ]
-            if len(self.project_data.phases) == original_len:
+            if len(self.project.phases) == original_len:
                 raise NotFoundError(f"Phase with slug '{item_slug_to_delete}' not found.")

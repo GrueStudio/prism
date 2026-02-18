@@ -6,15 +6,15 @@ Will replace Navigator class once migration is complete.
 """
 from typing import Dict, List, Optional
 
-from prism.models import (
+from prism.newmodels import (
     Action,
     BaseItem,
     Deliverable,
     Milestone,
     Objective,
     Phase,
-    ProjectData,
 )
+from prism.managers.project_manager import Project
 from prism.exceptions import NavigationError
 
 
@@ -29,14 +29,14 @@ class NavigationManager:
     - Tree traversal
     """
 
-    def __init__(self, project_data: ProjectData) -> None:
+    def __init__(self, project: Project) -> None:
         """
         Initialize NavigationManager.
 
         Args:
-            project_data: ProjectData instance containing all items.
+            project: Project instance containing all items.
         """
-        self.project_data = project_data
+        self.project = project
 
     def _resolve_path_segment(
         self, items: List[BaseItem], segment: str
@@ -82,7 +82,7 @@ class NavigationManager:
 
         try:
             segments = path.split("/")
-            current_items: List[BaseItem] = list(self.project_data.phases)
+            current_items: List[BaseItem] = list(self.project.phases)
 
             target_item: Optional[BaseItem] = None
 
@@ -144,7 +144,7 @@ class NavigationManager:
                             return found_path
                 return None
 
-            return _traverse(self.project_data.phases, "")
+            return _traverse(self.project.phases, "")
         except Exception as e:
             raise NavigationError(f"Failed to find path for item: {e}")
 
@@ -155,7 +155,7 @@ class NavigationManager:
             Current objective or None if not found.
         """
         current_objective = None
-        for phase in self.project_data.phases:
+        for phase in self.project.phases:
             for milestone in phase.milestones:
                 for objective in milestone.objectives:
                     if objective.status not in ["completed", "archived"]:
@@ -176,7 +176,7 @@ class NavigationManager:
         if not current_objective:
             return None
 
-        for phase in self.project_data.phases:
+        for phase in self.project.phases:
             for milestone in phase.milestones:
                 if current_objective in milestone.objectives:
                     return milestone
@@ -192,7 +192,7 @@ class NavigationManager:
         if not current_objective:
             return None
 
-        for phase in self.project_data.phases:
+        for phase in self.project.phases:
             for milestone in phase.milestones:
                 if current_objective in milestone.objectives:
                     return phase

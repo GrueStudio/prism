@@ -8,9 +8,11 @@ from typing import Callable, Optional, Tuple
 
 import click
 
-from prism.models import Action, BaseItem, Deliverable, Objective, ProjectData
-from prism.navigator import Navigator
+from prism.newmodels import Action, BaseItem, Deliverable, Objective
+from prism.managers.project_manager import Project
+from prism.managers.navigation_manager import NavigationManager
 from prism.constants import COMPLETED_STATUS
+from prism.managers.completion_tracker import CompletionTracker
 
 
 class TaskManager:
@@ -22,26 +24,29 @@ class TaskManager:
     - Finding next pending action
     - Starting actions (mark as in-progress)
     - Completing actions
-    - Cascading completion up the tree
+    - Cascading completion up the tree (via CompletionTracker)
     """
 
     def __init__(
         self,
-        project_data: ProjectData,
-        navigator: Navigator,
+        project: Project,
+        navigator: NavigationManager,
         save_callback: Callable[[], None],
+        completion_tracker: Optional[CompletionTracker] = None,
     ) -> None:
         """
         Initialize TaskManager.
 
         Args:
-            project_data: ProjectData instance containing all items.
-            navigator: Navigator instance for path resolution.
+            project: Project instance containing all items.
+            navigator: NavigationManager instance for path resolution.
             save_callback: Callback function to save project data.
+            completion_tracker: Optional CompletionTracker for cascade events.
         """
-        self.project_data = project_data
+        self.project = project
         self.navigator = navigator
         self._save_callback = save_callback
+        self._completion_tracker = completion_tracker
 
     def get_current_action(self) -> Optional[Action]:
         """Get the action currently referenced by the cursor.
@@ -49,9 +54,9 @@ class TaskManager:
         Returns:
             Current action or None if no cursor.
         """
-        if not self.project_data.cursor:
+        if not self.project.cursor:
             return None
-        item = self.navigator.get_item_by_path(self.project_data.cursor)
+        item = self.navigator.get_item_by_path(self.project.cursor)
         if isinstance(item, Action):
             return item
         return None
@@ -113,7 +118,7 @@ class TaskManager:
         """
         action.status = "in-progress"
         action_path = self.navigator.get_item_path(action)
-        self.project_data.cursor = action_path
+        self.project.cursor = action_path
         self._save_callback()
 
     def start_next_action(self) -> Optional[Action]:
@@ -137,7 +142,7 @@ class TaskManager:
         if next_pending_action:
             self._start_action(next_pending_action)
         else:
-            self.project_data.cursor = None
+            self.project.cursor = None
             self._save_callback()
 
         return next_pending_action
@@ -155,21 +160,20 @@ class TaskManager:
         current_action.status = "completed"
         current_action.updated_at = datetime.now()
 
-        # Cascade completion up the tree
-        self._cascade_completion(current_action)
+        # Cascade completion up the tree via CompletionTracker (emits events)
+        if self._completion_tracker:
+            self._completion_tracker.cascade_completion(current_action)
+        else:
+            # Fallback to local cascade if no tracker (no events emitted)
+            self._cascade_completion_local(current_action)
 
         self._save_callback()
         return current_action
 
-    def _cascade_completion(self, item: BaseItem) -> None:
-        """Cascade completion status up the tree when all children are complete.
+    def _cascade_completion_local(self, item: BaseItem) -> None:
+        """Local cascade completion (without events).
 
-        When all actions in a deliverable are complete, mark deliverable complete.
-        When all deliverables in an objective are complete, mark objective complete.
-
-        Does NOT cascade to milestones or phases to allow adding new children.
-
-        Prints a notification when a parent item is marked complete.
+        Fallback when CompletionTracker is not available.
 
         Args:
             item: The completed item.
@@ -204,8 +208,7 @@ class TaskManager:
                     d.status == "completed" for d in parent.deliverables
                 )
 
-        # If all children are complete, mark parent as complete and continue cascading
-        # Only cascade up to objective level (not milestones or phases)
+        # If all children are complete, mark parent as complete
         if all_children_complete and parent.status != "completed":
             parent.status = "completed"
             parent.updated_at = datetime.now()
@@ -213,9 +216,9 @@ class TaskManager:
                 f"  ✓ {type(parent).__name__} '{parent.name}' marked complete"
             )
 
-            # Continue cascading only if parent is a deliverable (cascade to objective)
+            # Continue cascading only if parent is a deliverable
             if isinstance(parent, Deliverable):
-                self._cascade_completion(parent)
+                self._cascade_completion_local(parent)
 
     def complete_current_and_start_next(
         self,

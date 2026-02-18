@@ -7,7 +7,7 @@ from typing import List, Optional
 
 from prism.managers.events import Event, EventListener, EventType, ItemEvent
 from prism.managers.storage_manager import StorageManager
-from prism.navigator import Navigator
+from prism.managers.project_manager import Project
 
 
 class AutoArchiveListener(EventListener):
@@ -23,7 +23,7 @@ class AutoArchiveListener(EventListener):
     def __init__(
         self, 
         storage: StorageManager, 
-        navigator: Navigator,
+        project: Project,
         auto_archive_enabled: bool = True,
     ) -> None:
         """
@@ -31,11 +31,11 @@ class AutoArchiveListener(EventListener):
         
         Args:
             storage: StorageManager for archive operations.
-            navigator: Navigator for path resolution.
+            project: Project for item lookup.
             auto_archive_enabled: Whether auto-archive is enabled.
         """
         self.storage = storage
-        self.navigator = navigator
+        self.project = project
         self.auto_archive_enabled = auto_archive_enabled
     
     @property
@@ -69,19 +69,19 @@ class AutoArchiveListener(EventListener):
     
     def _archive_objective(self, event: ItemEvent) -> None:
         """Archive a completed objective with its execution tree.
-        
+
         Args:
             event: The item event for the completed objective.
         """
-        # Get the objective item
-        objective = self.navigator.get_item_by_path(event.item_slug)
+        # Get the objective item by UUID
+        objective = self.project.get_by_uuid(event.item_uuid)
         if not objective:
-            raise ValueError(f"Objective not found: {event.item_slug}")
+            raise ValueError(f"Objective not found: {event.item_uuid}")
         
         # Archive strategic item
-        strategic_data = objective.model_dump()
+        strategic_data = objective.model_dump(mode='json')
         self.storage.archive_strategic(objective.uuid, strategic_data)
-        
+
         # Archive execution tree (deliverables and actions)
         execution_data = {
             "objective_uuid": objective.uuid,
@@ -89,13 +89,13 @@ class AutoArchiveListener(EventListener):
             "deliverables": [],
             "actions": []
         }
-        
+
         for deliverable in objective.deliverables:
-            del_data = deliverable.model_dump()
+            del_data = deliverable.model_dump(mode='json')
             execution_data["deliverables"].append(del_data)
-            
+
             for action in deliverable.actions:
-                act_data = action.model_dump()
+                act_data = action.model_dump(mode='json')
                 execution_data["actions"].append(act_data)
         
         self.storage.archive_execution_tree(objective.slug, execution_data)
