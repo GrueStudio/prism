@@ -508,6 +508,41 @@ class TestArchiveStorage:
         assert "obj-1" in archived
         assert "obj-2" in archived
 
+    def test_archive_multiple_strategic_items(self, storage_manager, temp_prism_dir):
+        """Test archiving multiple strategic items to single file."""
+        # Archive multiple items
+        storage_manager.archive_strategic({"uuid": "uuid-1", "name": "Item 1", "type": "objective"})
+        storage_manager.archive_strategic({"uuid": "uuid-2", "name": "Item 2", "type": "objective"})
+        storage_manager.archive_strategic({"uuid": "uuid-3", "name": "Item 3", "type": "objective"})
+
+        # Verify all items are in the file
+        archive_path = temp_prism_dir / "archive" / "strategic.json"
+        with open(archive_path, 'r') as f:
+            content = json.load(f)
+        
+        assert "items" in content
+        assert len(content["items"]) == 3
+        assert content["items"][0]["name"] == "Item 1"
+        assert content["items"][1]["name"] == "Item 2"
+        assert content["items"][2]["name"] == "Item 3"
+
+    def test_load_archived_strategic_by_uuid(self, storage_manager, temp_prism_dir):
+        """Test loading specific archived item by UUID from single file."""
+        # Archive multiple items
+        storage_manager.archive_strategic({"uuid": "uuid-1", "name": "Item 1", "type": "objective"})
+        storage_manager.archive_strategic({"uuid": "uuid-2", "name": "Item 2", "type": "objective"})
+        storage_manager.archive_strategic({"uuid": "uuid-3", "name": "Item 3", "type": "objective"})
+
+        # Load specific item by UUID
+        loaded = storage_manager.load_archived_strategic("uuid-2")
+        assert loaded is not None
+        assert loaded["uuid"] == "uuid-2"
+        assert loaded["name"] == "Item 2"
+
+        # Load non-existent item
+        not_found = storage_manager.load_archived_strategic("non-existent")
+        assert not_found is None
+
     def test_archive_dir_created(self, temp_prism_dir):
         """Test that archive directory is created on initialization."""
         manager = StorageManager(temp_prism_dir)

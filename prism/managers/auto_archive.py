@@ -13,11 +13,11 @@ from prism.managers.project_manager import Project
 class AutoArchiveListener(EventListener):
     """
     Automatically archives completed strategic items.
-    
+
     When a strategic item (phase, milestone, objective) is completed:
-    1. Archive the strategic item to archive/strategic-{uuid}.json
-    2. If objective, archive execution tree to archive/objective-{slug}.exec.json
-    3. Remove from active strategic.json and execution.json
+    1. Archive the strategic item to archive/strategic.json (flat list)
+    2. If objective, archive execution tree to archive/objective-{uuid}.exec.json
+    3. Remove from active strategic.json and execution.json (after migration)
     """
     
     def __init__(
@@ -105,5 +105,5 @@ class AutoArchiveListener(EventListener):
         
         import click
         click.echo(f"  ✓ Archived objective '{event.item_name}' to archive/")
-        click.echo(f"    - Strategic: archive/strategic-{objective.uuid}.json")
-        click.echo(f"    - Execution: archive/objective-{objective.slug}.exec.json")
+        click.echo(f"    - Strategic: archive/strategic.json (appended)")
+        click.echo(f"    - Execution: archive/objective-{objective.uuid}.exec.json")

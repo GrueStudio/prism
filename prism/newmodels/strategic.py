@@ -71,7 +71,3 @@ class Objective(BaseItem):
         """
         if child_type != 'deliverable':
             raise ValueError(f"Objective can only contain deliverables, not {child_type}")
-
-
-# Import for type hints - avoid circular import
-from prism.newmodels.execution import Deliverable

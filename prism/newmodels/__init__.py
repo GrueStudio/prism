@@ -25,6 +25,13 @@ from .files import (
     ConfigFile,
 )
 
+# Rebuild models to resolve forward references between strategic and execution
+Phase.model_rebuild()
+Milestone.model_rebuild()
+Objective.model_rebuild()
+Deliverable.model_rebuild()
+Action.model_rebuild()
+
 __all__ = [
     # Base
     "ItemStatus",

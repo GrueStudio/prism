@@ -34,7 +34,7 @@ class Deliverable(BaseItem):
 
 class Action(BaseItem):
     """Action model - individual tasks within a deliverable.
-    
+
     Actions cannot have children.
     """
     time_spent: Optional[float] = None  # Hours spent
