@@ -81,24 +81,32 @@ class ProjectManager:
     def load(self) -> Project:
         """
         Load project from storage and build hierarchical structure.
-        
+
         Returns:
             Project with hierarchical structure.
         """
         strategic = self.storage.load_strategic()
         execution = self.storage.load_execution()
-        
+
         self.project = Project()
-        
+
         # Build lookup maps from flat data
         all_items: Dict[str, object] = {}
-        
-        # Load strategic items
-        for item_data in strategic.items:
-            item_type = item_data.get('type')
+
+        # Load strategic items from new structure (phase, milestone, objective fields)
+        strategic_items = []
+        if strategic.phase:
+            strategic_items.append(strategic.phase)
+        if strategic.milestone:
+            strategic_items.append(strategic.milestone)
+        if strategic.objective:
+            strategic_items.append(strategic.objective)
+
+        for item_data in strategic_items:
             uuid = item_data['uuid']
-            
-            if item_type == 'phase':
+
+            # Determine type by which field it came from
+            if item_data == strategic.phase:
                 item = Phase(
                     uuid=uuid,
                     name=item_data['name'],
@@ -107,7 +115,7 @@ class ProjectManager:
                     status=item_data.get('status', 'pending'),
                     parent_uuid=item_data.get('parent_uuid'),
                 )
-            elif item_type == 'milestone':
+            elif item_data == strategic.milestone:
                 item = Milestone(
                     uuid=uuid,
                     name=item_data['name'],
@@ -116,7 +124,7 @@ class ProjectManager:
                     status=item_data.get('status', 'pending'),
                     parent_uuid=item_data.get('parent_uuid'),
                 )
-            elif item_type == 'objective':
+            elif item_data == strategic.objective:
                 item = Objective(
                     uuid=uuid,
                     name=item_data['name'],
@@ -127,7 +135,7 @@ class ProjectManager:
                 )
             else:
                 continue
-                
+
             all_items[uuid] = item
         
         # Load execution items
@@ -158,7 +166,7 @@ class ProjectManager:
         # Build hierarchy using parent_uuid references
         for uuid, item in all_items.items():
             item_data = None
-            for d in strategic.items:
+            for d in strategic_items:
                 if d['uuid'] == uuid:
                     item_data = d
                     break
@@ -172,14 +180,16 @@ class ProjectManager:
                     if d['uuid'] == uuid:
                         item_data = d
                         break
-            
+
             if not item_data:
                 continue
-                
+
             parent_uuid = item_data.get('parent_uuid')
             if parent_uuid and parent_uuid in all_items:
                 parent = all_items[parent_uuid]
-                if isinstance(item, Objective) and isinstance(parent, Milestone):
+                if isinstance(item, Milestone) and isinstance(parent, Phase):
+                    parent.milestones.append(item)
+                elif isinstance(item, Objective) and isinstance(parent, Milestone):
                     parent.objectives.append(item)
                 elif isinstance(item, Deliverable) and isinstance(parent, Objective):
                     parent.deliverables.append(item)
@@ -187,7 +197,7 @@ class ProjectManager:
                     parent.actions.append(item)
             elif isinstance(item, Phase):
                 self.project.phases.append(item)
-        
+
         self.project.build_maps()
         self.project.cursor = self.storage.load_config().schema_version  # placeholder
         return self.project
