@@ -20,7 +20,7 @@ STRATEGIC_FILE = "strategic.json"
 EXECUTION_FILE = "execution.json"
 CONFIG_FILE = "config.json"
 ORPHANS_FILE = "orphans.json"
-ARCHIVE_STRATEGIC_PREFIX = "strategic-"
+ARCHIVE_STRATEGIC_FILE = "strategic.json"
 ARCHIVE_EXECUTION_PREFIX = "objective-"
 ARCHIVE_EXECUTION_SUFFIX = ".exec.json"
 
@@ -230,33 +230,51 @@ class StorageManager:
         file_path = self._get_file_path(ORPHANS_FILE)
         self._atomic_write(file_path, data.model_dump())
 
-    def archive_strategic(self, item_uuid: str, item_data: Dict[str, Any]) -> None:
+    def archive_strategic(self, item_data: Dict[str, Any]) -> None:
         """
-        Archive a strategic item to the archive folder.
+        Archive a strategic item to archive/strategic.json.
+
+        Appends to the flat list of archived strategic items.
 
         Args:
-            item_uuid: UUID of the item being archived.
             item_data: Dictionary data of the item to archive.
         """
-        file_path = self._get_archive_file_path(f"{ARCHIVE_STRATEGIC_PREFIX}{item_uuid}.json")
-        self._atomic_write(file_path, item_data)
+        file_path = self._get_archive_file_path(ARCHIVE_STRATEGIC_FILE)
+        
+        # Load existing archived items
+        archived = []
+        if file_path.exists():
+            try:
+                with open(file_path, "r") as f:
+                    data = json.load(f)
+                    archived = data.get("items", [])
+            except (json.JSONDecodeError, IOError):
+                archived = []
+        
+        # Append new item
+        archived.append(item_data)
+        
+        # Save back
+        self._atomic_write(file_path, {"items": archived})
 
-    def archive_execution_tree(self, objective_slug: str, tree_data: Dict[str, Any]) -> None:
+    def archive_execution_tree(self, objective_uuid: str, tree_data: Dict[str, Any]) -> None:
         """
         Archive an execution tree (deliverables and actions) to the archive folder.
 
+        Creates individual file per objective: archive/objective-{uuid}.exec.json
+
         Args:
-            objective_slug: Slug of the objective being archived.
+            objective_uuid: UUID of the objective being archived.
             tree_data: Dictionary data containing deliverables and actions to archive.
         """
         file_path = self._get_archive_file_path(
-            f"{ARCHIVE_EXECUTION_PREFIX}{objective_slug}{ARCHIVE_EXECUTION_SUFFIX}"
+            f"{ARCHIVE_EXECUTION_PREFIX}{objective_uuid}{ARCHIVE_EXECUTION_SUFFIX}"
         )
         self._atomic_write(file_path, tree_data)
 
     def load_archived_strategic(self, item_uuid: str) -> Optional[Dict[str, Any]]:
         """
-        Load an archived strategic item by UUID.
+        Load an archived strategic item by UUID from archive/strategic.json.
 
         Args:
             item_uuid: UUID of the archived item.
@@ -264,33 +282,41 @@ class StorageManager:
         Returns:
             Dictionary data of the archived item, or None if not found.
         """
-        file_path = self._get_archive_file_path(f"{ARCHIVE_STRATEGIC_PREFIX}{item_uuid}.json")
-        if file_path.exists():
-            try:
-                with open(file_path, "r") as f:
-                    return json.load(f)
-            except (json.JSONDecodeError, ValidationError):
-                return None
-        return None
+        file_path = self._get_archive_file_path(ARCHIVE_STRATEGIC_FILE)
+        if not file_path.exists():
+            return None
+        
+        try:
+            with open(file_path, "r") as f:
+                data = json.load(f)
+            
+            # Find item by UUID in flat list
+            items = data.get("items", [])
+            for item in items:
+                if item.get("uuid") == item_uuid:
+                    return item
+            return None
+        except (json.JSONDecodeError, IOError):
+            return None
 
-    def load_archived_execution_tree(self, objective_slug: str) -> Optional[Dict[str, Any]]:
+    def load_archived_execution_tree(self, objective_uuid: str) -> Optional[Dict[str, Any]]:
         """
-        Load an archived execution tree by objective slug.
+        Load an archived execution tree by objective UUID.
 
         Args:
-            objective_slug: Slug of the archived objective.
+            objective_uuid: UUID of the archived objective.
 
         Returns:
             Dictionary data of the archived execution tree, or None if not found.
         """
         file_path = self._get_archive_file_path(
-            f"{ARCHIVE_EXECUTION_PREFIX}{objective_slug}{ARCHIVE_EXECUTION_SUFFIX}"
+            f"{ARCHIVE_EXECUTION_PREFIX}{objective_uuid}{ARCHIVE_EXECUTION_SUFFIX}"
         )
         if file_path.exists():
             try:
                 with open(file_path, "r") as f:
                     return json.load(f)
-            except (json.JSONDecodeError, ValidationError):
+            except (json.JSONDecodeError, IOError):
                 return None
         return None
 
@@ -301,29 +327,33 @@ class StorageManager:
         Returns:
             List of UUIDs of archived strategic items.
         """
-        archived = []
-        pattern = f"{ARCHIVE_STRATEGIC_PREFIX}*.json"
-        for file_path in self.archive_dir.glob(pattern):
-            # Extract UUID from filename: strategic-{uuid}.json
-            uuid = file_path.stem.replace(ARCHIVE_STRATEGIC_PREFIX, "")
-            archived.append(uuid)
-        return archived
+        file_path = self._get_archive_file_path(ARCHIVE_STRATEGIC_FILE)
+        if not file_path.exists():
+            return []
+        
+        try:
+            with open(file_path, "r") as f:
+                data = json.load(f)
+            
+            items = data.get("items", [])
+            return [item.get("uuid", "") for item in items if item.get("uuid")]
+        except (json.JSONDecodeError, IOError):
+            return []
 
     def list_archived_execution_trees(self) -> List[str]:
         """
-        List all archived objective slugs.
+        List all archived objective UUIDs.
 
         Returns:
-            List of objective slugs with archived execution trees.
+            List of objective UUIDs with archived execution trees.
         """
         archived = []
         pattern = f"{ARCHIVE_EXECUTION_PREFIX}*{ARCHIVE_EXECUTION_SUFFIX}"
         for file_path in self.archive_dir.glob(pattern):
-            # Extract slug from filename: objective-{slug}.exec.json
-            # stem gives us "objective-{slug}.exec", need to remove both prefix and suffix
-            name = file_path.name  # "objective-{slug}.exec.json"
-            slug = name.replace(ARCHIVE_EXECUTION_PREFIX, "").replace(
+            # Extract UUID from filename: objective-{uuid}.exec.json
+            name = file_path.name
+            uuid = name.replace(ARCHIVE_EXECUTION_PREFIX, "").replace(
                 ARCHIVE_EXECUTION_SUFFIX, ""
             )
-            archived.append(slug)
+            archived.append(uuid)
         return archived

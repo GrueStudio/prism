@@ -80,7 +80,7 @@ class AutoArchiveListener(EventListener):
         
         # Archive strategic item
         strategic_data = objective.model_dump(mode='json')
-        self.storage.archive_strategic(objective.uuid, strategic_data)
+        self.storage.archive_strategic(strategic_data)
 
         # Archive execution tree (deliverables and actions)
         execution_data = {
@@ -98,7 +98,7 @@ class AutoArchiveListener(EventListener):
                 act_data = action.model_dump(mode='json')
                 execution_data["actions"].append(act_data)
         
-        self.storage.archive_execution_tree(objective.slug, execution_data)
+        self.storage.archive_execution_tree(objective.uuid, execution_data)
         
         # Remove from active files (will be implemented after migration)
         # For now, just archive - removal happens after migration to new storage

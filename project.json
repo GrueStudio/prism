@@ -796,9 +796,9 @@
                       "name": "Move execution tree to archive/objective-slug.exec.json",
                       "description": "Archive associated execution items.",
                       "slug": "move-execution-",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-17T01:30:00.534391",
-                      "updated_at": "2026-02-17T01:30:00.534392",
+                      "updated_at": "2026-02-18T00:59:04.579104",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -806,7 +806,7 @@
                       "name": "Remove archived items from active files",
                       "description": "Clean up active strategic.json and execution.json.",
                       "slug": "remove-archived",
-                      "status": "pending",
+                      "status": "in-progress",
                       "created_at": "2026-02-17T01:30:00.534402",
                       "updated_at": "2026-02-17T01:30:00.534403",
                       "time_spent": null,
@@ -1071,5 +1071,5 @@
       ]
     }
   ],
-  "cursor": null
+  "cursor": "alpha/adopt-orphan-id/revamp-data-sto/implement-auto-/remove-archived"
 }

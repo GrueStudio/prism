@@ -74,19 +74,21 @@ class TestAutoArchiveFlow:
         archive_dir = temp_prism_dir / "archive"
         assert archive_dir.exists()
 
-        # Check strategic archive exists
-        strategic_archives = list(archive_dir.glob("strategic-*.json"))
-        assert len(strategic_archives) == 1
+        # Check strategic archive exists (single file with all archived items)
+        strategic_archive = archive_dir / "strategic.json"
+        assert strategic_archive.exists()
+        
+        # Verify archive content
+        with open(strategic_archive, 'r') as f:
+            strategic_data = json.load(f)
+        assert "items" in strategic_data
+        assert len(strategic_data["items"]) == 1
+        assert strategic_data["items"][0]["name"] == "Test Objective"
+        assert strategic_data["items"][0]["status"] == "completed"
 
-        # Check execution archive exists
+        # Check execution archive exists (per-objective file)
         execution_archives = list(archive_dir.glob("objective-*.exec.json"))
         assert len(execution_archives) == 1
-
-        # Verify archive content
-        with open(strategic_archives[0], 'r') as f:
-            strategic_data = json.load(f)
-        assert strategic_data["name"] == "Test Objective"
-        assert strategic_data["status"] == "completed"
 
         with open(execution_archives[0], 'r') as f:
             execution_data = json.load(f)
