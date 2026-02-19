@@ -2,7 +2,7 @@
 ProjectManager for building and managing project structure.
 
 Builds hierarchical structure from flat storage on demand.
-Uses ArchivedItem wrappers for lazy-loading archived items.
+Uses ArchivedItem wrappers from ArchiveManager for lazy-loading archived items.
 """
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Union
@@ -11,7 +11,7 @@ from prism.models.strategic import Phase, Milestone, Objective
 from prism.models.execution import Deliverable, Action
 from prism.managers.storage_manager import StorageManager
 from prism.models import StrategicFile, ExecutionFile
-from prism.archived_item import ArchivedItem
+from prism.managers.archive_manager import ArchiveManager, ArchivedItem
 
 
 @dataclass
@@ -75,27 +75,29 @@ class Project:
 class ProjectManager:
     """
     Manages project structure building and persistence.
-    
+
     Builds hierarchical structure from flat storage.
     Flattens hierarchy back to storage on save.
     """
-    
+
     def __init__(self, storage: StorageManager) -> None:
         """
         Initialize ProjectManager.
-        
+
         Args:
             storage: StorageManager for persistence.
         """
         self.storage = storage
+        self.archive_manager = ArchiveManager(storage)
         self.project = Project()
-    
+
     def load(self) -> Project:
         """
         Load project from storage and build hierarchical structure.
 
         Loads active items as full objects.
         Loads archived items as ArchivedItem wrappers for lazy loading.
+        Preserves order using child_uuids.
 
         Returns:
             Project with hierarchical structure.
@@ -105,7 +107,7 @@ class ProjectManager:
 
         self.project = Project()
 
-        # Build active items first
+        # Build all items (active + archived) in a single dict
         all_items: Dict[str, object] = {}
 
         # Load active phase
@@ -117,6 +119,7 @@ class ProjectManager:
                 slug=strategic.phase['slug'],
                 status=strategic.phase.get('status', 'pending'),
                 parent_uuid=None,
+                child_uuids=strategic.phase.get('child_uuids', []),
             )
             all_items[phase.uuid] = phase
             self.project.phases.append(phase)
@@ -130,13 +133,9 @@ class ProjectManager:
                 slug=strategic.milestone['slug'],
                 status=strategic.milestone.get('status', 'pending'),
                 parent_uuid=strategic.milestone.get('parent_uuid'),
+                child_uuids=strategic.milestone.get('child_uuids', []),
             )
             all_items[milestone.uuid] = milestone
-            # Add to parent phase
-            if milestone.parent_uuid and milestone.parent_uuid in all_items:
-                parent = all_items[milestone.parent_uuid]
-                if isinstance(parent, Phase):
-                    parent.milestones.append(milestone)
 
         # Load active objective
         if strategic.objective:
@@ -147,13 +146,9 @@ class ProjectManager:
                 slug=strategic.objective['slug'],
                 status=strategic.objective.get('status', 'pending'),
                 parent_uuid=strategic.objective.get('parent_uuid'),
+                child_uuids=strategic.objective.get('child_uuids', []),
             )
             all_items[objective.uuid] = objective
-            # Add to parent milestone
-            if objective.parent_uuid and objective.parent_uuid in all_items:
-                parent = all_items[objective.parent_uuid]
-                if isinstance(parent, Milestone):
-                    parent.objectives.append(objective)
 
         # Load active execution items
         for del_data in execution.deliverables:
@@ -164,12 +159,9 @@ class ProjectManager:
                 slug=del_data['slug'],
                 status=del_data.get('status', 'pending'),
                 parent_uuid=del_data.get('parent_uuid'),
+                child_uuids=del_data.get('child_uuids', []),
             )
             all_items[deliverable.uuid] = deliverable
-            if deliverable.parent_uuid and deliverable.parent_uuid in all_items:
-                parent = all_items[deliverable.parent_uuid]
-                if isinstance(parent, Objective):
-                    parent.deliverables.append(deliverable)
 
         for act_data in execution.actions:
             action = Action(
@@ -183,16 +175,12 @@ class ProjectManager:
                 time_spent=act_data.get('time_spent'),
             )
             all_items[action.uuid] = action
-            if action.parent_uuid and action.parent_uuid in all_items:
-                parent = all_items[action.parent_uuid]
-                if isinstance(parent, Deliverable):
-                    parent.actions.append(action)
 
         # Load archived items as ArchivedItem wrappers
         archived = self.storage.load_all_archived_strategic()
         
         # Create archived phase wrappers
-        for phase_data in archived['phases']:
+        for i, phase_data in enumerate(archived['phases']):
             archived_phase = ArchivedItem(
                 uuid=phase_data['uuid'],
                 name=phase_data['name'],
@@ -201,13 +189,14 @@ class ProjectManager:
                 status=phase_data.get('status', 'archived'),
                 parent_uuid=None,
                 description=phase_data.get('description'),
+                position=phase_data.get('position', i),
                 storage=self.storage,
             )
             all_items[archived_phase.uuid] = archived_phase
             self.project.phases.append(archived_phase)
         
-        # Create archived milestone wrappers and add to parent phases
-        for milestone_data in archived['milestones']:
+        # Create archived milestone wrappers
+        for i, milestone_data in enumerate(archived['milestones']):
             archived_milestone = ArchivedItem(
                 uuid=milestone_data['uuid'],
                 name=milestone_data['name'],
@@ -216,21 +205,13 @@ class ProjectManager:
                 status=milestone_data.get('status', 'archived'),
                 parent_uuid=milestone_data.get('parent_uuid'),
                 description=milestone_data.get('description'),
+                position=milestone_data.get('position', i),
                 storage=self.storage,
             )
             all_items[archived_milestone.uuid] = archived_milestone
-            # Add to parent phase (real or archived)
-            if archived_milestone.parent_uuid and archived_milestone.parent_uuid in all_items:
-                parent = all_items[archived_milestone.parent_uuid]
-                if isinstance(parent, Phase):
-                    parent.milestones.append(archived_milestone)
-                elif isinstance(parent, ArchivedItem) and parent.item_type == 'phase':
-                    # For archived phases, we need to use a different approach
-                    # since ArchivedItem doesn't have a milestones attribute
-                    pass  # Will be accessible via parent.children
         
-        # Create archived objective wrappers and add to parent milestones
-        for objective_data in archived['objectives']:
+        # Create archived objective wrappers
+        for i, objective_data in enumerate(archived['objectives']):
             archived_objective = ArchivedItem(
                 uuid=objective_data['uuid'],
                 name=objective_data['name'],
@@ -239,20 +220,74 @@ class ProjectManager:
                 status=objective_data.get('status', 'archived'),
                 parent_uuid=objective_data.get('parent_uuid'),
                 description=objective_data.get('description'),
+                position=objective_data.get('position', i),
                 storage=self.storage,
             )
             all_items[archived_objective.uuid] = archived_objective
-            # Add to parent milestone (real or archived)
-            if archived_objective.parent_uuid and archived_objective.parent_uuid in all_items:
-                parent = all_items[archived_objective.parent_uuid]
-                if isinstance(parent, Milestone):
-                    parent.objectives.append(archived_objective)
-                elif isinstance(parent, ArchivedItem) and parent.item_type == 'milestone':
-                    pass  # Will be accessible via parent.children
+
+        # Build hierarchy using child_uuids for ordering
+        for uuid, item in all_items.items():
+            if isinstance(item, (Phase, Milestone, Objective, Deliverable)):
+                # Real objects: build children from child_uuids
+                self._build_children(item, all_items)
+            # ArchivedItem children are loaded lazily
 
         self.project.build_maps()
-        self.project.cursor = None  # TODO: Load cursor from dedicated cursor file or config
+        self.project.cursor = None
         return self.project
+
+    def _build_children(self, parent, all_items: Dict[str, object]) -> None:
+        """Build children list for a parent item using child_uuids for ordering.
+        
+        Active items are shown first, then archived items.
+        """
+        if not hasattr(parent, 'child_uuids') or not parent.child_uuids:
+            return
+
+        active_children = []
+        archived_children = []
+
+        for child_uuid in parent.child_uuids:
+            if child_uuid in all_items:
+                child = all_items[child_uuid]
+                # Handle both real objects and ArchivedItem wrappers
+                child_type = child.item_type if hasattr(child, 'item_type') else type(child).__name__.lower()
+                
+                # Determine if this is an active or archived child
+                is_archived = isinstance(child, ArchivedItem) or child_type.startswith('archived')
+                
+                if isinstance(parent, Phase) and (isinstance(child, Milestone) or child_type == 'milestone'):
+                    if is_archived:
+                        archived_children.append(child)
+                    else:
+                        active_children.append(child)
+                elif isinstance(parent, Milestone) and (isinstance(child, Objective) or child_type == 'objective'):
+                    if is_archived:
+                        archived_children.append(child)
+                    else:
+                        active_children.append(child)
+                elif isinstance(parent, Objective) and (isinstance(child, Deliverable) or child_type == 'deliverable'):
+                    if is_archived:
+                        archived_children.append(child)
+                    else:
+                        active_children.append(child)
+                elif isinstance(parent, Deliverable) and (isinstance(child, Action) or child_type == 'action'):
+                    if is_archived:
+                        archived_children.append(child)
+                    else:
+                        active_children.append(child)
+
+        # Add active children first, then archived children
+        all_children = active_children + archived_children
+        for child in all_children:
+            if isinstance(parent, Phase):
+                parent.milestones.append(child)
+            elif isinstance(parent, Milestone):
+                parent.objectives.append(child)
+            elif isinstance(parent, Objective):
+                parent.deliverables.append(child)
+            elif isinstance(parent, Deliverable):
+                parent.actions.append(child)
     
     def save(self, project: Project) -> None:
         """

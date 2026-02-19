@@ -7,7 +7,7 @@ import re
 import uuid
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import BaseModel, Field, field_validator, model_serializer
 
@@ -34,6 +34,7 @@ class BaseItem(BaseModel):
     - parent_uuid: Reference to parent item
     - timestamps: created_at, updated_at
     - time_spent: Total time spent on this item (cascades from children)
+    - child_uuids: List of child UUIDs in order (for preserving order)
     """
     uuid: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
@@ -44,6 +45,7 @@ class BaseItem(BaseModel):
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
     time_spent: Optional[timedelta] = None
+    child_uuids: List[str] = Field(default_factory=list)
 
     def get_status(self) -> ItemStatus:
         """Get status as ItemStatus enum."""

@@ -17,18 +17,15 @@ class Phase(BaseItem):
     """
     milestones: List['Milestone'] = Field(default_factory=list)
 
-    def add_child(self, child_uuid: str, child_type: str) -> None:
-        """Add a milestone UUID to this phase.
+    def add_child(self, child: 'Milestone') -> None:
+        """Add a milestone to this phase.
 
         Args:
-            child_uuid: UUID of the milestone to add.
-            child_type: Type of child (must be 'milestone').
-
-        Raises:
-            ValueError: If child_type is not 'milestone'.
+            child: Milestone to add.
         """
-        if child_type != 'milestone':
-            raise ValueError(f"Phase can only contain milestones, not {child_type}")
+        if child.uuid not in self.child_uuids:
+            self.child_uuids.append(child.uuid)
+        self.milestones.append(child)
 
 
 class Milestone(BaseItem):
@@ -38,18 +35,15 @@ class Milestone(BaseItem):
     """
     objectives: List['Objective'] = Field(default_factory=list)
 
-    def add_child(self, child_uuid: str, child_type: str) -> None:
-        """Add an objective UUID to this milestone.
+    def add_child(self, child: 'Objective') -> None:
+        """Add an objective to this milestone.
 
         Args:
-            child_uuid: UUID of the objective to add.
-            child_type: Type of child (must be 'objective').
-
-        Raises:
-            ValueError: If child_type is not 'objective'.
+            child: Objective to add.
         """
-        if child_type != 'objective':
-            raise ValueError(f"Milestone can only contain objectives, not {child_type}")
+        if child.uuid not in self.child_uuids:
+            self.child_uuids.append(child.uuid)
+        self.objectives.append(child)
 
 
 class Objective(BaseItem):
@@ -59,15 +53,12 @@ class Objective(BaseItem):
     """
     deliverables: List['Deliverable'] = Field(default_factory=list)
 
-    def add_child(self, child_uuid: str, child_type: str) -> None:
-        """Add a deliverable UUID to this objective.
+    def add_child(self, child: 'Deliverable') -> None:
+        """Add a deliverable to this objective.
 
         Args:
-            child_uuid: UUID of the deliverable to add.
-            child_type: Type of child (must be 'deliverable').
-
-        Raises:
-            ValueError: If child_type is not 'deliverable'.
+            child: Deliverable to add.
         """
-        if child_type != 'deliverable':
-            raise ValueError(f"Objective can only contain deliverables, not {child_type}")
+        if child.uuid not in self.child_uuids:
+            self.child_uuids.append(child.uuid)
+        self.deliverables.append(child)

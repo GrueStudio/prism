@@ -18,18 +18,15 @@ class Deliverable(BaseItem):
     """
     actions: List['Action'] = Field(default_factory=list)
 
-    def add_child(self, child_uuid: str, child_type: str) -> None:
-        """Add an action UUID to this deliverable.
+    def add_child(self, child: 'Action') -> None:
+        """Add an action to this deliverable.
 
         Args:
-            child_uuid: UUID of the action to add.
-            child_type: Type of child (must be 'action').
-
-        Raises:
-            ValueError: If child_type is not 'action'.
+            child: Action to add.
         """
-        if child_type != 'action':
-            raise ValueError(f"Deliverable can only contain actions, not {child_type}")
+        if child.uuid not in self.child_uuids:
+            self.child_uuids.append(child.uuid)
+        self.actions.append(child)
 
 
 class Action(BaseItem):
@@ -39,10 +36,10 @@ class Action(BaseItem):
     """
     due_date: Optional[datetime] = None
 
-    def add_child(self, child_uuid: str, child_type: str) -> None:
+    def add_child(self, child: 'Action') -> None:
         """Actions cannot have children.
 
         Raises:
             ValueError: Always raised since Actions cannot have children.
         """
-        raise ValueError(f"Action cannot have children, got {child_type}")
+        raise ValueError("Action cannot have children")

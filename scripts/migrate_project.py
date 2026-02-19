@@ -285,10 +285,17 @@ def migrate_project(project_file: Path, prism_dir: Path) -> None:
     total_objectives_in_current_milestone = len(current_milestone.get('objectives', [])) if current_milestone else 0
 
     # Migrate all phases, milestones, objectives - but only keep current path active
+    # Track child_uuids for order preservation
+    phase_child_uuids = {}  # phase_uuid -> [milestone_uuids]
+    milestone_child_uuids = {}  # milestone_uuid -> [objective_uuids]
+    objective_child_uuids = {}  # objective_uuid -> [deliverable_uuids]
+    deliverable_child_uuids = {}  # deliverable_uuid -> [action_uuids]
+    
     for phase_idx, phase in enumerate(phases):
         is_current_phase = (phase_idx == len(phases) - 1)
         phase_uuid = generate_uuid()
-        
+        phase_child_uuids[phase_uuid] = []
+
         migrated_phase = {
             'uuid': phase_uuid,
             'name': phase.get('name', ''),
@@ -299,18 +306,21 @@ def migrate_project(project_file: Path, prism_dir: Path) -> None:
             'created_at': phase.get('created_at', datetime.now().isoformat()),
             'updated_at': phase.get('updated_at', datetime.now().isoformat()),
         }
-        
+
         if is_current_phase:
             active_strategic_items.append(migrated_phase)
         else:
+            migrated_phase['position'] = len([p for p in archive_strategic_items if p.get('parent_uuid') is None])
             archive_strategic_items.append(migrated_phase)
-        
+
         # Process milestones
         milestones = phase.get('milestones', [])
         for mile_idx, milestone in enumerate(milestones):
             is_current_milestone = is_current_phase and (mile_idx == len(milestones) - 1)
             milestone_uuid = generate_uuid()
-            
+            phase_child_uuids[phase_uuid].append(milestone_uuid)
+            milestone_child_uuids[milestone_uuid] = []
+
             migrated_milestone = {
                 'uuid': milestone_uuid,
                 'name': milestone.get('name', ''),
@@ -321,18 +331,21 @@ def migrate_project(project_file: Path, prism_dir: Path) -> None:
                 'created_at': milestone.get('created_at', datetime.now().isoformat()),
                 'updated_at': milestone.get('updated_at', datetime.now().isoformat()),
             }
-            
+
             if is_current_milestone:
                 active_strategic_items.append(migrated_milestone)
             else:
+                migrated_milestone['position'] = len([m for m in archive_strategic_items if m.get('parent_uuid') == phase_uuid])
                 archive_strategic_items.append(migrated_milestone)
-            
+
             # Process objectives
             objectives = milestone.get('objectives', [])
             for obj_idx, objective in enumerate(objectives):
                 is_current_objective = is_current_milestone and (obj_idx == len(objectives) - 1)
                 objective_uuid = generate_uuid()
-                
+                milestone_child_uuids[milestone_uuid].append(objective_uuid)
+                objective_child_uuids[objective_uuid] = []
+
                 migrated_objective = {
                     'uuid': objective_uuid,
                     'name': objective.get('name', ''),
@@ -343,13 +356,15 @@ def migrate_project(project_file: Path, prism_dir: Path) -> None:
                     'created_at': objective.get('created_at', datetime.now().isoformat()),
                     'updated_at': objective.get('updated_at', datetime.now().isoformat()),
                 }
-                
+
                 # Process deliverables and actions
                 deliverables = []
                 actions = []
                 for deliverable in objective.get('deliverables', []):
                     del_uuid = generate_uuid()
-                    
+                    objective_child_uuids[objective_uuid].append(del_uuid)
+                    deliverable_child_uuids[del_uuid] = []
+
                     migrated_deliverable = {
                         'uuid': del_uuid,
                         'name': deliverable.get('name', ''),
@@ -360,11 +375,12 @@ def migrate_project(project_file: Path, prism_dir: Path) -> None:
                         'created_at': deliverable.get('created_at', datetime.now().isoformat()),
                         'updated_at': deliverable.get('updated_at', datetime.now().isoformat()),
                     }
-                    
+
                     # Process actions
                     for action in deliverable.get('actions', []):
                         action_uuid = generate_uuid()
-                        
+                        deliverable_child_uuids[del_uuid].append(action_uuid)
+
                         migrated_action = {
                             'uuid': action_uuid,
                             'name': action.get('name', ''),
@@ -378,19 +394,29 @@ def migrate_project(project_file: Path, prism_dir: Path) -> None:
                             'due_date': action.get('due_date'),
                         }
                         actions.append(migrated_action)
-                    
+
                     deliverables.append(migrated_deliverable)
-                
+
                 if is_current_objective:
                     active_strategic_items.append(migrated_objective)
                     active_execution_deliverables.extend(deliverables)
                     active_execution_actions.extend(actions)
                 else:
+                    migrated_objective['position'] = len([o for o in archive_strategic_items if o.get('parent_uuid') == milestone_uuid])
                     archive_strategic_items.append(migrated_objective)
-                    archive_execution_trees.append((migrated_objective['uuid'], deliverables, actions))
+                    archive_execution_trees.append((objective_uuid, deliverables, actions))
     
     # Save strategic.json (active items only: current phase, milestone, objective)
     strategic_file = prism_dir / 'strategic.json'
+    
+    # Add child_uuids to active items
+    if len(active_strategic_items) > 0:
+        active_strategic_items[0]['child_uuids'] = phase_child_uuids.get(active_strategic_items[0]['uuid'], [])
+    if len(active_strategic_items) > 1:
+        active_strategic_items[1]['child_uuids'] = milestone_child_uuids.get(active_strategic_items[1]['uuid'], [])
+    if len(active_strategic_items) > 2:
+        active_strategic_items[2]['child_uuids'] = objective_child_uuids.get(active_strategic_items[2]['uuid'], [])
+    
     with open(strategic_file, 'w') as f:
         json.dump({
             'phase': active_strategic_items[0] if len(active_strategic_items) > 0 else None,
@@ -400,9 +426,14 @@ def migrate_project(project_file: Path, prism_dir: Path) -> None:
             'milestone_index': total_milestones_in_current_phase,  # 1-based index within phase
             'objective_index': total_objectives_in_current_milestone,  # 1-based index within milestone
         }, f, indent=2)
-    
+
     # Save execution.json (active items only)
     execution_file = prism_dir / 'execution.json'
+    
+    # Add child_uuids to active deliverables
+    for deliv in active_execution_deliverables:
+        deliv['child_uuids'] = deliverable_child_uuids.get(deliv['uuid'], [])
+    
     with open(execution_file, 'w') as f:
         json.dump({
             'deliverables': active_execution_deliverables,
@@ -415,31 +446,51 @@ def migrate_project(project_file: Path, prism_dir: Path) -> None:
         # Get the current phase UUID to identify milestones
         current_phase_uuid = active_strategic_items[0]['uuid'] if len(active_strategic_items) > 0 else None
         current_milestone_uuid = active_strategic_items[1]['uuid'] if len(active_strategic_items) > 1 else None
-        
-        # Separate archived items by type
+
+        # Separate archived items by type and add child_uuids
         # Phases: items with no parent_uuid
-        archived_phases = [item for item in archive_strategic_items if item.get('parent_uuid') is None]
+        archived_phases = []
+        for item in archive_strategic_items:
+            if item.get('parent_uuid') is None:
+                item_copy = item.copy()
+                item_copy['child_uuids'] = phase_child_uuids.get(item['uuid'], [])
+                archived_phases.append(item_copy)
+        
         # Milestones: items whose parent_uuid is a phase (either archived or current)
         all_phase_uuids = [p['uuid'] for p in archived_phases]
         if current_phase_uuid:
             all_phase_uuids.append(current_phase_uuid)
-        archived_milestones = [item for item in archive_strategic_items if item.get('parent_uuid') in all_phase_uuids]
+        archived_milestones = []
+        for item in archive_strategic_items:
+            if item.get('parent_uuid') in all_phase_uuids:
+                item_copy = item.copy()
+                item_copy['child_uuids'] = milestone_child_uuids.get(item['uuid'], [])
+                archived_milestones.append(item_copy)
+        
         # Objectives: everything else (parent is a milestone)
         all_milestone_uuids = [m['uuid'] for m in archived_milestones]
         if current_milestone_uuid:
             all_milestone_uuids.append(current_milestone_uuid)
-        archived_objectives = [item for item in archive_strategic_items if item.get('parent_uuid') in all_milestone_uuids]
-        
+        archived_objectives = []
+        for item in archive_strategic_items:
+            if item.get('parent_uuid') in all_milestone_uuids:
+                item_copy = item.copy()
+                item_copy['child_uuids'] = objective_child_uuids.get(item['uuid'], [])
+                archived_objectives.append(item_copy)
+
         with open(archive_strategic_file, 'w') as f:
             json.dump({
                 'phases': archived_phases,
                 'milestones': archived_milestones,
                 'objectives': archived_objectives,
             }, f, indent=2)
-    
+
     # Save archived execution trees (one file per non-current objective)
     for obj_uuid, deliverables, actions in archive_execution_trees:
         archive_exec_file = prism_dir / 'archive' / f'{obj_uuid}.exec.json'
+        # Add child_uuids to archived deliverables
+        for deliv in deliverables:
+            deliv['child_uuids'] = deliverable_child_uuids.get(deliv['uuid'], [])
         with open(archive_exec_file, 'w') as f:
             json.dump({
                 'deliverables': deliverables,

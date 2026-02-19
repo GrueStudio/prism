@@ -15,7 +15,7 @@ from prism.models import (
     Phase,
 )
 from prism.managers.project_manager import Project
-from prism.archived_item import ArchivedItem
+from prism.managers.archive_manager import ArchivedItem
 from prism.exceptions import NavigationError
 
 
