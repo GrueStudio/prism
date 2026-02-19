@@ -3,12 +3,13 @@ Execution item models for the Prism CLI.
 
 Flat structure with UUID references for parent-child relationships.
 """
+
 from datetime import datetime
 from typing import List, Optional
 
 from pydantic import Field
 
-from prism.models.base import BaseItem, ItemStatus
+from prism.models.base import BaseItem
 
 
 class Deliverable(BaseItem):
@@ -16,9 +17,10 @@ class Deliverable(BaseItem):
 
     Valid children: Action
     """
-    actions: List['Action'] = Field(default_factory=list)
 
-    def add_child(self, child: 'Action') -> None:
+    actions: List["Action"] = Field(default_factory=list)
+
+    def add_child(self, child: "Action") -> None:
         """Add an action to this deliverable.
 
         Args:
@@ -34,9 +36,10 @@ class Action(BaseItem):
 
     Actions cannot have children.
     """
+
     due_date: Optional[datetime] = None
 
-    def add_child(self, child: 'Action') -> None:
+    def add_child(self, child: "Action") -> None:
         """Actions cannot have children.
 
         Raises:

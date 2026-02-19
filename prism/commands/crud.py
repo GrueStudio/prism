@@ -11,9 +11,8 @@ from typing import Optional
 import click
 
 from prism.core import PrismCore
-from prism.models import (
-    Phase, Milestone, Objective, Deliverable, Action
-)
+from prism.models.strategic import Phase, Milestone, Objective
+from prism.models.execution import Deliverable, Action
 from prism.exceptions import (
     PrismError, NotFoundError, ValidationError, InvalidOperationError
 )

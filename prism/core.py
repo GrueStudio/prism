@@ -5,28 +5,29 @@ Orchestrates manager classes for all business operations.
 Uses StorageManager for .prism/ folder-based storage exclusively.
 Uses EventBus for decoupled event-driven architecture.
 """
+
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from prism.models import Action, Deliverable, Objective
+from prism.exceptions import ValidationError
 from prism.managers import (
-    ItemManager,
-    TaskManager,
-    CompletionTracker,
-    NavigationManager,
-    StorageManager,
     AutoArchiveListener,
+    CompletionTracker,
+    ItemManager,
+    NavigationManager,
     ProjectManager,
+    StorageManager,
+    TaskManager,
     get_event_bus,
     subscribe_listener,
 )
-from prism.exceptions import (
-    PrismError,
-    ValidationError,
-    NotFoundError,
-    InvalidOperationError,
-    DuplicateError,
+from prism.models.base import (
+    Action,
+    Deliverable,
+    Milestone,
+    Objective,
+    Phase,
 )
 
 
@@ -59,16 +60,13 @@ class PrismCore:
         """
         self.storage = StorageManager(prism_dir)
         self.project_manager = ProjectManager(self.storage)
-        
+
         # Load project from storage
         self.project = self.project_manager.load()
 
         # Initialize managers
         self.navigator = NavigationManager(self.project)
-        self.completion_tracker = CompletionTracker(
-            self.navigator,
-            emit_events=True
-        )
+        self.completion_tracker = CompletionTracker(self.navigator, emit_events=True)
         self.item_manager = ItemManager(self.project, self.navigator)
         self.task_manager = TaskManager(
             self.project,
@@ -115,9 +113,7 @@ class PrismCore:
         status: Optional[str] = None,
     ) -> Any:
         """Update an existing item."""
-        return self.item_manager.update_item(
-            path, name, description, due_date, status
-        )
+        return self.item_manager.update_item(path, name, description, due_date, status)
 
     def delete_item(self, path: str) -> None:
         """Delete an existing item."""
@@ -135,7 +131,9 @@ class PrismCore:
         """Complete the current action."""
         return self.task_manager.complete_current_action()
 
-    def complete_current_and_start_next(self) -> tuple[Optional[Action], Optional[Action]]:
+    def complete_current_and_start_next(
+        self,
+    ) -> tuple[Optional[Action], Optional[Action]]:
         """Complete current action and start next."""
         return self.task_manager.complete_current_and_start_next()
 
@@ -211,9 +209,7 @@ class PrismCore:
         self._save_project()
 
     def get_status_summary(
-        self,
-        phase_path: Optional[str] = None,
-        milestone_path: Optional[str] = None
+        self, phase_path: Optional[str] = None, milestone_path: Optional[str] = None
     ) -> Dict[str, Any]:
         """Get a summary of project status."""
         summary = {
@@ -231,7 +227,9 @@ class PrismCore:
         def _traverse(items, parent_path="", parent_is_completed=False):
             for item in items:
                 item_type = type(item).__name__
-                current_path = f"{parent_path}/{item.slug}" if parent_path else item.slug
+                current_path = (
+                    f"{parent_path}/{item.slug}" if parent_path else item.slug
+                )
                 is_completed = item.status == "completed"
 
                 summary["item_counts"][item_type]["total"] += 1
@@ -266,7 +264,11 @@ class PrismCore:
                     children = item.actions
 
                 if children:
-                    _traverse(children, parent_path=current_path, parent_is_completed=is_completed)
+                    _traverse(
+                        children,
+                        parent_path=current_path,
+                        parent_is_completed=is_completed,
+                    )
 
         start_items = self.project.phases
         if milestone_path:

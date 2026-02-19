@@ -4,19 +4,19 @@ NavigationManager for path resolution and item lookup.
 Handles all tree traversal, path resolution, and navigation logic.
 Will replace Navigator class once migration is complete.
 """
+
 from typing import Dict, List, Optional
 
-from prism.models import (
-    Action,
+from prism.exceptions import NavigationError
+from prism.models.archived import ArchivedItem
+from prism.models.base import (
     BaseItem,
     Deliverable,
     Milestone,
     Objective,
     Phase,
 )
-from prism.managers.project_manager import Project
-from prism.managers.archive_manager import ArchivedItem
-from prism.exceptions import NavigationError
+from prism.models.project import Project
 
 
 class NavigationManager:
@@ -39,9 +39,7 @@ class NavigationManager:
         """
         self.project = project
 
-    def _resolve_path_segment(
-        self, items: list, segment: str
-    ) -> Optional[object]:
+    def _resolve_path_segment(self, items: list, segment: str) -> Optional[object]:
         """Resolve a path segment to a specific item.
 
         Args:
@@ -98,19 +96,31 @@ class NavigationManager:
                     # Get children - handle both real objects and ArchivedItem wrappers
                     if isinstance(found_item, Phase):
                         current_items = list(found_item.milestones)
-                    elif isinstance(found_item, ArchivedItem) and found_item.item_type == 'phase':
+                    elif (
+                        isinstance(found_item, ArchivedItem)
+                        and found_item.item_type == "phase"
+                    ):
                         current_items = list(found_item.children)
                     elif isinstance(found_item, Milestone):
                         current_items = list(found_item.objectives)
-                    elif isinstance(found_item, ArchivedItem) and found_item.item_type == 'milestone':
+                    elif (
+                        isinstance(found_item, ArchivedItem)
+                        and found_item.item_type == "milestone"
+                    ):
                         current_items = list(found_item.children)
                     elif isinstance(found_item, Objective):
                         current_items = list(found_item.deliverables)
-                    elif isinstance(found_item, ArchivedItem) and found_item.item_type == 'objective':
+                    elif (
+                        isinstance(found_item, ArchivedItem)
+                        and found_item.item_type == "objective"
+                    ):
                         current_items = list(found_item.get_deliverables())
                     elif isinstance(found_item, Deliverable):
                         current_items = list(found_item.actions)
-                    elif isinstance(found_item, ArchivedItem) and found_item.item_type == 'deliverable':
+                    elif (
+                        isinstance(found_item, ArchivedItem)
+                        and found_item.item_type == "deliverable"
+                    ):
                         current_items = list(found_item.get_actions())
                     else:
                         return None
@@ -132,6 +142,7 @@ class NavigationManager:
             NavigationError: If path discovery fails unexpectedly.
         """
         try:
+
             def _traverse(items: List[BaseItem], current_path: str) -> Optional[str]:
                 for item in items:
                     path = f"{current_path}/{item.slug}" if current_path else item.slug

@@ -3,11 +3,30 @@ ItemManager for CRUD operations on Prism items.
 
 Handles adding, updating, and deleting strategic and execution items.
 """
+
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
-from prism.models import (
+from prism.constants import (
+    ARCHIVED_STATUS,
+    COMPLETED_STATUS,
+    DATE_FORMAT_ERROR,
+    DEFAULT_STATUS,
+    VALID_STATUSES,
+    VALIDATION_INVALID_STATUS,
+    get_slug_filler_words,
+    get_slug_max_length,
+    get_slug_word_limit,
+)
+from prism.exceptions import (
+    InvalidOperationError,
+    NotFoundError,
+    ValidationError,
+)
+from prism.managers.navigation_manager import NavigationManager
+from prism.managers.project_manager import Project
+from prism.models.base import (
     Action,
     BaseItem,
     Deliverable,
@@ -15,32 +34,13 @@ from prism.models import (
     Objective,
     Phase,
 )
-from prism.managers.project_manager import Project
-from prism.managers.navigation_manager import NavigationManager
-from prism.constants import (
-    SLUG_MAX_LENGTH,
-    VALID_STATUSES,
-    COMPLETED_STATUS,
-    ARCHIVED_STATUS,
-    DEFAULT_STATUS,
-    VALIDATION_INVALID_STATUS,
-    DATE_FORMAT_ERROR,
-    get_slug_max_length,
-    get_slug_word_limit,
-    get_slug_filler_words,
-)
-from prism.exceptions import (
-    ValidationError,
-    NotFoundError,
-    InvalidOperationError,
-)
 from prism.utils import parse_date, validate_date_range
 
 
 class ItemManager:
     """
     Manages CRUD operations for all Prism items.
-    
+
     Handles:
     - Adding new items (phases, milestones, objectives, deliverables, actions)
     - Updating existing items
@@ -110,7 +110,9 @@ class ItemManager:
             count += 1
         return slug
 
-    def _get_sibling_items(self, parent_path: Optional[str], item_type: str) -> List[BaseItem]:
+    def _get_sibling_items(
+        self, parent_path: Optional[str], item_type: str
+    ) -> List[BaseItem]:
         """Get list of sibling items for slug uniqueness check.
 
         Args:
@@ -258,6 +260,9 @@ class ItemManager:
                     f"Parent item not found at path: '{parent_path}'. "
                     f"Please verify the path is correct and the parent item exists."
                 )
+
+            # Set parent_uuid on the new item
+            new_item.parent_uuid = parent_item.uuid
 
             if item_type == "milestone" and isinstance(parent_item, Phase):
                 parent_item.milestones.append(new_item)
@@ -449,4 +454,6 @@ class ItemManager:
                 if phase.slug != item_slug_to_delete
             ]
             if len(self.project.phases) == original_len:
-                raise NotFoundError(f"Phase with slug '{item_slug_to_delete}' not found.")
+                raise NotFoundError(
+                    f"Phase with slug '{item_slug_to_delete}' not found."
+                )

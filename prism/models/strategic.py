@@ -3,11 +3,12 @@ Strategic item models for the Prism CLI.
 
 Flat structure with UUID references for parent-child relationships.
 """
-from typing import List, Optional
+
+from typing import List
 
 from pydantic import Field
 
-from prism.models.base import BaseItem, ItemStatus
+from prism.models.base import BaseItem
 
 
 class Phase(BaseItem):
@@ -15,9 +16,10 @@ class Phase(BaseItem):
 
     Valid children: Milestone
     """
-    milestones: List['Milestone'] = Field(default_factory=list)
 
-    def add_child(self, child: 'Milestone') -> None:
+    milestones: List["Milestone"] = Field(default_factory=list)
+
+    def add_child(self, child: "Milestone") -> None:
         """Add a milestone to this phase.
 
         Args:
@@ -33,9 +35,10 @@ class Milestone(BaseItem):
 
     Valid children: Objective
     """
-    objectives: List['Objective'] = Field(default_factory=list)
 
-    def add_child(self, child: 'Objective') -> None:
+    objectives: List["Objective"] = Field(default_factory=list)
+
+    def add_child(self, child: "Objective") -> None:
         """Add an objective to this milestone.
 
         Args:
@@ -51,9 +54,10 @@ class Objective(BaseItem):
 
     Valid children: Deliverable (execution item, stored separately)
     """
-    deliverables: List['Deliverable'] = Field(default_factory=list)
 
-    def add_child(self, child: 'Deliverable') -> None:
+    deliverables: List["Deliverable"] = Field(default_factory=list)
+
+    def add_child(self, child: "Deliverable") -> None:
         """Add a deliverable to this objective.
 
         Args:
