@@ -151,27 +151,39 @@ def _display_item(item, show_children: bool = True):
     click.echo(f"Description: {item.description or ''}")
     click.echo(f"Status: {item.status}")
     click.echo(f"Type: {type(item).__name__}")
-    
+
     if not show_children:
         return
-    
-    # Display children based on item type
+
+    # Display children based on item type - handle both real objects and ArchivedItem wrappers
     children = []
     child_type = ""
-    
+
     if isinstance(item, Phase):
         children = [(m.name, m.slug) for m in item.milestones]
+        child_type = "Milestones"
+    elif hasattr(item, 'item_type') and item.item_type == 'phase':  # ArchivedItem
+        children = [(m.name, m.slug) for m in item.children]
         child_type = "Milestones"
     elif isinstance(item, Milestone):
         children = [(o.name, o.slug) for o in item.objectives]
         child_type = "Objectives"
+    elif hasattr(item, 'item_type') and item.item_type == 'milestone':  # ArchivedItem
+        children = [(o.name, o.slug) for o in item.children]
+        child_type = "Objectives"
     elif isinstance(item, Objective):
         children = [(d.name, d.slug) for d in item.deliverables]
+        child_type = "Deliverables"
+    elif hasattr(item, 'item_type') and item.item_type == 'objective':  # ArchivedItem
+        children = [(d.name, d.slug) for d in item.get_deliverables()]
         child_type = "Deliverables"
     elif isinstance(item, Deliverable):
         children = [(a.name, a.slug) for a in item.actions]
         child_type = "Actions"
-    
+    elif hasattr(item, 'item_type') and item.item_type == 'deliverable':  # ArchivedItem
+        children = [(a.name, a.slug) for a in item.get_actions()]
+        child_type = "Actions"
+
     if children:
         click.echo(f"\n{child_type}:")
         for i, (name, slug) in enumerate(children, 1):

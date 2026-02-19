@@ -15,6 +15,7 @@ from prism.models import (
     Phase,
 )
 from prism.managers.project_manager import Project
+from prism.archived_item import ArchivedItem
 from prism.exceptions import NavigationError
 
 
@@ -39,12 +40,12 @@ class NavigationManager:
         self.project = project
 
     def _resolve_path_segment(
-        self, items: List[BaseItem], segment: str
-    ) -> Optional[BaseItem]:
+        self, items: list, segment: str
+    ) -> Optional[object]:
         """Resolve a path segment to a specific item.
 
         Args:
-            items: List of items to search in.
+            items: List of items to search in (can include ArchivedItem wrappers).
             segment: Path segment to resolve (slug or index).
 
         Returns:
@@ -65,7 +66,7 @@ class NavigationManager:
 
         return None
 
-    def get_item_by_path(self, path: str) -> Optional[BaseItem]:
+    def get_item_by_path(self, path: str) -> Optional[object]:
         """Get an item by its path.
 
         Args:
@@ -82,9 +83,9 @@ class NavigationManager:
 
         try:
             segments = path.split("/")
-            current_items: List[BaseItem] = list(self.project.phases)
+            current_items: list = list(self.project.phases)
 
-            target_item: Optional[BaseItem] = None
+            target_item: Optional[object] = None
 
             for i, segment in enumerate(segments):
                 found_item = self._resolve_path_segment(current_items, segment)
@@ -94,14 +95,23 @@ class NavigationManager:
                 target_item = found_item
 
                 if i < len(segments) - 1:
+                    # Get children - handle both real objects and ArchivedItem wrappers
                     if isinstance(found_item, Phase):
                         current_items = list(found_item.milestones)
+                    elif isinstance(found_item, ArchivedItem) and found_item.item_type == 'phase':
+                        current_items = list(found_item.children)
                     elif isinstance(found_item, Milestone):
                         current_items = list(found_item.objectives)
+                    elif isinstance(found_item, ArchivedItem) and found_item.item_type == 'milestone':
+                        current_items = list(found_item.children)
                     elif isinstance(found_item, Objective):
                         current_items = list(found_item.deliverables)
+                    elif isinstance(found_item, ArchivedItem) and found_item.item_type == 'objective':
+                        current_items = list(found_item.get_deliverables())
                     elif isinstance(found_item, Deliverable):
                         current_items = list(found_item.actions)
+                    elif isinstance(found_item, ArchivedItem) and found_item.item_type == 'deliverable':
+                        current_items = list(found_item.get_actions())
                     else:
                         return None
 
