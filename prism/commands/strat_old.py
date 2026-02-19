@@ -1,10 +1,24 @@
+"""
+DEPRECATED: Old strat commands using project.json storage.
+
+This module is deprecated and will be removed in a future version.
+Use prism/commands/crud.py with .prism/ folder-based storage instead.
+"""
+import warnings
+warnings.warn(
+    "Old strat commands (project.json storage) are deprecated. "
+    "Use prism/commands/crud.py with .prism/ storage instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
+
 import json
 from pathlib import Path
 
 import click
 
-from prism.models import Objective, Phase, Milestone
-from prism.core import Core
+from prism.models_old import Objective, Phase, Milestone
+from prism.core_old import Core
 from prism.exceptions import PrismError, NotFoundError, ValidationError, InvalidOperationError
 
 

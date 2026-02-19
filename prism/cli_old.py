@@ -17,8 +17,8 @@ warnings.warn(
     stacklevel=2
 )
 
-from prism.commands.strat import strat
-from prism.commands.exec import exec
+from prism.commands.strat_old import strat
+from prism.commands.exec_old import exec
 from prism.commands.status_old import status
 from prism.commands.init import init
 from prism.commands.task_old import task
