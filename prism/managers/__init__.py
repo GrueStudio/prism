@@ -28,7 +28,7 @@ from prism.managers.events import (
     publish_event,
     subscribe_listener,
 )
-from prism.managers.auto_archive import AutoArchiveListener
+from prism.managers.archive_manager import AutoArchiveListener
 from prism.exceptions import NavigationError
 
 __all__ = [

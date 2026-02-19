@@ -1,17 +1,16 @@
 import json
-import uuid
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
 
-from prism.cli import cli
-from prism.models import Action, Deliverable
+from prism.cli_old import cli
 from prism.exceptions import InvalidOperationError
+from prism.models_old import Action, Deliverable
 
 
-@patch("prism.commands.exec.Core")
+@patch("prism.commands.exec_old.Core")
 def test_exec_add_deliverable(mock_core):
     runner = CliRunner()
     result = runner.invoke(
@@ -39,7 +38,7 @@ def test_exec_add_deliverable(mock_core):
     assert "Deliverable 'Test Deliverable' created successfully." in result.output
 
 
-@patch("prism.commands.exec.Core")
+@patch("prism.commands.exec_old.Core")
 def test_exec_add_action(mock_core):
     runner = CliRunner()
     result = runner.invoke(
@@ -67,7 +66,7 @@ def test_exec_add_action(mock_core):
     assert "Action 'Test Action' created successfully." in result.output
 
 
-@patch("prism.commands.exec.Core")
+@patch("prism.commands.exec_old.Core")
 def test_exec_add_no_item_type(mock_core):
     runner = CliRunner()
     result = runner.invoke(cli, ["exec", "add", "--name", "Test Item"])
@@ -76,10 +75,9 @@ def test_exec_add_no_item_type(mock_core):
     mock_core.return_value.add_item.assert_not_called()
 
 
-@patch("prism.commands.exec.Core")
+@patch("prism.commands.exec_old.Core")
 def test_exec_show(mock_core):
     mock_action = Action(
-        id=uuid.uuid4(),
         name="Test Action",
         description="A test action",
         slug="test-action",
@@ -90,7 +88,6 @@ def test_exec_show(mock_core):
         due_date=None,
     )
     mock_deliverable = Deliverable(
-        id=uuid.uuid4(),
         name="Test Deliverable",
         description="A test deliverable",
         slug="test-deliv",
@@ -123,11 +120,10 @@ def test_exec_show(mock_core):
     assert "1. Test Action (test-action)" in result.output
 
 
-@patch("prism.commands.exec.Core")
+@patch("prism.commands.exec_old.Core")
 def test_exec_show_with_children(mock_core):
     """Test exec show displays child actions correctly."""
     mock_action1 = Action(
-        id=uuid.uuid4(),
         name="Action 1",
         description="First action",
         slug="action-1",
@@ -138,7 +134,6 @@ def test_exec_show_with_children(mock_core):
         due_date=None,
     )
     mock_action2 = Action(
-        id=uuid.uuid4(),
         name="Action 2",
         description="Second action",
         slug="action-2",
@@ -149,7 +144,6 @@ def test_exec_show_with_children(mock_core):
         due_date=None,
     )
     mock_deliverable = Deliverable(
-        id=uuid.uuid4(),
         name="Test Deliverable",
         description="A test deliverable",
         slug="test-deliv",
@@ -163,20 +157,24 @@ def test_exec_show_with_children(mock_core):
     runner = CliRunner()
     result = runner.invoke(
         cli,
-        ["exec", "show", "--path", "test-phase/test-milestone/test-objective/test-deliv"],
+        [
+            "exec",
+            "show",
+            "--path",
+            "test-phase/test-milestone/test-objective/test-deliv",
+        ],
     )
-    
+
     assert result.exit_code == 0
     assert "Actions:" in result.output
     assert "1. Action 1 (action-1)" in result.output
     assert "2. Action 2 (action-2)" in result.output
 
 
-@patch("prism.commands.exec.Core")
+@patch("prism.commands.exec_old.Core")
 def test_exec_show_no_children(mock_core):
     """Test exec show displays 'no actions' message."""
     mock_deliverable = Deliverable(
-        id=uuid.uuid4(),
         name="Empty Deliverable",
         description="A deliverable with no actions",
         slug="empty-deliv",
@@ -190,18 +188,22 @@ def test_exec_show_no_children(mock_core):
     runner = CliRunner()
     result = runner.invoke(
         cli,
-        ["exec", "show", "--path", "test-phase/test-milestone/test-objective/empty-deliv"],
+        [
+            "exec",
+            "show",
+            "--path",
+            "test-phase/test-milestone/test-objective/empty-deliv",
+        ],
     )
-    
+
     assert result.exit_code == 0
     assert "No actions." in result.output
 
 
-@patch("prism.commands.exec.Core")
+@patch("prism.commands.exec_old.Core")
 def test_exec_show_json_with_children(mock_core):
     """Test exec show JSON output includes actions."""
     mock_action = Action(
-        id=uuid.uuid4(),
         name="Test Action",
         description="A test action",
         slug="test-action",
@@ -212,7 +214,6 @@ def test_exec_show_json_with_children(mock_core):
         due_date=None,
     )
     mock_deliverable = Deliverable(
-        id=uuid.uuid4(),
         name="Test Deliverable",
         description="A test deliverable",
         slug="test-deliv",
@@ -234,7 +235,7 @@ def test_exec_show_json_with_children(mock_core):
             "--json",
         ],
     )
-    
+
     assert result.exit_code == 0
     output_data = json.loads(result.output)
     assert "actions" in output_data
@@ -243,7 +244,7 @@ def test_exec_show_json_with_children(mock_core):
     assert output_data["actions"][0]["slug"] == "test-action"
 
 
-@patch("prism.commands.exec.Core")
+@patch("prism.commands.exec_old.Core")
 def test_exec_addtree(mock_core):
     runner = CliRunner()
     json_file_path = Path("tests/test_simplified_exec_tree.json")
@@ -282,7 +283,7 @@ def test_exec_addtree(mock_core):
     mock_core.return_value.add_exec_tree.reset_mock()
 
 
-@patch("prism.commands.exec.Core")
+@patch("prism.commands.exec_old.Core")
 def test_exec_addtree_file_not_found(mock_core):
     runner = CliRunner()
     non_existent_file = "non_existent.json"
@@ -297,7 +298,7 @@ def test_exec_addtree_file_not_found(mock_core):
     mock_core.return_value.add_exec_tree.assert_not_called()
 
 
-@patch("prism.commands.exec.Core")
+@patch("prism.commands.exec_old.Core")
 def test_exec_addtree_invalid_json(mock_core):
     runner = CliRunner()
     invalid_json_file = "tests/invalid_exec_tree.json"
@@ -309,7 +310,7 @@ def test_exec_addtree_invalid_json(mock_core):
     Path(invalid_json_file).unlink()  # Clean up
 
 
-@patch("prism.commands.exec.Core")
+@patch("prism.commands.exec_old.Core")
 def test_exec_edit(mock_core):
     runner = CliRunner()
     path = "test-phase/test-milestone/test-objective/test-deliverable"
@@ -344,7 +345,7 @@ def test_exec_edit(mock_core):
     assert f"Item at '{path}' updated successfully." in result.output
 
 
-@patch("prism.commands.exec.Core")
+@patch("prism.commands.exec_old.Core")
 def test_exec_edit_from_file(mock_core):
     runner = CliRunner()
     path = "test-phase/test-milestone/test-objective/test-action"
@@ -368,7 +369,7 @@ def test_exec_edit_from_file(mock_core):
     assert f"Item at '{path}' updated successfully." in result.output
 
 
-@patch("prism.commands.exec.Core")
+@patch("prism.commands.exec_old.Core")
 def test_exec_delete(mock_core):
     runner = CliRunner()
     path = "test-phase/test-milestone/test-objective/test-action"
@@ -380,7 +381,7 @@ def test_exec_delete(mock_core):
     assert f"Item at '{path}' deleted successfully." in result.output
 
 
-@patch("prism.commands.exec.Core")
+@patch("prism.commands.exec_old.Core")
 def test_exec_delete_no_path(mock_core):
     runner = CliRunner()
     result = runner.invoke(cli, ["exec", "delete"])
@@ -390,7 +391,7 @@ def test_exec_delete_no_path(mock_core):
     mock_core.return_value.delete_item.assert_not_called()
 
 
-@patch("prism.commands.exec.Core")
+@patch("prism.commands.exec_old.Core")
 def test_exec_show_json_output(mock_core):
     # Use consistent datetime objects for both mock creation and assertion
     now = datetime.now()
@@ -409,7 +410,9 @@ def test_exec_show_json_output(mock_core):
     result = runner.invoke(cli, ["exec", "show", "--path", "dummy/path", "--json"])
 
     assert result.exit_code == 0
-    mock_core.return_value.navigator.get_item_by_path.assert_called_once_with("dummy/path")
+    mock_core.return_value.navigator.get_item_by_path.assert_called_once_with(
+        "dummy/path"
+    )
 
     try:
         output_json = json.loads(result.output)
@@ -425,10 +428,9 @@ def test_exec_show_json_output(mock_core):
     assert output_json["actions"] == []
 
 
-@patch("prism.commands.exec.Core")
+@patch("prism.commands.exec_old.Core")
 def test_exec_edit_completed_item_raises_error(mock_core):
     mock_deliverable = Deliverable(
-        id=uuid.uuid4(),
         name="Completed Deliverable",
         description="A completed deliverable",
         slug="completed-deliv",
@@ -459,10 +461,9 @@ def test_exec_edit_completed_item_raises_error(mock_core):
     )
 
 
-@patch("prism.commands.exec.Core")
+@patch("prism.commands.exec_old.Core")
 def test_exec_delete_completed_item_raises_error(mock_core):
     mock_deliverable = Deliverable(
-        id=uuid.uuid4(),
         name="Completed Deliverable",
         description="A completed deliverable",
         slug="completed-deliv",

@@ -4,26 +4,30 @@ DEPRECATED: Old task commands using project.json storage.
 This module is deprecated and will be removed in a future version.
 Use prism/commands/task.py with .prism/ folder-based storage instead.
 """
-import click
+
 import warnings
+
+import click
 
 warnings.warn(
     "Old task commands (project.json storage) are deprecated. "
     "Use the new task commands with .prism/ storage instead.",
     DeprecationWarning,
-    stacklevel=2
+    stacklevel=2,
 )
 
-from prism.core import Core
+from prism.core_old import Core
+
 
 @click.group()
 def task():
     """Commands for managing tasks.
-    
+
     When completing tasks, parent deliverables and objectives are automatically
     marked complete when all their children are done.
     """
     pass
+
 
 @task.command()
 def start():
@@ -35,10 +39,11 @@ def start():
     else:
         click.echo("No pending tasks found.")
 
+
 @task.command()
 def done():
     """Mark the current task as done.
-    
+
     If all actions in a deliverable are complete, the deliverable is marked done.
     If all deliverables in an objective are complete, the objective is marked done.
     """
@@ -49,10 +54,11 @@ def done():
     else:
         click.echo("No task in progress.")
 
+
 @task.command()
 def next():
     """Complete the current task and start the next one.
-    
+
     If all actions in a deliverable are complete, the deliverable is marked done.
     If all deliverables in an objective are complete, the objective is marked done.
     """

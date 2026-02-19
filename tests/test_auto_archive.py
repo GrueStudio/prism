@@ -81,19 +81,22 @@ class TestAutoArchiveFlow:
         # Verify archive content
         with open(strategic_archive, 'r') as f:
             strategic_data = json.load(f)
-        assert "items" in strategic_data
-        assert len(strategic_data["items"]) == 1
-        assert strategic_data["items"][0]["name"] == "Test Objective"
-        assert strategic_data["items"][0]["status"] == "completed"
+        # New structure uses 'objectives' key
+        assert "objectives" in strategic_data
+        assert len(strategic_data["objectives"]) == 1
+        assert strategic_data["objectives"][0]["name"] == "Test Objective"
+        assert strategic_data["objectives"][0]["status"] == "completed"
 
         # Check execution archive exists (per-objective file)
-        execution_archives = list(archive_dir.glob("objective-*.exec.json"))
+        # Files are named {uuid}.exec.json
+        execution_archives = list(archive_dir.glob("*.exec.json"))
         assert len(execution_archives) == 1
 
         with open(execution_archives[0], 'r') as f:
             execution_data = json.load(f)
-        assert execution_data["objective_slug"] == "test-objective"
+        assert "deliverables" in execution_data
         assert len(execution_data["deliverables"]) == 1
+        assert "actions" in execution_data
         assert len(execution_data["actions"]) == 1
 
     def test_auto_archive_disabled(self, temp_prism_dir):
