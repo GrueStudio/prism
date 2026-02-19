@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from prism.newcore import NewPrismCore
+from prism.core import PrismCore
 from prism.managers import StorageManager, get_event_bus
 
 
@@ -32,8 +32,8 @@ class TestAutoArchiveFlow:
 
     def test_auto_archive_on_objective_completion(self, temp_prism_dir):
         """Test that completing an objective triggers auto-archive."""
-        # Create NewPrismCore with temp directory
-        core = NewPrismCore(prism_dir=temp_prism_dir, auto_archive_enabled=True)
+        # Create PrismCore with temp directory
+        core = PrismCore(prism_dir=temp_prism_dir, auto_archive_enabled=True)
 
         # Create a simple objective with one deliverable and one action
         # Note: slugs are truncated to 15 chars max
@@ -48,7 +48,7 @@ class TestAutoArchiveFlow:
         # Fetch fresh objects from navigator (local refs may be stale)
         objective = core.navigator.get_item_by_path("test-phase/test-milestone/test-objective")
         assert objective is not None
-        from prism.newmodels import Objective, Deliverable
+        from prism.models import Objective, Deliverable
         assert isinstance(objective, Objective)
         assert len(objective.deliverables) == 1
         
@@ -81,25 +81,28 @@ class TestAutoArchiveFlow:
         # Verify archive content
         with open(strategic_archive, 'r') as f:
             strategic_data = json.load(f)
-        assert "items" in strategic_data
-        assert len(strategic_data["items"]) == 1
-        assert strategic_data["items"][0]["name"] == "Test Objective"
-        assert strategic_data["items"][0]["status"] == "completed"
+        # New structure uses 'objectives' key
+        assert "objectives" in strategic_data
+        assert len(strategic_data["objectives"]) == 1
+        assert strategic_data["objectives"][0]["name"] == "Test Objective"
+        assert strategic_data["objectives"][0]["status"] == "completed"
 
         # Check execution archive exists (per-objective file)
-        execution_archives = list(archive_dir.glob("objective-*.exec.json"))
+        # Files are named {uuid}.exec.json
+        execution_archives = list(archive_dir.glob("*.exec.json"))
         assert len(execution_archives) == 1
 
         with open(execution_archives[0], 'r') as f:
             execution_data = json.load(f)
-        assert execution_data["objective_slug"] == "test-objective"
+        assert "deliverables" in execution_data
         assert len(execution_data["deliverables"]) == 1
+        assert "actions" in execution_data
         assert len(execution_data["actions"]) == 1
 
     def test_auto_archive_disabled(self, temp_prism_dir):
         """Test that auto-archive can be disabled."""
-        # Create NewPrismCore with auto-archive disabled
-        core = NewPrismCore(prism_dir=temp_prism_dir, auto_archive_enabled=False)
+        # Create PrismCore with auto-archive disabled
+        core = PrismCore(prism_dir=temp_prism_dir, auto_archive_enabled=False)
 
         # Create test structure
         core.add_item("phase", "Test Phase", "A test phase", None)

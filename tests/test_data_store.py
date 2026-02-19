@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from prism.data_store import DataStore
-from prism.models import ProjectData
+from prism.data_store_old import DataStore
+from prism.models_old import ProjectData
 
 
 def test_data_store_initialization():

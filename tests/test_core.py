@@ -9,8 +9,8 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from prism.core import Core
-from prism.models import ProjectData, Phase, Milestone, Objective, Deliverable, Action
+from prism.core_old import Core
+from prism.models_old import ProjectData, Phase, Milestone, Objective, Deliverable, Action
 from prism.exceptions import ValidationError, NotFoundError, InvalidOperationError
 
 

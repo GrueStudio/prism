@@ -1,4 +1,18 @@
 """
+DEPRECATED: Old Prism DataStore using project.json storage.
+
+This module is deprecated and will be removed in a future version.
+Use prism.managers.StorageManager with .prism/ folder-based storage instead.
+"""
+import warnings
+warnings.warn(
+    "Old DataStore (project.json storage) is deprecated. "
+    "Use prism.managers.StorageManager with .prism/ storage instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
+
+"""
 This module handles the persistence of project data to a JSON file.
 """
 import json
@@ -9,7 +23,7 @@ from typing import Optional
 
 from pydantic import ValidationError
 
-from prism.models import ProjectData
+from prism.models_old import ProjectData
 
 
 class DataStore:

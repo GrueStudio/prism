@@ -768,7 +768,7 @@
                   "name": "Implement Auto-Archive on Completion",
                   "description": "Automatically archive completed strategic items with their execution trees.",
                   "slug": "implement-auto-",
-                  "status": "pending",
+                  "status": "completed",
                   "created_at": "2026-02-17T01:30:00.534356",
                   "updated_at": "2026-02-17T01:30:00.534357",
                   "actions": [
@@ -808,9 +808,9 @@
                   "name": "Implement Migration from project.json",
                   "description": "Migrate existing project.json to new folder-based structure.",
                   "slug": "implement-migra",
-                  "status": "pending",
+                  "status": "completed",
                   "created_at": "2026-02-17T01:30:00.534414",
-                  "updated_at": "2026-02-17T01:30:00.534415",
+                  "updated_at": "2026-02-18T15:15:49.065361",
                   "actions": [
                     {
                       "name": "Create migration script for project.json to .prism/",
@@ -836,9 +836,9 @@
                       "name": "Create initial config.json from current constants",
                       "description": "Populate config with default values.",
                       "slug": "create-initial-",
-                      "status": "in-progress",
+                      "status": "completed",
                       "created_at": "2026-02-17T01:30:00.534476",
-                      "updated_at": "2026-02-17T01:30:00.534476",
+                      "updated_at": "2026-02-18T14:55:32.037710",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -846,9 +846,9 @@
                       "name": "Backup project.json before migration",
                       "description": "Keep original file as backup during development.",
                       "slug": "backup-project-",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-17T01:30:00.534486",
-                      "updated_at": "2026-02-17T01:30:00.534487",
+                      "updated_at": "2026-02-18T14:55:43.672527",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -856,69 +856,9 @@
                       "name": "Test migration with existing project data",
                       "description": "Verify all data migrates correctly.",
                       "slug": "test-migration-",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-17T01:30:00.534521",
-                      "updated_at": "2026-02-17T01:30:00.534522",
-                      "time_spent": null,
-                      "due_date": null
-                    }
-                  ]
-                },
-                {
-                  "name": "Implement UUID and Slug Dual System",
-                  "description": "Support both UUID (internal) and slug (user-facing) references.",
-                  "slug": "implement-uuid-",
-                  "status": "pending",
-                  "created_at": "2026-02-17T01:30:00.534278",
-                  "updated_at": "2026-02-17T01:30:00.534279",
-                  "actions": [
-                    {
-                      "name": "Add UUID field to all item models",
-                      "description": "Generate UUID on item creation.",
-                      "slug": "add-uuid-field-",
-                      "status": "pending",
-                      "created_at": "2026-02-17T01:30:00.534290",
-                      "updated_at": "2026-02-17T16:30:00",
-                      "time_spent": null,
-                      "due_date": null
-                    },
-                    {
-                      "name": "Update slug generation to use config settings",
-                      "description": "Use configurable slug length and pattern.",
-                      "slug": "update-slug-gen",
-                      "status": "pending",
-                      "created_at": "2026-02-17T01:30:00.534301",
-                      "updated_at": "2026-02-17T01:30:00.534302",
-                      "time_spent": null,
-                      "due_date": null
-                    },
-                    {
-                      "name": "Create UUID-to-slug lookup methods",
-                      "description": "Resolve UUID to slug for user-facing output.",
-                      "slug": "create-uuid-to-",
-                      "status": "pending",
-                      "created_at": "2026-02-17T01:30:00.534316",
-                      "updated_at": "2026-02-17T01:30:00.534317",
-                      "time_spent": null,
-                      "due_date": null
-                    },
-                    {
-                      "name": "Create slug-to-UUID lookup methods",
-                      "description": "Resolve slug to UUID for internal operations.",
-                      "slug": "create-slug-to-",
-                      "status": "pending",
-                      "created_at": "2026-02-17T01:30:00.534331",
-                      "updated_at": "2026-02-17T01:30:00.534332",
-                      "time_spent": null,
-                      "due_date": null
-                    },
-                    {
-                      "name": "Update CLI commands to accept both UUID and slug",
-                      "description": "User can use either format in commands.",
-                      "slug": "update-cli-comm",
-                      "status": "pending",
-                      "created_at": "2026-02-17T01:30:00.534344",
-                      "updated_at": "2026-02-17T01:30:00.534345",
+                      "updated_at": "2026-02-18T15:15:49.065092",
                       "time_spent": null,
                       "due_date": null
                     }
@@ -928,17 +868,17 @@
                   "name": "Update CLI Commands for New Storage",
                   "description": "Update all CLI commands to work with new storage system.",
                   "slug": "update-cli-comm",
-                  "status": "pending",
+                  "status": "completed",
                   "created_at": "2026-02-17T01:30:00.534544",
-                  "updated_at": "2026-02-17T01:30:00.534545",
+                  "updated_at": "2026-02-18T17:31:41.343601",
                   "actions": [
                     {
                       "name": "Update strat commands to use new storage",
                       "description": "strat add/show/edit/delete with UUID/slug support.",
                       "slug": "update-strat-co",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-17T01:30:00.534564",
-                      "updated_at": "2026-02-17T01:30:00.534565",
+                      "updated_at": "2026-02-18T17:26:00.848281",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -946,9 +886,9 @@
                       "name": "Update exec commands to use new storage",
                       "description": "exec add/show/edit/delete with UUID/slug support.",
                       "slug": "update-exec-com",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-17T01:30:00.534596",
-                      "updated_at": "2026-02-17T01:30:00.534597",
+                      "updated_at": "2026-02-18T17:26:55.956638",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -956,9 +896,9 @@
                       "name": "Update task commands to use new storage",
                       "description": "task start/done/next with new managers.",
                       "slug": "update-task-com",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-17T01:30:00.534614",
-                      "updated_at": "2026-02-17T01:30:00.534615",
+                      "updated_at": "2026-02-18T17:27:06.700882",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -966,9 +906,9 @@
                       "name": "Update status command to use new storage",
                       "description": "status with lazy loading for performance.",
                       "slug": "update-status-c",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-17T01:30:00.534626",
-                      "updated_at": "2026-02-17T01:30:00.534627",
+                      "updated_at": "2026-02-18T17:31:26.473234",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -976,9 +916,9 @@
                       "name": "Add config command group",
                       "description": "config show/set for project settings.",
                       "slug": "add-config-comm",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-17T01:30:00.534647",
-                      "updated_at": "2026-02-17T01:30:00.534648",
+                      "updated_at": "2026-02-18T17:31:34.816776",
                       "time_spent": null,
                       "due_date": null
                     },
@@ -986,9 +926,9 @@
                       "name": "Add orphan command group",
                       "description": "orphan add/list/adopt for orphan management.",
                       "slug": "add-orphan-comm",
-                      "status": "pending",
+                      "status": "completed",
                       "created_at": "2026-02-17T01:30:00.534667",
-                      "updated_at": "2026-02-17T01:30:00.534668",
+                      "updated_at": "2026-02-18T17:31:41.343281",
                       "time_spent": null,
                       "due_date": null
                     }
@@ -1006,7 +946,7 @@
                       "name": "Create tests for new model classes",
                       "description": "Test Phase, Milestone, Objective, Deliverable, Action models.",
                       "slug": "create-tests-fo",
-                      "status": "pending",
+                      "status": "in-progress",
                       "created_at": "2026-02-17T01:30:00.534690",
                       "updated_at": "2026-02-17T01:30:00.534691",
                       "time_spent": null,
@@ -1061,5 +1001,5 @@
       ]
     }
   ],
-  "cursor": "alpha/adopt-orphan-id/revamp-data-sto/implement-migra/create-initial-"
+  "cursor": "alpha/adopt-orphan-id/revamp-data-sto/add-comprehensi/create-tests-fo"
 }

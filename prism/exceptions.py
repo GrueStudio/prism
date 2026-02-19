@@ -36,3 +36,8 @@ class ConfigurationError(PrismError):
 class NavigationError(PrismError):
     """Raised when navigation or path resolution fails."""
     pass
+
+
+class ArchivedItemError(PrismError):
+    """Raised when attempting to modify an archived item."""
+    pass

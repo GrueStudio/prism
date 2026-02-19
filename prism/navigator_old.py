@@ -1,4 +1,18 @@
 """
+DEPRECATED: Old Prism Navigator using project.json storage.
+
+This module is deprecated and will be removed in a future version.
+Use prism.managers.NavigationManager with .prism/ folder-based storage instead.
+"""
+import warnings
+warnings.warn(
+    "Old Navigator (project.json storage) is deprecated. "
+    "Use prism.managers.NavigationManager with .prism/ storage instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
+
+"""
 Navigation and path resolution for the Prism CLI.
 This class handles all tree traversal, path resolution, and navigation logic.
 """
@@ -6,7 +20,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from prism.models import (
+from prism.models_old import (
     Action,
     BaseItem,
     Deliverable,

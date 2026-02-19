@@ -3,15 +3,17 @@ Event system for Prism CLI.
 
 Allows decoupled communication between components via signals and listeners.
 """
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional
 
 
 class EventType(str, Enum):
     """Types of events in Prism."""
+
     ITEM_CREATED = "item.created"
     ITEM_UPDATED = "item.updated"
     ITEM_DELETED = "item.deleted"
@@ -25,6 +27,7 @@ class EventType(str, Enum):
 @dataclass
 class Event:
     """Base event class."""
+
     type: EventType
     timestamp: datetime = field(default_factory=datetime.now)
     data: Dict[str, Any] = field(default_factory=dict)
@@ -33,6 +36,7 @@ class Event:
 @dataclass
 class ItemEvent(Event):
     """Event for item-related actions."""
+
     item_uuid: str = ""
     item_type: str = ""
     item_slug: str = ""
@@ -43,16 +47,16 @@ class ItemEvent(Event):
 
 class EventListener(ABC):
     """Base class for event listeners."""
-    
+
     @abstractmethod
     def handle(self, event: Event) -> None:
         """Handle an event.
-        
+
         Args:
             event: The event to handle.
         """
         pass
-    
+
     @property
     @abstractmethod
     def subscribed_events(self) -> List[EventType]:
@@ -63,21 +67,21 @@ class EventListener(ABC):
 class EventBus:
     """
     Central event bus for publishing and subscribing to events.
-    
+
     Thread-safe singleton pattern for global event access.
     """
-    
-    _instance: Optional['EventBus'] = None
+
+    _instance: Optional["EventBus"] = None
     _listeners: Dict[EventType, List[EventListener]] = {}
-    
-    def __new__(cls) -> 'EventBus':
+
+    def __new__(cls) -> "EventBus":
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
-    
+
     def subscribe(self, listener: EventListener) -> None:
         """Subscribe a listener to events.
-        
+
         Args:
             listener: The listener to subscribe.
         """
@@ -85,20 +89,20 @@ class EventBus:
             if event_type not in self._listeners:
                 self._listeners[event_type] = []
             self._listeners[event_type].append(listener)
-    
+
     def unsubscribe(self, listener: EventListener) -> None:
         """Unsubscribe a listener from all events.
-        
+
         Args:
             listener: The listener to unsubscribe.
         """
         for event_type in self._listeners:
             if listener in self._listeners[event_type]:
                 self._listeners[event_type].remove(listener)
-    
+
     def publish(self, event: Event) -> None:
         """Publish an event to all subscribed listeners.
-        
+
         Args:
             event: The event to publish.
         """
@@ -109,8 +113,11 @@ class EventBus:
             except Exception as e:
                 # Log error but don't stop other listeners
                 import click
-                click.echo(f"  ⚠ Listener {listener.__class__.__name__} failed: {e}", err=True)
-    
+
+                click.echo(
+                    f"  ⚠ Listener {listener.__class__.__name__} failed: {e}", err=True
+                )
+
     def clear(self) -> None:
         """Clear all listeners (useful for testing)."""
         self._listeners.clear()

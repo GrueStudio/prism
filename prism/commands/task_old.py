@@ -1,11 +1,22 @@
 """
-Task commands for new Prism CLI using .prism/ storage.
+DEPRECATED: Old task commands using project.json storage.
 
-Commands for managing tasks (start, done, next).
+This module is deprecated and will be removed in a future version.
+Use prism/commands/task.py with .prism/ folder-based storage instead.
 """
+
+import warnings
+
 import click
 
-from prism.core import PrismCore
+warnings.warn(
+    "Old task commands (project.json storage) are deprecated. "
+    "Use the new task commands with .prism/ storage instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
+from prism.core_old import Core
 
 
 @click.group()
@@ -21,8 +32,8 @@ def task():
 @task.command()
 def start():
     """Start the next pending task, or show current in-progress task."""
-    core = PrismCore()
-    action = core.task_manager.start_next_action()
+    core = Core()
+    action = core.start_next_action()
     if action:
         click.echo(f"Currently working on: {action.name}")
     else:
@@ -36,8 +47,8 @@ def done():
     If all actions in a deliverable are complete, the deliverable is marked done.
     If all deliverables in an objective are complete, the objective is marked done.
     """
-    core = PrismCore()
-    action = core.task_manager.complete_current_action()
+    core = Core()
+    action = core.complete_current_action()
     if action:
         click.echo(f"Completed task: {action.name}")
     else:
@@ -51,10 +62,10 @@ def next():
     If all actions in a deliverable are complete, the deliverable is marked done.
     If all deliverables in an objective are complete, the objective is marked done.
     """
-    core = PrismCore()
-    completed, next_action = core.task_manager.complete_current_and_start_next()
-    if completed:
-        click.echo(f"Completed task: {completed.name}")
+    core = Core()
+    completed_action, next_action = core.complete_current_and_start_next()
+    if completed_action:
+        click.echo(f"Completed task: {completed_action.name}")
         if next_action:
             click.echo(f"Started next task: {next_action.name}")
         else:

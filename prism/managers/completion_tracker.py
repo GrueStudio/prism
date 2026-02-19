@@ -3,14 +3,15 @@ CompletionTracker for cascade completion and percentage calculations.
 
 Handles completion cascading and progress tracking.
 """
-from typing import Dict, List, Optional
+
+from typing import Dict
 
 import click
 
-from prism.newmodels import Action, BaseItem, Deliverable, Objective
+from prism.constants import PERCENTAGE_ROUND_PRECISION
+from prism.managers.events import EventType, ItemEvent, publish_event
 from prism.managers.navigation_manager import NavigationManager
-from prism.constants import COMPLETED_STATUS, PERCENTAGE_ROUND_PRECISION
-from prism.managers.events import ItemEvent, EventType, publish_event
+from prism.models.base import Action, BaseItem, Deliverable, Objective
 
 
 class CompletionTracker:
@@ -93,9 +94,7 @@ class CompletionTracker:
         if all_children_complete and parent.status != "completed":
             parent.status = "completed"
             parent.updated_at = datetime.now()
-            click.echo(
-                f"  ✓ {type(parent).__name__} '{parent.name}' marked complete"
-            )
+            click.echo(f"  ✓ {type(parent).__name__} '{parent.name}' marked complete")
 
             # Emit event for strategic item completion
             if self._emit_events and isinstance(parent, Objective):
@@ -122,9 +121,7 @@ class CompletionTracker:
         )
         publish_event(event)
 
-    def calculate_completion_percentage(
-        self, item: BaseItem
-    ) -> Dict[str, float]:
+    def calculate_completion_percentage(self, item: BaseItem) -> Dict[str, float]:
         """Calculate completion percentage for objectives and deliverables.
 
         Args:
@@ -179,9 +176,7 @@ class CompletionTracker:
             if len(item.actions) == 0:
                 return {"overall": 0.0}
 
-            completed_actions = sum(
-                1 for a in item.actions if a.status == "completed"
-            )
+            completed_actions = sum(1 for a in item.actions if a.status == "completed")
             total_actions = len(item.actions)
 
             return {

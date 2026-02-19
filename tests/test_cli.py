@@ -7,8 +7,8 @@ from unittest.mock import patch
 import pytest
 from click.testing import CliRunner
 
-from prism.cli import cli
-from prism.models import Deliverable, Milestone, Objective, Phase
+from prism.cli_old import cli
+from prism.models_old import Deliverable, Milestone, Objective, Phase
 
 
 def test_cli_registers_strat_and_exec_groups():
@@ -19,7 +19,7 @@ def test_cli_registers_strat_and_exec_groups():
     assert "exec" in result.output
 
 
-@patch("prism.commands.strat.Core")
+@patch("prism.commands.strat_old.Core")
 def test_strat_add_phase(mock_core):
     runner = CliRunner()
     result = runner.invoke(
@@ -37,7 +37,7 @@ def test_strat_add_phase(mock_core):
     assert "Phase 'Test Phase' created successfully." in result.output
 
 
-@patch("prism.commands.strat.Core")
+@patch("prism.commands.strat_old.Core")
 def test_strat_add_milestone(mock_core):
     runner = CliRunner()
     result = runner.invoke(
@@ -65,7 +65,7 @@ def test_strat_add_milestone(mock_core):
     assert "Milestone 'Test Milestone' created successfully." in result.output
 
 
-@patch("prism.commands.strat.Core")
+@patch("prism.commands.strat_old.Core")
 def test_strat_add_objective(mock_core):
     runner = CliRunner()
     result = runner.invoke(
@@ -93,7 +93,7 @@ def test_strat_add_objective(mock_core):
     assert "Objective 'Test Objective' created successfully." in result.output
 
 
-@patch("prism.commands.strat.Core")
+@patch("prism.commands.strat_old.Core")
 def test_strat_add_no_item_type(mock_core):
     runner = CliRunner()
     result = runner.invoke(cli, ["strat", "add", "--name", "Test Item"])
@@ -102,7 +102,7 @@ def test_strat_add_no_item_type(mock_core):
     mock_core.return_value.add_item.assert_not_called()
 
 
-@patch("prism.commands.strat.Core")
+@patch("prism.commands.strat_old.Core")
 def test_strat_show(mock_core):
     mock_milestone = Milestone(
         id=uuid.uuid4(),
@@ -130,7 +130,9 @@ def test_strat_show(mock_core):
     runner = CliRunner()
     result = runner.invoke(cli, ["strat", "show", "--path", "test-phase"])
     assert result.exit_code == 0
-    mock_core.return_value.navigator.get_item_by_path.assert_called_once_with("test-phase")
+    mock_core.return_value.navigator.get_item_by_path.assert_called_once_with(
+        "test-phase"
+    )
     assert "Name: Test Phase" in result.output
     assert "Description: A test phase" in result.output
     assert "Status: in-progress" in result.output
@@ -139,7 +141,7 @@ def test_strat_show(mock_core):
     assert "1. Test Milestone (test-milestone)" in result.output
 
 
-@patch("prism.commands.strat.Core")
+@patch("prism.commands.strat_old.Core")
 def test_strat_show_with_children(mock_core):
     """Test strat show displays child items correctly."""
     mock_milestone = Milestone(
@@ -176,14 +178,14 @@ def test_strat_show_with_children(mock_core):
 
     runner = CliRunner()
     result = runner.invoke(cli, ["strat", "show", "--path", "test-phase"])
-    
+
     assert result.exit_code == 0
     assert "Milestones:" in result.output
     assert "1. Milestone 1 (milestone-1)" in result.output
     assert "2. Milestone 2 (milestone-2)" in result.output
 
 
-@patch("prism.commands.strat.Core")
+@patch("prism.commands.strat_old.Core")
 def test_strat_show_no_children(mock_core):
     """Test strat show displays 'no children' message."""
     mock_phase = Phase(
@@ -200,12 +202,12 @@ def test_strat_show_no_children(mock_core):
 
     runner = CliRunner()
     result = runner.invoke(cli, ["strat", "show", "--path", "empty-phase"])
-    
+
     assert result.exit_code == 0
     assert "No milestones." in result.output
 
 
-@patch("prism.commands.strat.Core")
+@patch("prism.commands.strat_old.Core")
 def test_strat_show_json_with_children(mock_core):
     """Test strat show JSON output includes children."""
     mock_deliverable = Deliverable(
@@ -232,9 +234,10 @@ def test_strat_show_json_with_children(mock_core):
 
     runner = CliRunner()
     result = runner.invoke(cli, ["strat", "show", "--path", "test-obj", "--json"])
-    
+
     assert result.exit_code == 0
     import json as json_module
+
     output_data = json_module.loads(result.output)
     assert "deliverables" in output_data
     assert len(output_data["deliverables"]) == 1
@@ -242,7 +245,7 @@ def test_strat_show_json_with_children(mock_core):
     assert output_data["deliverables"][0]["slug"] == "test-del"
 
 
-@patch("prism.commands.strat.Core")
+@patch("prism.commands.strat_old.Core")
 def test_strat_add_validation_incomplete_exec_tree(mock_core):
     mock_core.return_value.is_exec_tree_complete.return_value = False
 
@@ -275,9 +278,7 @@ def test_strat_add_validation_incomplete_exec_tree(mock_core):
     )
 
     assert result.exit_code == 1  # Expecting an error exit code
-    mock_core.return_value.is_exec_tree_complete.assert_called_once_with(
-        "parent-obj"
-    )
+    mock_core.return_value.is_exec_tree_complete.assert_called_once_with("parent-obj")
     mock_core.return_value.add_item.assert_not_called()
     assert (
         "Error: Cannot add strategic item. Execution tree for 'parent-obj' is not complete or does not exist."
@@ -285,7 +286,7 @@ def test_strat_add_validation_incomplete_exec_tree(mock_core):
     )
 
 
-@patch("prism.commands.strat.Core")
+@patch("prism.commands.strat_old.Core")
 def test_strat_edit(mock_core):
     runner = CliRunner()
     path = "test-phase/test-milestone"
@@ -316,7 +317,7 @@ def test_strat_edit(mock_core):
     assert f"Item at '{path}' updated successfully." in result.output
 
 
-@patch("prism.commands.strat.Core")
+@patch("prism.commands.strat_old.Core")
 def test_strat_edit_from_file(mock_core):
     runner = CliRunner()
     path = "test-phase/test-objective"
@@ -339,7 +340,7 @@ def test_strat_edit_from_file(mock_core):
     assert f"Item at '{path}' updated successfully." in result.output
 
 
-@patch("prism.commands.strat.Core")
+@patch("prism.commands.strat_old.Core")
 def test_strat_delete(mock_core):
     runner = CliRunner()
     path = "test-phase/test-objective"
@@ -351,7 +352,7 @@ def test_strat_delete(mock_core):
     assert f"Item at '{path}' deleted successfully." in result.output
 
 
-@patch("prism.commands.strat.Core")
+@patch("prism.commands.strat_old.Core")
 def test_strat_delete_no_path(mock_core):
     runner = CliRunner()
     result = runner.invoke(cli, ["strat", "delete"])
@@ -361,7 +362,7 @@ def test_strat_delete_no_path(mock_core):
     mock_core.return_value.delete_item.assert_not_called()
 
 
-@patch("prism.commands.strat.Core")
+@patch("prism.commands.strat_old.Core")
 def test_strat_show_json_output(mock_core):
     mock_phase_data = Phase(
         name="Test Phase",
@@ -380,7 +381,9 @@ def test_strat_show_json_output(mock_core):
 
     assert result.exit_code == 0
     mock_core.assert_called_once()  # Ensure Tracker class was instantiated
-    mock_core.return_value.navigator.get_item_by_path.assert_called_once_with("test-phase")
+    mock_core.return_value.navigator.get_item_by_path.assert_called_once_with(
+        "test-phase"
+    )
 
     try:
         output_json = json.loads(result.output)
@@ -396,7 +399,7 @@ def test_strat_show_json_output(mock_core):
         pytest.fail("Output is not valid JSON.")
 
 
-@patch("prism.commands.strat.Core")
+@patch("prism.commands.strat_old.Core")
 def test_strat_edit_completed_item_raises_error(mock_core):
     mock_phase = Phase(
         id=uuid.uuid4(),

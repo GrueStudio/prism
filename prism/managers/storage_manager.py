@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import ValidationError
 
 from prism.exceptions import PrismError
-from prism.newmodels import StrategicFile, ExecutionFile, OrphansFile, ConfigFile
+from prism.models.files import StrategicFile, ExecutionFile, OrphansFile, ConfigFile
 
 
 # File name constants
@@ -21,7 +21,7 @@ EXECUTION_FILE = "execution.json"
 CONFIG_FILE = "config.json"
 ORPHANS_FILE = "orphans.json"
 ARCHIVE_STRATEGIC_FILE = "strategic.json"
-ARCHIVE_EXECUTION_PREFIX = "objective-"
+ARCHIVE_EXECUTION_PREFIX = ""
 ARCHIVE_EXECUTION_SUFFIX = ".exec.json"
 
 
@@ -285,19 +285,43 @@ class StorageManager:
         file_path = self._get_archive_file_path(ARCHIVE_STRATEGIC_FILE)
         if not file_path.exists():
             return None
-        
+
         try:
             with open(file_path, "r") as f:
                 data = json.load(f)
-            
-            # Find item by UUID in flat list
-            items = data.get("items", [])
-            for item in items:
-                if item.get("uuid") == item_uuid:
-                    return item
+
+            # New structure: phases, milestones, objectives fields
+            for item_type in ['phases', 'milestones', 'objectives']:
+                items = data.get(item_type, [])
+                for item in items:
+                    if item.get("uuid") == item_uuid:
+                        item['type'] = item_type[:-1]  # 'phases' -> 'phase', etc.
+                        return item
             return None
         except (json.JSONDecodeError, IOError):
             return None
+
+    def load_all_archived_strategic(self) -> Dict[str, List[Dict[str, Any]]]:
+        """
+        Load all archived strategic items from archive/strategic.json.
+
+        Returns:
+            Dictionary with 'phases', 'milestones', 'objectives' lists.
+        """
+        file_path = self._get_archive_file_path(ARCHIVE_STRATEGIC_FILE)
+        if not file_path.exists():
+            return {'phases': [], 'milestones': [], 'objectives': []}
+
+        try:
+            with open(file_path, "r") as f:
+                data = json.load(f)
+            return {
+                'phases': data.get('phases', []),
+                'milestones': data.get('milestones', []),
+                'objectives': data.get('objectives', []),
+            }
+        except (json.JSONDecodeError, IOError):
+            return {'phases': [], 'milestones': [], 'objectives': []}
 
     def load_archived_execution_tree(self, objective_uuid: str) -> Optional[Dict[str, Any]]:
         """
@@ -330,13 +354,17 @@ class StorageManager:
         file_path = self._get_archive_file_path(ARCHIVE_STRATEGIC_FILE)
         if not file_path.exists():
             return []
-        
+
         try:
             with open(file_path, "r") as f:
                 data = json.load(f)
-            
-            items = data.get("items", [])
-            return [item.get("uuid", "") for item in items if item.get("uuid")]
+
+            # New structure: phases, milestones, objectives fields
+            uuids = []
+            for item_type in ['phases', 'milestones', 'objectives']:
+                items = data.get(item_type, [])
+                uuids.extend([item.get("uuid", "") for item in items if item.get("uuid")])
+            return uuids
         except (json.JSONDecodeError, IOError):
             return []
 

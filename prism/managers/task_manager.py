@@ -3,16 +3,16 @@ TaskManager for task operations in the Prism CLI.
 
 Handles starting, completing, and navigating through actions.
 """
+
 from datetime import datetime
 from typing import Callable, Optional, Tuple
 
 import click
 
-from prism.newmodels import Action, BaseItem, Deliverable, Objective
-from prism.managers.project_manager import Project
-from prism.managers.navigation_manager import NavigationManager
-from prism.constants import COMPLETED_STATUS
 from prism.managers.completion_tracker import CompletionTracker
+from prism.managers.navigation_manager import NavigationManager
+from prism.managers.project_manager import Project
+from prism.models.base import Action, BaseItem, Deliverable, Objective
 
 
 class TaskManager:
@@ -93,7 +93,9 @@ class TaskManager:
         # First, try to find pending actions in non-completed deliverables
         for deliverable in objective.deliverables:
             if deliverable.status != "completed":
-                pending_action = self._find_next_pending_action_in_deliverable(deliverable)
+                pending_action = self._find_next_pending_action_in_deliverable(
+                    deliverable
+                )
                 if pending_action:
                     return pending_action
         return None
@@ -212,9 +214,7 @@ class TaskManager:
         if all_children_complete and parent.status != "completed":
             parent.status = "completed"
             parent.updated_at = datetime.now()
-            click.echo(
-                f"  ✓ {type(parent).__name__} '{parent.name}' marked complete"
-            )
+            click.echo(f"  ✓ {type(parent).__name__} '{parent.name}' marked complete")
 
             # Continue cascading only if parent is a deliverable
             if isinstance(parent, Deliverable):

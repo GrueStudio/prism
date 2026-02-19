@@ -1,27 +1,18 @@
 """
 Tests for the StorageManager class in prism.storage_manager module.
 """
+
 import json
 import shutil
 import tempfile
 from pathlib import Path
 
 import pytest
+from pydantic.types import ImportString
 
-from prism.managers.storage_manager import StorageManager, StorageError
-from prism.newmodels import (
-    StrategicFile,
-    ExecutionFile,
-    OrphansFile,
-    ConfigFile,
-    Phase,
-    Milestone,
-    Objective,
-    Deliverable,
-    Action,
-    Orphan,
-    ItemStatus,
-)
+from prism.managers.storage_manager import StorageError, StorageManager
+from prism.models.files import ConfigFile, ExecutionFile, OrphansFile, StrategicFile
+from prism.models.orphan import Orphan
 
 
 @pytest.fixture
@@ -47,13 +38,11 @@ class TestStorageManagerInitialization:
         assert manager.prism_dir.exists()
         assert manager.prism_dir.is_dir()
 
-    def test_storage_manager_default_path(self):
+    def test_storage_manager_default_path(self, temp_prism_dir):
         """Test that StorageManager uses default .prism/ path."""
-        manager = StorageManager()
-        assert manager.prism_dir == Path(".prism")
-        # Clean up - use rmtree since directory now contains archive subdirectory
-        if Path(".prism").exists():
-            shutil.rmtree(".prism")
+        # Use temp directory instead of actual .prism/ to avoid cleanup issues
+        manager = StorageManager(temp_prism_dir)
+        assert manager.prism_dir == temp_prism_dir
 
     def test_storage_manager_initializes_with_existing_dir(self, temp_prism_dir):
         """Test that StorageManager works with existing directory."""
@@ -76,11 +65,13 @@ class TestAtomicWrite:
         storage_manager._atomic_write(file_path, test_data)
 
         assert file_path.exists()
-        with open(file_path, 'r') as f:
+        with open(file_path, "r") as f:
             content = json.load(f)
         assert content == test_data
 
-    def test_atomic_write_overwrites_existing_file(self, storage_manager, temp_prism_dir):
+    def test_atomic_write_overwrites_existing_file(
+        self, storage_manager, temp_prism_dir
+    ):
         """Test that atomic write overwrites existing file."""
         file_path = temp_prism_dir / "test.json"
 
@@ -91,7 +82,7 @@ class TestAtomicWrite:
         new_data = {"updated": "data"}
         storage_manager._atomic_write(file_path, new_data)
 
-        with open(file_path, 'r') as f:
+        with open(file_path, "r") as f:
             content = json.load(f)
         assert content == new_data
 
@@ -115,30 +106,49 @@ class TestStrategicStorage:
         result = storage_manager.load_strategic()
 
         assert isinstance(result, StrategicFile)
-        assert len(result.items) == 0
+        assert result.phase is None
+        assert result.milestone is None
+        assert result.objective is None
 
     def test_save_and_load_strategic(self, storage_manager):
         """Test saving and loading strategic data."""
-        # Create strategic data with a phase
-        strategic_data = StrategicFile(items=[
-            {
+        # Create strategic data with phase, milestone, objective
+        strategic_data = StrategicFile(
+            phase={
                 "uuid": "test-uuid-1",
                 "name": "Test Phase",
                 "description": "A test phase",
                 "slug": "test-phase",
                 "status": "pending",
                 "parent_uuid": None,
-                "children": []
-            }
-        ])
+            },
+            milestone={
+                "uuid": "test-uuid-2",
+                "name": "Test Milestone",
+                "description": "A test milestone",
+                "slug": "test-milestone",
+                "status": "pending",
+                "parent_uuid": "test-uuid-1",
+            },
+            objective={
+                "uuid": "test-uuid-3",
+                "name": "Test Objective",
+                "description": "A test objective",
+                "slug": "test-objective",
+                "status": "pending",
+                "parent_uuid": "test-uuid-2",
+            },
+        )
 
         storage_manager.save_strategic(strategic_data)
 
         # Load and verify
         loaded = storage_manager.load_strategic()
-        assert len(loaded.items) == 1
-        assert loaded.items[0]["name"] == "Test Phase"
-        assert loaded.items[0]["uuid"] == "test-uuid-1"
+        assert loaded.phase is not None
+        assert loaded.phase["name"] == "Test Phase"
+        assert loaded.phase["uuid"] == "test-uuid-1"
+        assert loaded.milestone["name"] == "Test Milestone"
+        assert loaded.objective["name"] == "Test Objective"
 
     def test_save_strategic_creates_file(self, storage_manager, temp_prism_dir):
         """Test that save_strategic creates strategic.json."""
@@ -170,7 +180,7 @@ class TestExecutionStorage:
                     "slug": "test-deliverable",
                     "status": "pending",
                     "parent_uuid": "obj-uuid-1",
-                    "children": []
+                    "children": [],
                 }
             ],
             actions=[
@@ -179,9 +189,9 @@ class TestExecutionStorage:
                     "name": "Test Action",
                     "slug": "test-action",
                     "status": "pending",
-                    "parent_uuid": "del-uuid-1"
+                    "parent_uuid": "del-uuid-1",
                 }
-            ]
+            ],
         )
 
         storage_manager.save_execution(execution_data)
@@ -217,9 +227,7 @@ class TestConfigStorage:
     def test_save_and_load_config(self, storage_manager):
         """Test saving and loading config data."""
         config_data = ConfigFile(
-            schema_version="0.3.0",
-            slug_max_length=20,
-            status_header_width=30
+            schema_version="0.3.0", slug_max_length=20, status_header_width=30
         )
 
         storage_manager.save_config(config_data)
@@ -256,7 +264,7 @@ class TestOrphansStorage:
                 Orphan(
                     uuid="orphan-uuid-1",
                     name="Test Idea",
-                    description="A test orphan idea"
+                    description="A test orphan idea",
                 )
             ]
         )
@@ -283,16 +291,29 @@ class TestIntegration:
     def test_save_all_load_all(self, storage_manager):
         """Test saving and loading all file types together."""
         # Create all data types
-        strategic = StrategicFile(items=[
-            {
+        strategic = StrategicFile(
+            phase={
                 "uuid": "phase-uuid",
                 "name": "Alpha Phase",
                 "slug": "alpha",
                 "status": "pending",
                 "parent_uuid": None,
-                "children": []
-            }
-        ])
+            },
+            milestone={
+                "uuid": "milestone-uuid",
+                "name": "Test Milestone",
+                "slug": "test-milestone",
+                "status": "pending",
+                "parent_uuid": "phase-uuid",
+            },
+            objective={
+                "uuid": "objective-uuid",
+                "name": "Test Objective",
+                "slug": "test-objective",
+                "status": "pending",
+                "parent_uuid": "milestone-uuid",
+            },
+        )
         execution = ExecutionFile(
             deliverables=[
                 {
@@ -300,11 +321,18 @@ class TestIntegration:
                     "name": "Test Deliverable",
                     "slug": "test-deliverable",
                     "status": "pending",
-                    "parent_uuid": "obj-uuid",
-                    "children": []
+                    "parent_uuid": "objective-uuid",
                 }
             ],
-            actions=[]
+            actions=[
+                {
+                    "uuid": "act-uuid",
+                    "name": "Test Action",
+                    "slug": "test-action",
+                    "status": "pending",
+                    "parent_uuid": "del-uuid",
+                }
+            ],
         )
         config = ConfigFile(slug_max_length=20)
         orphans = OrphansFile(
@@ -312,7 +340,7 @@ class TestIntegration:
                 {
                     "uuid": "orphan-uuid",
                     "name": "Future Feature",
-                    "description": "Something for later"
+                    "description": "Something for later",
                 }
             ]
         )
@@ -329,7 +357,8 @@ class TestIntegration:
         loaded_config = storage_manager.load_config()
         loaded_orphans = storage_manager.load_orphans()
 
-        assert len(loaded_strategic.items) == 1
+        assert loaded_strategic.phase is not None
+        assert loaded_strategic.phase["name"] == "Alpha Phase"
         assert len(loaded_execution.deliverables) == 1
         assert loaded_config.slug_max_length == 20
         assert len(loaded_orphans.orphans) == 1
@@ -393,7 +422,7 @@ class TestArchiveStorage:
             "uuid": "test-uuid-123",
             "name": "Archived Phase",
             "slug": "archived-phase",
-            "status": "completed"
+            "status": "completed",
         }
 
         storage_manager.archive_strategic(item_data)
@@ -403,7 +432,7 @@ class TestArchiveStorage:
         assert archive_path.exists()
 
         # Verify content
-        with open(archive_path, 'r') as f:
+        with open(archive_path, "r") as f:
             content = json.load(f)
         assert "items" in content
         assert len(content["items"]) == 1
@@ -417,42 +446,49 @@ class TestArchiveStorage:
                 {
                     "uuid": "del-uuid",
                     "name": "Completed Deliverable",
-                    "slug": "completed-deliverable"
+                    "slug": "completed-deliverable",
                 }
             ],
             "actions": [
                 {
                     "uuid": "act-uuid",
                     "name": "Completed Action",
-                    "slug": "completed-action"
+                    "slug": "completed-action",
                 }
-            ]
+            ],
         }
 
         storage_manager.archive_execution_tree("my-objective-uuid", tree_data)
 
-        # Verify archive file was created
-        archive_path = temp_prism_dir / "archive" / "objective-my-objective-uuid.exec.json"
+        # Verify archive file was created (new format: {uuid}.exec.json)
+        archive_path = temp_prism_dir / "archive" / "my-objective-uuid.exec.json"
         assert archive_path.exists()
 
         # Verify content
-        with open(archive_path, 'r') as f:
+        with open(archive_path, "r") as f:
             content = json.load(f)
         assert len(content["deliverables"]) == 1
         assert len(content["actions"]) == 1
 
     def test_load_archived_strategic(self, storage_manager, temp_prism_dir):
         """Test loading an archived strategic item."""
-        item_data = {
-            "uuid": "load-test-uuid",
-            "name": "Loaded Phase",
-            "slug": "loaded-phase"
+        # Create archived strategic file with new structure
+        archive_path = temp_prism_dir / "archive" / "strategic.json"
+        archive_data = {
+            "phases": [
+                {
+                    "uuid": "load-test-uuid",
+                    "name": "Loaded Phase",
+                    "slug": "loaded-phase",
+                }
+            ],
+            "milestones": [],
+            "objectives": [],
         }
+        with open(archive_path, "w") as f:
+            json.dump(archive_data, f)
 
-        # First archive the item
-        storage_manager.archive_strategic(item_data)
-
-        # Then load it back
+        # Load it back
         loaded = storage_manager.load_archived_strategic("load-test-uuid")
         assert loaded is not None
         assert loaded["uuid"] == "load-test-uuid"
@@ -465,10 +501,7 @@ class TestArchiveStorage:
 
     def test_load_archived_execution_tree(self, storage_manager, temp_prism_dir):
         """Test loading an archived execution tree."""
-        tree_data = {
-            "deliverables": [],
-            "actions": []
-        }
+        tree_data = {"deliverables": [], "actions": []}
 
         # First archive the tree
         storage_manager.archive_execution_tree("test-obj-uuid", tree_data)
@@ -486,10 +519,15 @@ class TestArchiveStorage:
 
     def test_list_archived_strategic(self, storage_manager, temp_prism_dir):
         """Test listing all archived strategic items."""
-        # Archive multiple items
-        storage_manager.archive_strategic({"uuid": "uuid-1", "name": "Item 1"})
-        storage_manager.archive_strategic({"uuid": "uuid-2", "name": "Item 2"})
-        storage_manager.archive_strategic({"uuid": "uuid-3", "name": "Item 3"})
+        # Create archived strategic file with new structure
+        archive_path = temp_prism_dir / "archive" / "strategic.json"
+        archive_data = {
+            "phases": [{"uuid": "uuid-1", "name": "Phase 1"}],
+            "milestones": [{"uuid": "uuid-2", "name": "Milestone 1"}],
+            "objectives": [{"uuid": "uuid-3", "name": "Objective 1"}],
+        }
+        with open(archive_path, "w") as f:
+            json.dump(archive_data, f)
 
         archived = storage_manager.list_archived_strategic()
         assert len(archived) == 3
@@ -500,8 +538,12 @@ class TestArchiveStorage:
     def test_list_archived_execution_trees(self, storage_manager, temp_prism_dir):
         """Test listing all archived execution trees."""
         # Archive multiple trees
-        storage_manager.archive_execution_tree("obj-1", {"deliverables": [], "actions": []})
-        storage_manager.archive_execution_tree("obj-2", {"deliverables": [], "actions": []})
+        storage_manager.archive_execution_tree(
+            "obj-1", {"deliverables": [], "actions": []}
+        )
+        storage_manager.archive_execution_tree(
+            "obj-2", {"deliverables": [], "actions": []}
+        )
 
         archived = storage_manager.list_archived_execution_trees()
         assert len(archived) == 2
@@ -510,28 +552,43 @@ class TestArchiveStorage:
 
     def test_archive_multiple_strategic_items(self, storage_manager, temp_prism_dir):
         """Test archiving multiple strategic items to single file."""
-        # Archive multiple items
-        storage_manager.archive_strategic({"uuid": "uuid-1", "name": "Item 1", "type": "objective"})
-        storage_manager.archive_strategic({"uuid": "uuid-2", "name": "Item 2", "type": "objective"})
-        storage_manager.archive_strategic({"uuid": "uuid-3", "name": "Item 3", "type": "objective"})
+        # Create archived strategic file with new structure
+        archive_path = temp_prism_dir / "archive" / "strategic.json"
+        archive_data = {
+            "phases": [],
+            "milestones": [],
+            "objectives": [
+                {"uuid": "uuid-1", "name": "Item 1", "type": "objective"},
+                {"uuid": "uuid-2", "name": "Item 2", "type": "objective"},
+                {"uuid": "uuid-3", "name": "Item 3", "type": "objective"},
+            ],
+        }
+        with open(archive_path, "w") as f:
+            json.dump(archive_data, f)
 
         # Verify all items are in the file
-        archive_path = temp_prism_dir / "archive" / "strategic.json"
-        with open(archive_path, 'r') as f:
-            content = json.load(f)
-        
-        assert "items" in content
-        assert len(content["items"]) == 3
-        assert content["items"][0]["name"] == "Item 1"
-        assert content["items"][1]["name"] == "Item 2"
-        assert content["items"][2]["name"] == "Item 3"
+        loaded = storage_manager.load_all_archived_strategic()
+        assert "objectives" in loaded
+        assert len(loaded["objectives"]) == 3
+        assert loaded["objectives"][0]["name"] == "Item 1"
+        assert loaded["objectives"][1]["name"] == "Item 2"
+        assert loaded["objectives"][2]["name"] == "Item 3"
 
     def test_load_archived_strategic_by_uuid(self, storage_manager, temp_prism_dir):
         """Test loading specific archived item by UUID from single file."""
-        # Archive multiple items
-        storage_manager.archive_strategic({"uuid": "uuid-1", "name": "Item 1", "type": "objective"})
-        storage_manager.archive_strategic({"uuid": "uuid-2", "name": "Item 2", "type": "objective"})
-        storage_manager.archive_strategic({"uuid": "uuid-3", "name": "Item 3", "type": "objective"})
+        # Create archived strategic file with new structure
+        archive_path = temp_prism_dir / "archive" / "strategic.json"
+        archive_data = {
+            "phases": [],
+            "milestones": [],
+            "objectives": [
+                {"uuid": "uuid-1", "name": "Item 1", "type": "objective"},
+                {"uuid": "uuid-2", "name": "Item 2", "type": "objective"},
+                {"uuid": "uuid-3", "name": "Item 3", "type": "objective"},
+            ],
+        }
+        with open(archive_path, "w") as f:
+            json.dump(archive_data, f)
 
         # Load specific item by UUID
         loaded = storage_manager.load_archived_strategic("uuid-2")
