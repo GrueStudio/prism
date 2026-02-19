@@ -7,7 +7,7 @@ from typing import Dict, List, Optional
 
 import click
 
-from prism.newmodels import Action, BaseItem, Deliverable, Objective
+from prism.models import Action, BaseItem, Deliverable, Objective
 from prism.managers.navigation_manager import NavigationManager
 from prism.constants import COMPLETED_STATUS, PERCENTAGE_ROUND_PRECISION
 from prism.managers.events import ItemEvent, EventType, publish_event

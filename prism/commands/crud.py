@@ -1,5 +1,5 @@
 """
-Unified CRUD commands for Prism CLI using NewPrismCore.
+Unified CRUD commands for Prism CLI using PrismCore.
 
 Handles all strategic and execution items through a single interface.
 Path is positional argument, UUID is optional flag.
@@ -10,8 +10,8 @@ from typing import Optional
 
 import click
 
-from prism.newcore import NewPrismCore
-from prism.newmodels import (
+from prism.core import PrismCore
+from prism.models import (
     Phase, Milestone, Objective, Deliverable, Action
 )
 from prism.exceptions import (
@@ -25,13 +25,13 @@ def crud():
     pass
 
 
-def _get_item_by_path_or_uuid(core: NewPrismCore, path: Optional[str], uuid: Optional[str], require_path: bool = False):
+def _get_item_by_path_or_uuid(core: PrismCore, path: Optional[str], uuid: Optional[str], require_path: bool = False):
     """Get an item by path or UUID.
     
     For show/edit/delete commands.
     
     Args:
-        core: NewPrismCore instance
+        core: PrismCore instance
         path: Path string (positional, optional)
         uuid: UUID string (optional flag)
         require_path: If True, errors when no path provided (for edit/delete safety)
@@ -72,11 +72,11 @@ def _get_item_by_path_or_uuid(core: NewPrismCore, path: Optional[str], uuid: Opt
         raise click.ClickException(str(e))
 
 
-def _get_parent_path_for_add(core: NewPrismCore, item_type: str, parent_path: Optional[str]) -> Optional[str]:
+def _get_parent_path_for_add(core: PrismCore, item_type: str, parent_path: Optional[str]) -> Optional[str]:
     """Get parent path for add command, inferring from context based on item type.
     
     Args:
-        core: NewPrismCore instance
+        core: PrismCore instance
         item_type: Type of item being added
         parent_path: Explicit parent path (optional)
     
@@ -191,7 +191,7 @@ def show(path: Optional[str], uuid: Optional[str], json_output: bool):
     If PATH is omitted, shows the current phase.
     Use -u/--uuid to lookup by UUID instead.
     """
-    core = NewPrismCore()
+    core = PrismCore()
     try:
         item = _get_item_by_path_or_uuid(core, path, uuid, require_path=False)
         
@@ -240,7 +240,7 @@ def add(path: Optional[str], item_type: str, name: str, desc: Optional[str],
     
     If parent path is omitted, it's inferred from current context.
     """
-    core = NewPrismCore()
+    core = PrismCore()
     try:
         # Resolve parent path
         if item_type != 'phase':
@@ -298,7 +298,7 @@ def edit(path: Optional[str], uuid: Optional[str], name: Optional[str],
     
     Only specified fields are updated.
     """
-    core = NewPrismCore()
+    core = PrismCore()
     try:
         item = _get_item_by_path_or_uuid(core, path, uuid, require_path=True)
         item_path = core.navigator.get_item_path(item)
@@ -339,7 +339,7 @@ def delete(path: Optional[str], uuid: Optional[str]):
     
     WARNING: This will delete all child items as well.
     """
-    core = NewPrismCore()
+    core = PrismCore()
     try:
         item = _get_item_by_path_or_uuid(core, path, uuid, require_path=True)
         item_path = core.navigator.get_item_path(item)

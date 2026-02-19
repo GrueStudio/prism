@@ -7,7 +7,7 @@ import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from prism.newmodels import (
+from prism.models import (
     Action,
     BaseItem,
     Deliverable,

@@ -6,7 +6,7 @@ Will replace Navigator class once migration is complete.
 """
 from typing import Dict, List, Optional
 
-from prism.newmodels import (
+from prism.models import (
     Action,
     BaseItem,
     Deliverable,

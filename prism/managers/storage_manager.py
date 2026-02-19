@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import ValidationError
 
 from prism.exceptions import PrismError
-from prism.newmodels import StrategicFile, ExecutionFile, OrphansFile, ConfigFile
+from prism.models import StrategicFile, ExecutionFile, OrphansFile, ConfigFile
 
 
 # File name constants

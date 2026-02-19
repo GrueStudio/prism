@@ -6,10 +6,10 @@ Builds hierarchical structure from flat storage on demand.
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
-from prism.newmodels.strategic import Phase, Milestone, Objective
-from prism.newmodels.execution import Deliverable, Action
+from prism.models.strategic import Phase, Milestone, Objective
+from prism.models.execution import Deliverable, Action
 from prism.managers.storage_manager import StorageManager
-from prism.newmodels import StrategicFile, ExecutionFile
+from prism.models import StrategicFile, ExecutionFile
 
 
 @dataclass

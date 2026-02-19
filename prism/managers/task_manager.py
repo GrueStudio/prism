@@ -8,7 +8,7 @@ from typing import Callable, Optional, Tuple
 
 import click
 
-from prism.newmodels import Action, BaseItem, Deliverable, Objective
+from prism.models import Action, BaseItem, Deliverable, Objective
 from prism.managers.project_manager import Project
 from prism.managers.navigation_manager import NavigationManager
 from prism.constants import COMPLETED_STATUS

@@ -1,12 +1,12 @@
 import pytest
 from click.testing import CliRunner
 from prism.cli import cli
-from prism.models import ProjectData, Phase, Milestone, Objective, Deliverable, Action
-from prism.core import Core
+from prism.models_old import ProjectData, Phase, Milestone, Objective, Deliverable, Action
+from prism.core_old import Core
 from unittest.mock import patch, MagicMock
 
 
-@patch("prism.commands.task.Core")
+@patch("prism.commands.task_old.Core")
 def test_task_start_with_pending_task(mock_core_class):
     """Test 'prism task start' when there is a pending task."""
     runner = CliRunner()
@@ -31,7 +31,7 @@ def test_task_start_with_pending_task(mock_core_class):
     assert "Currently working on: Action 1" in result.output
     mock_core_instance.start_next_action.assert_called_once()
 
-@patch("prism.commands.task.Core")
+@patch("prism.commands.task_old.Core")
 def test_task_start_no_pending_tasks(mock_core_class):
     """Test 'prism task start' when there are no pending tasks."""
     runner = CliRunner()
@@ -48,7 +48,7 @@ def test_task_start_no_pending_tasks(mock_core_class):
     assert "No pending tasks found." in result.output
     mock_core_instance.start_next_action.assert_called_once()
 
-@patch("prism.commands.task.Core")
+@patch("prism.commands.task_old.Core")
 def test_task_done_with_in_progress_task(mock_core_class):
     """Test 'prism task done' when there is a task in progress."""
     runner = CliRunner()
@@ -68,7 +68,7 @@ def test_task_done_with_in_progress_task(mock_core_class):
     assert "Completed task: Current Task" in result.output
     mock_core_instance.complete_current_action.assert_called_once()
 
-@patch("prism.commands.task.Core")
+@patch("prism.commands.task_old.Core")
 def test_task_done_no_in_progress_task(mock_core_class):
     """Test 'prism task done' when there is no task in progress."""
     runner = CliRunner()
@@ -86,7 +86,7 @@ def test_task_done_no_in_progress_task(mock_core_class):
     mock_core_instance.complete_current_action.assert_called_once()
     mock_core_instance.get_current_action.assert_not_called()
 
-@patch("prism.commands.task.Core")
+@patch("prism.commands.task_old.Core")
 def test_task_next_with_in_progress_task(mock_core_class):
     """Test 'prism task next' when there is a task in progress."""
     runner = CliRunner()
@@ -108,7 +108,7 @@ def test_task_next_with_in_progress_task(mock_core_class):
     assert "Started next task: Next New Task" in result.output
     mock_core_instance.complete_current_and_start_next.assert_called_once()
 
-@patch("prism.commands.task.Core")
+@patch("prism.commands.task_old.Core")
 def test_task_next_no_in_progress_task(mock_core_class):
     """Test 'prism task next' when there is no task in progress."""
     runner = CliRunner()
@@ -125,7 +125,7 @@ def test_task_next_no_in_progress_task(mock_core_class):
     assert "No task in progress to complete." in result.output
     mock_core_instance.complete_current_and_start_next.assert_called_once()
 
-@patch("prism.commands.task.Core")
+@patch("prism.commands.task_old.Core")
 def test_task_workflow(mock_core_class):
     """Test the full workflow: start, next, done."""
     runner = CliRunner()

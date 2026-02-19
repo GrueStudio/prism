@@ -1,3 +1,17 @@
+"""
+DEPRECATED: Old Prism models using project.json storage.
+
+This module is deprecated and will be removed in a future version.
+Use prism.models with .prism/ folder-based storage instead.
+"""
+import warnings
+warnings.warn(
+    "Old models (project.json storage) are deprecated. "
+    "Use prism.models with .prism/ storage instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
+
 from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
 from datetime import datetime, timedelta

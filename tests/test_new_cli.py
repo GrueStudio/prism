@@ -7,9 +7,9 @@ import pytest
 from unittest.mock import Mock, patch, MagicMock
 from click.testing import CliRunner
 
-from prism.newcli import newcli
-from prism.newcore import NewPrismCore
-from prism.newmodels import Phase, Milestone, Objective, Deliverable, Action
+from prism.cli import cli as newcli
+from prism.core import PrismCore
+from prism.models import Phase, Milestone, Objective, Deliverable, Action
 
 
 @pytest.fixture
@@ -20,8 +20,8 @@ def runner():
 
 @pytest.fixture
 def mock_core():
-    """Create a mock NewPrismCore for testing."""
-    core = Mock(spec=NewPrismCore)
+    """Create a mock PrismCore for testing."""
+    core = Mock(spec=PrismCore)
     
     # Create mock items
     phase = Phase(
@@ -121,7 +121,7 @@ class TestCrudShow:
     
     def test_show_with_path(self, runner, mock_core):
         """Test showing an item by path."""
-        with patch('prism.commands.crud.NewPrismCore', return_value=mock_core):
+        with patch('prism.commands.crud.PrismCore', return_value=mock_core):
             result = runner.invoke(newcli, ['crud', 'show', '1/1/1'])
             
             assert result.exit_code == 0
@@ -130,7 +130,7 @@ class TestCrudShow:
     
     def test_show_with_uuid(self, runner, mock_core):
         """Test showing an item by UUID."""
-        with patch('prism.commands.crud.NewPrismCore', return_value=mock_core):
+        with patch('prism.commands.crud.PrismCore', return_value=mock_core):
             result = runner.invoke(newcli, ['crud', 'show', '-u', 'objective-uuid'])
             
             assert result.exit_code == 0
@@ -138,7 +138,7 @@ class TestCrudShow:
     
     def test_show_no_path_defaults_to_phase(self, runner, mock_core):
         """Test showing with no path defaults to current phase."""
-        with patch('prism.commands.crud.NewPrismCore', return_value=mock_core):
+        with patch('prism.commands.crud.PrismCore', return_value=mock_core):
             result = runner.invoke(newcli, ['crud', 'show'])
             
             assert result.exit_code == 0
@@ -147,7 +147,7 @@ class TestCrudShow:
     
     def test_show_json_output(self, runner, mock_core):
         """Test showing an item in JSON format."""
-        with patch('prism.commands.crud.NewPrismCore', return_value=mock_core):
+        with patch('prism.commands.crud.PrismCore', return_value=mock_core):
             result = runner.invoke(newcli, ['crud', 'show', '1/1/1', '-j'])
             
             assert result.exit_code == 0
@@ -158,7 +158,7 @@ class TestCrudShow:
         """Test showing a non-existent item."""
         mock_core.navigator.get_item_by_path = Mock(return_value=None)
         
-        with patch('prism.commands.crud.NewPrismCore', return_value=mock_core):
+        with patch('prism.commands.crud.PrismCore', return_value=mock_core):
             result = runner.invoke(newcli, ['crud', 'show', '999'])
             
             assert result.exit_code == 1
@@ -170,7 +170,7 @@ class TestCrudEdit:
     
     def test_edit_requires_path(self, runner, mock_core):
         """Test that edit requires a path (safety feature)."""
-        with patch('prism.commands.crud.NewPrismCore', return_value=mock_core):
+        with patch('prism.commands.crud.PrismCore', return_value=mock_core):
             result = runner.invoke(newcli, ['crud', 'edit', '-n', 'New Name'])
             
             assert result.exit_code == 1
@@ -178,7 +178,7 @@ class TestCrudEdit:
     
     def test_edit_with_path(self, runner, mock_core):
         """Test editing an item by path."""
-        with patch('prism.commands.crud.NewPrismCore', return_value=mock_core):
+        with patch('prism.commands.crud.PrismCore', return_value=mock_core):
             result = runner.invoke(newcli, ['crud', 'edit', '1/1/1', '-n', 'New Name'])
             
             assert result.exit_code == 0
@@ -187,7 +187,7 @@ class TestCrudEdit:
     
     def test_edit_with_uuid(self, runner, mock_core):
         """Test editing an item by UUID."""
-        with patch('prism.commands.crud.NewPrismCore', return_value=mock_core):
+        with patch('prism.commands.crud.PrismCore', return_value=mock_core):
             result = runner.invoke(newcli, ['crud', 'edit', '-u', 'objective-uuid', '-s', 'completed'])
             
             assert result.exit_code == 0
@@ -195,7 +195,7 @@ class TestCrudEdit:
     
     def test_edit_no_changes(self, runner, mock_core):
         """Test editing without specifying changes."""
-        with patch('prism.commands.crud.NewPrismCore', return_value=mock_core):
+        with patch('prism.commands.crud.PrismCore', return_value=mock_core):
             result = runner.invoke(newcli, ['crud', 'edit', '1/1/1'])
             
             assert result.exit_code == 1
@@ -207,7 +207,7 @@ class TestCrudDelete:
     
     def test_delete_requires_path(self, runner, mock_core):
         """Test that delete requires a path (safety feature)."""
-        with patch('prism.commands.crud.NewPrismCore', return_value=mock_core):
+        with patch('prism.commands.crud.PrismCore', return_value=mock_core):
             # Use --yes to skip confirmation, then check path error
             result = runner.invoke(newcli, ['crud', 'delete', '--yes'])
             
@@ -216,7 +216,7 @@ class TestCrudDelete:
     
     def test_delete_with_path(self, runner, mock_core):
         """Test deleting an item by path."""
-        with patch('prism.commands.crud.NewPrismCore', return_value=mock_core):
+        with patch('prism.commands.crud.PrismCore', return_value=mock_core):
             # Use --yes to skip confirmation prompt
             result = runner.invoke(newcli, ['crud', 'delete', '1/1/1', '--yes'])
             
@@ -230,7 +230,7 @@ class TestCrudAdd:
     
     def test_add_phase(self, runner, mock_core):
         """Test adding a phase."""
-        with patch('prism.commands.crud.NewPrismCore', return_value=mock_core):
+        with patch('prism.commands.crud.PrismCore', return_value=mock_core):
             result = runner.invoke(newcli, ['crud', 'add', '-t', 'phase', '-n', 'New Phase'])
             
             assert result.exit_code == 0
@@ -239,7 +239,7 @@ class TestCrudAdd:
     
     def test_add_action_infers_parent(self, runner, mock_core):
         """Test adding an action with inferred parent."""
-        with patch('prism.commands.crud.NewPrismCore', return_value=mock_core):
+        with patch('prism.commands.crud.PrismCore', return_value=mock_core):
             result = runner.invoke(newcli, ['crud', 'add', '-t', 'action', '-n', 'New Action'])
             
             assert result.exit_code == 0
@@ -250,7 +250,7 @@ class TestCrudAdd:
         """Test that milestone requires parent if no context."""
         mock_core.navigator.get_current_phase = Mock(return_value=None)
         
-        with patch('prism.commands.crud.NewPrismCore', return_value=mock_core):
+        with patch('prism.commands.crud.PrismCore', return_value=mock_core):
             result = runner.invoke(newcli, ['crud', 'add', '-t', 'milestone', '-n', 'New Milestone'])
             
             assert result.exit_code == 1
@@ -266,7 +266,7 @@ class TestTaskCommands:
         mock_action.name = "Test Action"
         mock_core.task_manager.start_next_action = Mock(return_value=mock_action)
         
-        with patch('prism.commands.task_new.NewPrismCore', return_value=mock_core):
+        with patch('prism.commands.task.PrismCore', return_value=mock_core):
             result = runner.invoke(newcli, ['task', 'start'])
             
             assert result.exit_code == 0
@@ -276,7 +276,7 @@ class TestTaskCommands:
         """Test task start with no pending tasks."""
         mock_core.task_manager.start_next_action = Mock(return_value=None)
         
-        with patch('prism.commands.task_new.NewPrismCore', return_value=mock_core):
+        with patch('prism.commands.task.PrismCore', return_value=mock_core):
             result = runner.invoke(newcli, ['task', 'start'])
             
             assert result.exit_code == 0
@@ -288,7 +288,7 @@ class TestTaskCommands:
         mock_action.name = "Test Action"
         mock_core.task_manager.complete_current_action = Mock(return_value=mock_action)
         
-        with patch('prism.commands.task_new.NewPrismCore', return_value=mock_core):
+        with patch('prism.commands.task.PrismCore', return_value=mock_core):
             result = runner.invoke(newcli, ['task', 'done'])
             
             assert result.exit_code == 0
@@ -302,7 +302,7 @@ class TestTaskCommands:
         next_action.name = "Next Task"
         mock_core.task_manager.complete_current_and_start_next = Mock(return_value=(completed, next_action))
         
-        with patch('prism.commands.task_new.NewPrismCore', return_value=mock_core):
+        with patch('prism.commands.task.PrismCore', return_value=mock_core):
             result = runner.invoke(newcli, ['task', 'next'])
             
             assert result.exit_code == 0

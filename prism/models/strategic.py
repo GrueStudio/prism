@@ -7,7 +7,7 @@ from typing import List, Optional
 
 from pydantic import Field
 
-from prism.newmodels.base import BaseItem, ItemStatus
+from prism.models.base import BaseItem, ItemStatus
 
 
 class Phase(BaseItem):

@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 from prism.managers.storage_manager import StorageManager, StorageError
-from prism.newmodels import (
+from prism.models import (
     StrategicFile,
     ExecutionFile,
     OrphansFile,
