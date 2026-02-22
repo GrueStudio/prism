@@ -2,257 +2,364 @@
 ArchivedItem - Read-only lazy-loading wrapper for archived Prism items.
 
 Provides transparent access to archived items without loading them into memory
-until accessed. Archived items cannot be modified.
+until accessed. Uses signals to request data loading from ArchiveManager.
+
+Load States:
+    NOT_LOADED: No data loaded from archive.
+    LOADED: Full item data loaded from archive.
+    CHILDREN_LOADED: Item data and children loaded from archive.
+
+Signals:
+    request_load: Emitted when item data is accessed but not loaded.
+    request_load_children: Emitted when children are accessed but not loaded.
 """
 
-from datetime import datetime
-from typing import Any, Dict, List, Optional
+from enum import Enum, auto
+from typing import Any, List, Optional
 
-from prism.exceptions import ArchivedItemError
-from prism.managers.storage_manager import StorageManager
+from prism.models.base import BaseItem
+from prism.signals import signal
+
+
+class LoadState(Enum):
+    """Load state for ArchivedItem."""
+
+    NOT_LOADED = auto()
+    LOADED = auto()
+    CHILDREN_LOADED = auto()
 
 
 class ArchivedItem:
     """
     Lazy-loading read-only wrapper for archived items.
 
-    Stores minimal metadata (uuid, name, slug, type, status, parent_uuid, position)
-    and loads full data from archive only when accessed.
+    Stores minimal state. All data is loaded on-demand via signals
+    when properties are accessed.
 
-    All write operations raise ArchivedItemError.
+    Attributes:
+        _wrapped_item: The loaded BaseItem instance (None until loaded).
+        _load_state: Current load state.
+        _load_context: Optional context dict for loading (set by creator).
+
+    Signals:
+        request_load: Emitted when item data access requires loading.
+        request_load_children: Emitted when children access requires loading.
     """
 
-    def __init__(
-        self,
-        uuid: str,
-        name: str,
-        slug: str,
-        item_type: str,
-        status: str = "archived",
-        parent_uuid: Optional[str] = None,
-        description: Optional[str] = None,
-        position: int = 0,  # Position among siblings for ordering
-        storage: Optional[StorageManager] = None,
-    ):
+    def __init__(self, uuid: str, **kwargs):
         """
         Initialize archived item wrapper.
 
+        Accepts optional keyword arguments for load context.
+        The signal handler uses this context to determine what to load.
+
         Args:
-            uuid: Item UUID
-            name: Item name
-            slug: Item slug
-            item_type: Type of item (phase, milestone, objective, deliverable, action)
-            status: Item status (default: 'archived')
-            parent_uuid: Parent item UUID
-            description: Optional description
-            position: Position among siblings (for ordering)
-            storage: StorageManager for lazy loading
+            **kwargs: Optional context for loading (e.g., uuid, path, index)
         """
         self._uuid = uuid
-        self._name = name
-        self._slug = slug
-        self._item_type = item_type
-        self._status = status
-        self._parent_uuid = parent_uuid
-        self._description = description
-        self._position = position
-        self._storage = storage
-        self._loaded_data: Optional[Dict[str, Any]] = None
-        self._children: Optional[List["ArchivedItem"]] = None
-        self._child_uuids: List[str] = []
+        self._wrapped_item: Optional[BaseItem] = None
+        self._load_state = LoadState.NOT_LOADED
+        self._load_context: dict = kwargs
+
+    # =========================================================================
+    # Signal Declarations
+    # =========================================================================
+
+    @signal
+    def request_load(self) -> None:
+        """
+        Emitted when item data access requires loading from archive.
+
+        Connected handlers should load the full item data and set
+        _wrapped_item and _load_state appropriately.
+        """
+        pass
+
+    @signal
+    def request_load_children(self) -> None:
+        """
+        Emitted when children access requires loading from archive.
+
+        Connected handlers should load children and attach them to
+        _wrapped_item._children, then update _load_state.
+        """
+        pass
+
+    # =========================================================================
+    # Load State Management
+    # =========================================================================
+
+    def _ensure_loaded(self) -> None:
+        """Ensure item data is loaded, emitting request_load if needed."""
+        if self._load_state == LoadState.NOT_LOADED:
+            self.request_load()
+
+    def _ensure_children_loaded(self) -> None:
+        """Ensure children are loaded, emitting request_load_children if needed."""
+        self._ensure_loaded()
+        if self._load_state != LoadState.CHILDREN_LOADED:
+            self.request_load_children()
+
+    def mark_loaded(self, wrapped_item: BaseItem) -> None:
+        """
+        Mark item as loaded with the provided wrapped item.
+
+        Called by signal handlers after loading item data.
+
+        Args:
+            wrapped_item: The loaded BaseItem instance.
+        """
+        if self._uuid != wrapped_item.uuid:
+            raise ValueError("UUID mismatch")
+        self._wrapped_item = wrapped_item
+        self._load_state = LoadState.LOADED
+
+    def mark_children_loaded(self) -> None:
+        """
+        Mark children as loaded.
+
+        Called by signal handlers after loading children.
+        Assumes _wrapped_item is already set with children populated.
+        """
+        self._load_state = LoadState.CHILDREN_LOADED
+
+    # =========================================================================
+    # Properties (all trigger load on first access)
+    # =========================================================================
 
     @property
     def uuid(self) -> str:
+        """Item UUID (loaded on first access)."""
         return self._uuid
 
     @property
     def name(self) -> str:
-        return self._name
+        """Item name (loaded on first access)."""
+        self._ensure_loaded()
+        if self._wrapped_item is None:
+            raise ValueError(f"ArchivedItem {id(self)} not loaded")
+        return self._wrapped_item.name
 
     @property
     def slug(self) -> str:
-        return self._slug
+        """Item slug (loaded on first access)."""
+        self._ensure_loaded()
+        if self._wrapped_item is None:
+            raise ValueError(f"ArchivedItem {id(self)} not loaded")
+        return self._wrapped_item.slug
 
     @property
     def item_type(self) -> str:
-        return self._item_type
+        """Item type (loaded on first access)."""
+        self._ensure_loaded()
+        if self._wrapped_item is None:
+            raise ValueError(f"ArchivedItem {id(self)} not loaded")
+        return self._wrapped_item.item_type
 
     @property
     def status(self) -> str:
-        return self._status
+        """Item status (loaded on first access)."""
+        self._ensure_loaded()
+        if self._wrapped_item is None:
+            raise ValueError(f"ArchivedItem {id(self)} not loaded")
+        return self._wrapped_item.status
 
     @property
     def parent_uuid(self) -> Optional[str]:
-        return self._parent_uuid
+        """Parent item UUID (loaded on first access)."""
+        self._ensure_loaded()
+        if self._wrapped_item is None:
+            raise ValueError(f"ArchivedItem {id(self)} not loaded")
+        return self._wrapped_item.parent_uuid
 
     @property
     def description(self) -> Optional[str]:
-        return self._description
+        """Item description (loaded on first access)."""
+        self._ensure_loaded()
+        if self._wrapped_item is None:
+            raise ValueError(f"ArchivedItem {id(self)} not loaded")
+        return self._wrapped_item.description
 
     @property
     def position(self) -> int:
-        return self._position
+        """Position among siblings (loaded on first access)."""
+        # Position is metadata, not on BaseItem - get from context or wrapped item
+        self._ensure_loaded()
+        return self._load_context.get("position", 0)
 
     @property
-    def created_at(self) -> Optional[datetime]:
-        self._ensure_loaded()
-        if self._loaded_data and "created_at" in self._loaded_data:
-            return datetime.fromisoformat(self._loaded_data["created_at"])
-        return None
+    def wrapped_item(self) -> Optional[BaseItem]:
+        """
+        Get the wrapped BaseItem instance.
 
-    @property
-    def updated_at(self) -> Optional[datetime]:
+        Triggers load if not yet loaded.
+
+        Returns:
+            The loaded BaseItem, or None if loading failed.
+        """
         self._ensure_loaded()
-        if self._loaded_data and "updated_at" in self._loaded_data:
-            return datetime.fromisoformat(self._loaded_data["updated_at"])
-        return None
+        return self._wrapped_item
 
     @property
     def children(self) -> List["ArchivedItem"]:
-        """Get child items in order."""
-        if self._children is None:
-            self._load_children()
-        return self._children
+        """
+        Get child items.
+
+        Triggers load of item and children if not yet loaded.
+
+        Returns:
+            List of ArchivedItem wrappers for children.
+        """
+        self._ensure_children_loaded()
+        if self._wrapped_item:
+            return [
+                ArchivedItem.from_wrapped_item(child)
+                for child in self._wrapped_item.children
+            ]
+        return []
 
     @property
     def child_uuids(self) -> List[str]:
-        """Get child UUIDs in order."""
-        if not self._child_uuids:
-            self._load_children()
-        return self._child_uuids
+        """
+        Get child UUIDs.
 
-    def _ensure_loaded(self) -> None:
-        """Load full data from archive if not already loaded."""
-        if self._loaded_data is None and self._storage:
-            if self._item_type in ["phase", "milestone", "objective"]:
-                self._loaded_data = self._storage.load_archived_strategic(self._uuid)
+        Triggers load if not yet loaded.
 
-    def _load_children(self) -> None:
-        """Load child items from archive in order."""
-        self._children = []
-        self._child_uuids = []
+        Returns:
+            List of child UUIDs.
+        """
+        self._ensure_loaded()
+        if self._wrapped_item:
+            return self._wrapped_item.child_uuids
+        return []
 
-        if self._item_type == "phase" and self._storage:
-            archived = self._storage.load_all_archived_strategic()
-            # Get milestones in order
-            for milestone_data in archived["milestones"]:
-                if milestone_data.get("parent_uuid") == self._uuid:
-                    pos = milestone_data.get("position", len(self._children))
-                    child = ArchivedItem(
-                        uuid=milestone_data["uuid"],
-                        name=milestone_data["name"],
-                        slug=milestone_data["slug"],
-                        item_type="milestone",
-                        status=milestone_data.get("status", "archived"),
-                        parent_uuid=self._uuid,
-                        description=milestone_data.get("description"),
-                        position=pos,
-                        storage=self._storage,
-                    )
-                    self._children.append(child)
-                    self._child_uuids.append(child.uuid)
-            # Sort by position
-            self._children.sort(key=lambda c: c.position)
+    @property
+    def created_at(self) -> Optional[Any]:
+        """
+        Get created_at timestamp from wrapped item.
 
-        elif self._item_type == "milestone" and self._storage:
-            archived = self._storage.load_all_archived_strategic()
-            for objective_data in archived["objectives"]:
-                if objective_data.get("parent_uuid") == self._uuid:
-                    pos = objective_data.get("position", len(self._children))
-                    child = ArchivedItem(
-                        uuid=objective_data["uuid"],
-                        name=objective_data["name"],
-                        slug=objective_data["slug"],
-                        item_type="objective",
-                        status=objective_data.get("status", "archived"),
-                        parent_uuid=self._uuid,
-                        description=objective_data.get("description"),
-                        position=pos,
-                        storage=self._storage,
-                    )
-                    self._children.append(child)
-                    self._child_uuids.append(child.uuid)
-            self._children.sort(key=lambda c: c.position)
+        Triggers load if not yet loaded.
 
-        elif self._item_type == "objective" and self._storage:
-            try:
-                exec_tree = self._storage.load_archived_execution_tree(self._uuid)
-                if exec_tree:
-                    for deliv_data in exec_tree.get("deliverables", []):
-                        pos = deliv_data.get("position", len(self._children))
-                        child = ArchivedItem(
-                            uuid=deliv_data["uuid"],
-                            name=deliv_data["name"],
-                            slug=deliv_data["slug"],
-                            item_type="deliverable",
-                            status=deliv_data.get("status", "archived"),
-                            parent_uuid=self._uuid,
-                            description=deliv_data.get("description"),
-                            position=pos,
-                            storage=self._storage,
-                        )
-                        self._children.append(child)
-                        self._child_uuids.append(child.uuid)
-                    self._children.sort(key=lambda c: c.position)
-            except Exception:
-                pass
+        Returns:
+            Created timestamp or None.
+        """
+        self._ensure_loaded()
+        if self._wrapped_item:
+            return self._wrapped_item.created_at
+        return None
+
+    @property
+    def updated_at(self) -> Optional[Any]:
+        """
+        Get updated_at timestamp from wrapped item.
+
+        Triggers load if not yet loaded.
+
+        Returns:
+            Updated timestamp or None.
+        """
+        self._ensure_loaded()
+        if self._wrapped_item:
+            return self._wrapped_item.updated_at
+        return None
+
+    @property
+    def time_spent(self) -> Optional[Any]:
+        """
+        Get time_spent from wrapped item.
+
+        Triggers load if not yet loaded.
+
+        Returns:
+            Time spent or None.
+        """
+        self._ensure_loaded()
+        if self._wrapped_item:
+            return self._wrapped_item.time_spent
+        return None
+
+    def add_child(self, child):
+        if not self._load_state == LoadState.LOADED or not self._wrapped_item:
+            raise ValueError("Tried to add child to unloaded item")
+
+        self._wrapped_item.add_child(child)
+
+        if (
+            self._load_state != LoadState.CHILDREN_LOADED
+            and None not in self._wrapped_item.children
+        ):
+            self.mark_children_loaded()
+
+    # =========================================================================
+    # Factory Methods
+    # =========================================================================
+
+    @classmethod
+    def from_wrapped_item(cls, item: BaseItem) -> "ArchivedItem":
+        """
+        Create an ArchivedItem wrapper from a loaded BaseItem.
+
+        Used to wrap children when they are loaded.
+
+        Args:
+            item: The loaded BaseItem to wrap.
+
+        Returns:
+            ArchivedItem wrapper with item pre-loaded.
+        """
+        wrapper = cls(uuid=item.uuid)
+        wrapper._wrapped_item = item
+
+        if None not in item.children:
+            wrapper._load_state = LoadState.CHILDREN_LOADED
+        else:
+            wrapper._load_state = LoadState.LOADED
+
+        return wrapper
+
+    # =========================================================================
+    # Utility Methods
+    # =========================================================================
 
     def get_deliverables(self) -> List["ArchivedItem"]:
-        """Get deliverables (for objective type) in order."""
-        if self._item_type != "objective":
+        """
+        Get deliverable children (for objective type).
+
+        Returns:
+            List of deliverable ArchivedItem wrappers.
+        """
+        if self.item_type != "objective":
             return []
         return [c for c in self.children if c.item_type == "deliverable"]
 
     def get_actions(self) -> List["ArchivedItem"]:
-        """Get actions (for deliverable type) in order."""
-        if self._item_type != "deliverable":
-            return []
-        actions = []
-        if self._storage and self._parent_uuid:
-            try:
-                exec_tree = self._storage.load_archived_execution_tree(
-                    self._parent_uuid
-                )
-                if exec_tree:
-                    for action_data in exec_tree.get("actions", []):
-                        if action_data.get("parent_uuid") == self._uuid:
-                            pos = action_data.get("position", len(actions))
-                            actions.append(
-                                (
-                                    pos,
-                                    ArchivedItem(
-                                        uuid=action_data["uuid"],
-                                        name=action_data["name"],
-                                        slug=action_data["slug"],
-                                        item_type="action",
-                                        status=action_data.get("status", "archived"),
-                                        parent_uuid=self._uuid,
-                                        description=action_data.get("description"),
-                                        position=pos,
-                                        storage=self._storage,
-                                    ),
-                                )
-                            )
-                    actions.sort(key=lambda x: x[0])
-                    return [a[1] for a in actions]
-            except Exception:
-                pass
-        return []
+        """
+        Get action children (for deliverable type).
 
-    # Write operations always fail for archived items
-    def __setattr__(self, name: str, value: Any) -> None:
-        if name.startswith("_"):
-            super().__setattr__(name, value)
-        else:
-            raise ArchivedItemError(f"Cannot modify archived item property '{name}'")
+        Returns:
+            List of action ArchivedItem wrappers.
+        """
+        if self.item_type != "deliverable":
+            return []
+        return [c for c in self.children if c.item_type == "action"]
 
     def __repr__(self) -> str:
-        return f"ArchivedItem({self._item_type}, '{self._name}', uuid='{self._uuid}', pos={self._position})"
+        uuid_str = self.uuid if self._load_state != LoadState.NOT_LOADED else "unloaded"
+        return f"ArchivedItem(uuid={uuid_str!r}, state={self._load_state.name})"
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, ArchivedItem):
-            return self._uuid == other._uuid
+            # Compare by UUID if both loaded, otherwise by identity
+            if (
+                self._load_state != LoadState.NOT_LOADED
+                and other._load_state != LoadState.NOT_LOADED
+            ):
+                return self.uuid == other.uuid
+            return id(self) == id(other)
         return False
 
     def __hash__(self) -> int:
-        return hash(self._uuid)
+        # Use object identity for unloaded items, UUID for loaded
+        if self._load_state != LoadState.NOT_LOADED and self.uuid:
+            return hash(self.uuid)
+        return hash(id(self))

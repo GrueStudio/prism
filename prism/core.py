@@ -3,7 +3,6 @@ PrismCore - Core business logic for the Prism CLI using .prism/ storage.
 
 Orchestrates manager classes for all business operations.
 Uses StorageManager for .prism/ folder-based storage exclusively.
-Uses EventBus for decoupled event-driven architecture.
 """
 
 from datetime import datetime
@@ -12,15 +11,10 @@ from typing import Any, Dict, List, Optional
 
 from prism.exceptions import ValidationError
 from prism.managers import (
-    AutoArchiveListener,
-    CompletionTracker,
-    ItemManager,
     NavigationManager,
     ProjectManager,
     StorageManager,
     TaskManager,
-    get_event_bus,
-    subscribe_listener,
 )
 from prism.models.base import (
     Action,
@@ -39,24 +33,18 @@ class PrismCore:
     - ProjectManager: Build/save project structure
     - StorageManager: Persistence to .prism/ folder
     - NavigationManager: Path resolution
-    - ItemManager: CRUD operations
-    - TaskManager: Task operations (start, complete, next)
-    - CompletionTracker: Cascade completion and percentages
-    - EventBus: Event-driven communication
-    - AutoArchiveListener: Auto-archive completed items
+    - TaskManager: Task operations, CRUD, and completion tracking
     """
 
     def __init__(
         self,
         prism_dir: Optional[Path] = None,
-        auto_archive_enabled: bool = True,
     ):
         """
         Initialize the PrismCore with a .prism/ directory.
 
         Args:
             prism_dir: Path to .prism/ directory. Defaults to .prism/ in current directory.
-            auto_archive_enabled: Whether to enable auto-archive on completion.
         """
         self.storage = StorageManager(prism_dir)
         self.project_manager = ProjectManager(self.storage)
@@ -66,30 +54,19 @@ class PrismCore:
 
         # Initialize managers
         self.navigator = NavigationManager(self.project)
-        self.completion_tracker = CompletionTracker(self.navigator, emit_events=True)
-        self.item_manager = ItemManager(self.project, self.navigator)
         self.task_manager = TaskManager(
             self.project,
             self.navigator,
             self._save_project,
-            self.completion_tracker,
         )
-
-        # Set up event-driven architecture
-        self.event_bus = get_event_bus()
-
-        # Subscribe auto-archive listener
-        if auto_archive_enabled:
-            self.auto_archive_listener = AutoArchiveListener(
-                self.storage,
-                self.project,
-                auto_archive_enabled=True,
-            )
-            subscribe_listener(self.auto_archive_listener)
 
     def _save_project(self) -> None:
         """Save project to storage."""
         self.project_manager.save(self.project)
+
+    # =========================================================================
+    # CRUD Operations (delegated to TaskManager)
+    # =========================================================================
 
     def add_item(
         self,
@@ -100,7 +77,7 @@ class PrismCore:
         status: Optional[str] = None,
     ) -> Any:
         """Add a new item to the project."""
-        return self.item_manager.add_item(
+        return self.task_manager.add_item(
             item_type, name, description, parent_path, status
         )
 
@@ -113,11 +90,15 @@ class PrismCore:
         status: Optional[str] = None,
     ) -> Any:
         """Update an existing item."""
-        return self.item_manager.update_item(path, name, description, due_date, status)
+        return self.task_manager.update_item(path, name, description, due_date, status)
 
     def delete_item(self, path: str) -> None:
         """Delete an existing item."""
-        self.item_manager.delete_item(path)
+        self.task_manager.delete_item(path)
+
+    # =========================================================================
+    # Task Operations (delegated to TaskManager)
+    # =========================================================================
 
     def get_current_action(self) -> Optional[Action]:
         """Get the current action from cursor."""
@@ -137,9 +118,13 @@ class PrismCore:
         """Complete current action and start next."""
         return self.task_manager.complete_current_and_start_next()
 
+    # =========================================================================
+    # Completion Tracking (delegated to TaskManager)
+    # =========================================================================
+
     def calculate_completion_percentage(self, item: Any) -> Dict[str, float]:
         """Calculate completion percentage for an item."""
-        return self.completion_tracker.calculate_completion_percentage(item)
+        return self.task_manager.calculate_completion_percentage(item)
 
     def is_exec_tree_complete(self, objective_path: str) -> bool:
         """Check if execution tree is complete."""
@@ -148,7 +133,11 @@ class PrismCore:
             return False
         if not isinstance(objective, Objective):
             return False
-        return self.completion_tracker.is_exec_tree_complete(objective)
+        return self.task_manager.is_exec_tree_complete(objective)
+
+    # =========================================================================
+    # Navigation Helpers (delegated to NavigationManager)
+    # =========================================================================
 
     def get_item_by_path(self, path: str) -> Optional[Any]:
         """Get an item by its path."""
@@ -166,6 +155,10 @@ class PrismCore:
         """Get current phase, milestone, and objective."""
         return self.navigator.get_current_strategic_items()
 
+    # =========================================================================
+    # Execution Tree Operations
+    # =========================================================================
+
     def add_exec_tree(self, tree_data: List[Dict[str, Any]], mode: str) -> None:
         """Add an execution tree."""
         current_objective = self.navigator.get_current_objective()
@@ -173,7 +166,7 @@ class PrismCore:
             raise ValueError("No current objective found.")
 
         if mode == "replace":
-            current_objective.deliverables = []
+            current_objective.children = []
         elif mode != "append":
             raise ValueError(f"Invalid mode: {mode}. Must be 'append' or 'replace'.")
 
@@ -183,8 +176,8 @@ class PrismCore:
             if not del_name:
                 raise ValidationError("Deliverable name is required in addtree input.")
 
-            deliverable_slug = self.item_manager._generate_unique_slug(
-                current_objective.deliverables, del_name
+            deliverable_slug = self.task_manager._generate_unique_slug(
+                current_objective.children, del_name
             )
             new_deliverable = Deliverable(
                 name=del_name, description=del_desc, slug=deliverable_slug
@@ -196,17 +189,21 @@ class PrismCore:
                 if not act_name:
                     raise ValidationError("Action name is required in addtree input.")
 
-                action_slug = self.item_manager._generate_unique_slug(
-                    new_deliverable.actions, act_name
+                action_slug = self.task_manager._generate_unique_slug(
+                    new_deliverable.children, act_name
                 )
                 new_action = Action(
                     name=act_name, description=act_desc, slug=action_slug
                 )
-                new_deliverable.actions.append(new_action)
+                new_deliverable.add_child(new_action)
 
-            current_objective.deliverables.append(new_deliverable)
+            current_objective.add_child(new_deliverable)
 
         self._save_project()
+
+    # =========================================================================
+    # Status Summary
+    # =========================================================================
 
     def get_status_summary(
         self, phase_path: Optional[str] = None, milestone_path: Optional[str] = None
@@ -253,15 +250,7 @@ class PrismCore:
                         {"path": current_path, "due_date": item.due_date.isoformat()}
                     )
 
-                children = []
-                if isinstance(item, Phase):
-                    children = item.milestones
-                elif isinstance(item, Milestone):
-                    children = item.objectives
-                elif isinstance(item, Objective):
-                    children = item.deliverables
-                elif isinstance(item, Deliverable):
-                    children = item.actions
+                children = item.children
 
                 if children:
                     _traverse(

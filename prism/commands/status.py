@@ -14,20 +14,20 @@ def display_exec_tree(core, objective, current_action=None, current_deliverable_
     current_deliverable = None
     if current_action:
         # Find the deliverable that contains the current action
-        for deliverable in objective.deliverables:
-            if any(a.uuid == current_action.uuid for a in deliverable.actions):
+        for deliverable in objective.children:
+            if any(a.uuid == current_action.uuid for a in deliverable.children):
                 current_deliverable = deliverable
                 break
 
     # Determine which deliverables to display
-    deliverables_to_display = objective.deliverables
+    deliverables_to_display = objective.children
     if current_deliverable_only and current_deliverable:
         deliverables_to_display = [current_deliverable]
 
     for deliverable in deliverables_to_display:
         # Calculate completion percentage for this deliverable
-        total_actions = len(deliverable.actions)
-        completed_actions = sum(1 for a in deliverable.actions if a.status == 'completed')
+        total_actions = len(deliverable.children)
+        completed_actions = sum(1 for a in deliverable.children if a.status == 'completed')
         deliv_completion = (completed_actions / total_actions * 100) if total_actions > 0 else 0
         completion_text = f" ({deliv_completion:.1f}%)" if deliv_completion > 0 else " (0%)"
 
@@ -46,7 +46,7 @@ def display_exec_tree(core, objective, current_action=None, current_deliverable_
         click.echo(f"- {deliverable.name}{completion_text}{status_indicator}")
 
         # Display actions under this deliverable
-        for action in deliverable.actions:
+        for action in deliverable.children:
             action_indicator = " →" if current_action and action.uuid == current_action.uuid else ""
             action_status_indicator = ""
             if action.status == "completed":
@@ -61,19 +61,19 @@ def get_exec_tree_data(core, objective, current_action=None, current_deliverable
     """Get execution tree data in a structured format for JSON output."""
     current_deliverable = None
     if current_action:
-        for deliverable in objective.deliverables:
-            if any(a.uuid == current_action.uuid for a in deliverable.actions):
+        for deliverable in objective.children:
+            if any(a.uuid == current_action.uuid for a in deliverable.children):
                 current_deliverable = deliverable
                 break
 
-    deliverables_to_include = objective.deliverables
+    deliverables_to_include = objective.children
     if current_deliverable_only and current_deliverable:
         deliverables_to_include = [current_deliverable]
 
     tree_data = []
     for deliverable in deliverables_to_include:
-        total_actions = len(deliverable.actions)
-        completed_actions = sum(1 for a in deliverable.actions if a.status == 'completed')
+        total_actions = len(deliverable.children)
+        completed_actions = sum(1 for a in deliverable.children if a.status == 'completed')
         deliv_completion = (completed_actions / total_actions * 100) if total_actions > 0 else 0
 
         deliverable_data = {
@@ -84,7 +84,7 @@ def get_exec_tree_data(core, objective, current_action=None, current_deliverable
             "actions": []
         }
 
-        for action in deliverable.actions:
+        for action in deliverable.children:
             action_data = {
                 "name": action.name,
                 "slug": action.slug,
@@ -122,8 +122,8 @@ def status(current_deliverable_only, json_output):
 
         if current_objective:
             # Calculate objective completion
-            total_delivs = len(current_objective.deliverables)
-            completed_delivs = sum(1 for d in current_objective.deliverables if d.status == 'completed')
+            total_delivs = len(current_objective.children)
+            completed_delivs = sum(1 for d in current_objective.children if d.status == 'completed')
             obj_completion = (completed_delivs / total_delivs * 100) if total_delivs > 0 else 0
             
             result["current_strategic_focus"] = {
@@ -161,8 +161,8 @@ def status(current_deliverable_only, json_output):
         click.echo(f"- Milestone: {current_milestone.name}")
     if current_objective:
         # Calculate objective completion
-        total_delivs = len(current_objective.deliverables)
-        completed_delivs = sum(1 for d in current_objective.deliverables if d.status == 'completed')
+        total_delivs = len(current_objective.children)
+        completed_delivs = sum(1 for d in current_objective.children if d.status == 'completed')
         obj_completion = (completed_delivs / total_delivs * 100) if total_delivs > 0 else 0
         click.echo(f"- Objective: {current_objective.name} - {obj_completion:.1f}% complete")
     click.echo()
