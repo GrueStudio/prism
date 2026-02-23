@@ -90,7 +90,8 @@ class ProjectManager:
         project.task_cursor = cursor_file.task_cursor
         project.crud_context = cursor_file.crud_context
 
-        def _load_strategic(item: BaseItem | None, parent: Project | BaseItem) -> bool:
+        def _load_strategic(item, parent, item_type):
+            """Load strategic item and its children, then fill in archived siblings."""
             child_uuids = parent.child_uuids.copy()
             if item:
                 if isinstance(parent, Project) and isinstance(item, Phase):
@@ -99,20 +100,26 @@ class ProjectManager:
                     project.place_item(item)
                 child_uuids.remove(item.uuid)
 
-            for uuid in child_uuids:
-                archived_item = self.archive_manager.get_archived_item(uuid)
-                parent.add_child(archived_item)
+            # Fill in archived siblings from child_uuids
+            for uuid in list(child_uuids):
+                if item and uuid == item.uuid:
+                    continue
+                archived = self.archive_manager.get_archived_item(uuid, item_type)
+                if archived:
+                    parent.add_child(archived)
 
-            return item is not None
+        # Load phase (and archived siblings)
+        _load_strategic(strategic.phase, project, "phase")
 
-        for item, parent in [
-            (strategic.phase, project),
-            (strategic.milestone, strategic.phase),
-            (strategic.objective, strategic.milestone),
-        ]:
-            if parent and not _load_strategic(item, parent):
-                return project
+        # Load milestone if phase exists
+        if strategic.milestone and strategic.phase:
+            _load_strategic(strategic.milestone, strategic.phase, "milestone")
 
+        # Load objective if milestone exists
+        if strategic.objective and strategic.milestone:
+            _load_strategic(strategic.objective, strategic.milestone, "objective")
+
+        # Load execution items
         for item in execution.deliverables + execution.actions:
             project.place_item(item)
 

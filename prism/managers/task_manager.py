@@ -618,10 +618,7 @@ class TaskManager:
             parent_item.add_child(new_item)
         else:
             if item_type == "phase":
-                self.project.phases.append(new_item)
-
-        # Rebuild lookup maps
-        self.project.build_maps()
+                self.project.add_child(new_item)
 
         return new_item
 

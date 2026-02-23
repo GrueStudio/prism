@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional
 
 from prism.exceptions import ValidationError
 from prism.managers import (
+    ArchiveManager,
     NavigationManager,
     ProjectManager,
     StorageManager,
@@ -47,7 +48,8 @@ class PrismCore:
             prism_dir: Path to .prism/ directory. Defaults to .prism/ in current directory.
         """
         self.storage = StorageManager(prism_dir)
-        self.project_manager = ProjectManager(self.storage)
+        self.archive_manager = ArchiveManager(self.storage)
+        self.project_manager = ProjectManager(self.storage, self.archive_manager)
 
         # Load project from storage
         self.project = self.project_manager.load()
@@ -77,9 +79,11 @@ class PrismCore:
         status: Optional[str] = None,
     ) -> Any:
         """Add a new item to the project."""
-        return self.task_manager.add_item(
+        result = self.task_manager.add_item(
             item_type, name, description, parent_path, status
         )
+        self._save_project()
+        return result
 
     def update_item(
         self,
@@ -90,11 +94,14 @@ class PrismCore:
         status: Optional[str] = None,
     ) -> Any:
         """Update an existing item."""
-        return self.task_manager.update_item(path, name, description, due_date, status)
+        result = self.task_manager.update_item(path, name, description, due_date, status)
+        self._save_project()
+        return result
 
     def delete_item(self, path: str) -> None:
         """Delete an existing item."""
         self.task_manager.delete_item(path)
+        self._save_project()
 
     # =========================================================================
     # Task Operations (delegated to TaskManager)

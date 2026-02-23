@@ -37,6 +37,9 @@ class Project:
             self.phases.append(item)
         else:
             index = self.child_uuids.index(item.uuid)
+            # Extend phases list if needed (for loading archived items)
+            while len(self.phases) <= index:
+                self.phases.append(None)
             self.phases[index] = item
         self._map_item(item)
 
@@ -55,20 +58,3 @@ class Project:
 
     def get_item(self, uuid: str) -> BaseItem | None:
         return self._id_map.get(uuid)
-
-    def build_maps(self) -> None:
-        """Rebuild the UUID to item lookup map.
-
-        Traverses the entire tree and maps all BaseItem UUIDs.
-        Called after bulk operations that add items.
-        """
-        self._id_map.clear()
-
-        def _traverse(items: List):
-            for item in items:
-                if isinstance(item, BaseItem):
-                    self._id_map[item.uuid] = item
-                    if item.children:
-                        _traverse(item.children)
-
-        _traverse(self.phases)

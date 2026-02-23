@@ -46,7 +46,7 @@ class ArchivedItem:
         request_load_children: Emitted when children access requires loading.
     """
 
-    def __init__(self, uuid: str, **kwargs):
+    def __init__(self, uuid: str, item_type: str, **kwargs):
         """
         Initialize archived item wrapper.
 
@@ -56,7 +56,8 @@ class ArchivedItem:
         Args:
             **kwargs: Optional context for loading (e.g., uuid, path, index)
         """
-        self._uuid = uuid
+        self.uuid = uuid
+        self.item_type = item_type
         self._wrapped_item: Optional[BaseItem] = None
         self._load_state = LoadState.NOT_LOADED
         self._load_context: dict = kwargs
@@ -109,7 +110,7 @@ class ArchivedItem:
         Args:
             wrapped_item: The loaded BaseItem instance.
         """
-        if self._uuid != wrapped_item.uuid:
+        if self.uuid != wrapped_item.uuid:
             raise ValueError("UUID mismatch")
         self._wrapped_item = wrapped_item
         self._load_state = LoadState.LOADED
@@ -128,11 +129,6 @@ class ArchivedItem:
     # =========================================================================
 
     @property
-    def uuid(self) -> str:
-        """Item UUID (loaded on first access)."""
-        return self._uuid
-
-    @property
     def name(self) -> str:
         """Item name (loaded on first access)."""
         self._ensure_loaded()
@@ -149,20 +145,9 @@ class ArchivedItem:
         return self._wrapped_item.slug
 
     @property
-    def item_type(self) -> str:
-        """Item type (loaded on first access)."""
-        self._ensure_loaded()
-        if self._wrapped_item is None:
-            raise ValueError(f"ArchivedItem {id(self)} not loaded")
-        return self._wrapped_item.item_type
-
-    @property
     def status(self) -> str:
-        """Item status (loaded on first access)."""
-        self._ensure_loaded()
-        if self._wrapped_item is None:
-            raise ValueError(f"ArchivedItem {id(self)} not loaded")
-        return self._wrapped_item.status
+        """Item status - always returns 'archived' for ArchivedItem."""
+        return "archived"
 
     @property
     def parent_uuid(self) -> Optional[str]:
@@ -201,7 +186,7 @@ class ArchivedItem:
         return self._wrapped_item
 
     @property
-    def children(self) -> List["ArchivedItem"]:
+    def children(self) -> List:
         """
         Get child items.
 
@@ -212,10 +197,7 @@ class ArchivedItem:
         """
         self._ensure_children_loaded()
         if self._wrapped_item:
-            return [
-                ArchivedItem.from_wrapped_item(child)
-                for child in self._wrapped_item.children
-            ]
+            return self._wrapped_item.children
         return []
 
     @property
@@ -307,7 +289,7 @@ class ArchivedItem:
         Returns:
             ArchivedItem wrapper with item pre-loaded.
         """
-        wrapper = cls(uuid=item.uuid)
+        wrapper = cls(uuid=item.uuid, item_type=item.item_type)
         wrapper._wrapped_item = item
 
         if None not in item.children:
@@ -320,28 +302,6 @@ class ArchivedItem:
     # =========================================================================
     # Utility Methods
     # =========================================================================
-
-    def get_deliverables(self) -> List["ArchivedItem"]:
-        """
-        Get deliverable children (for objective type).
-
-        Returns:
-            List of deliverable ArchivedItem wrappers.
-        """
-        if self.item_type != "objective":
-            return []
-        return [c for c in self.children if c.item_type == "deliverable"]
-
-    def get_actions(self) -> List["ArchivedItem"]:
-        """
-        Get action children (for deliverable type).
-
-        Returns:
-            List of action ArchivedItem wrappers.
-        """
-        if self.item_type != "deliverable":
-            return []
-        return [c for c in self.children if c.item_type == "action"]
 
     def __repr__(self) -> str:
         uuid_str = self.uuid if self._load_state != LoadState.NOT_LOADED else "unloaded"
@@ -359,7 +319,6 @@ class ArchivedItem:
         return False
 
     def __hash__(self) -> int:
-        # Use object identity for unloaded items, UUID for loaded
-        if self._load_state != LoadState.NOT_LOADED and self.uuid:
-            return hash(self.uuid)
+        # Always use object identity for hash to ensure consistency
+        # when used as dictionary keys (e.g., in SignalDescriptor)
         return hash(id(self))

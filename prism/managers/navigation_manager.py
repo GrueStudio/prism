@@ -21,9 +21,10 @@ from prism.models.project import Project
 
 # Special navigation tokens
 SPECIAL_TOKENS = {
-    # Back navigation
-    ":b": "back",
-    ":back": "back",
+    # Up/parent navigation
+    ":u": "up",
+    ":up": "up",
+    ":parent": "up",
     # Current - short forms
     ":cp": "current_phase",
     ":cm": "current_milestone",
@@ -399,7 +400,7 @@ class NavigationManager:
         """Resolve special navigation token to a path.
 
         Args:
-            token: Special token like :back, :lasto, :nextd, :co, etc.
+            token: Special token like :up, :lasto, :nextd, :co, etc.
 
         Returns:
             Resolved path string, or None if token invalid or target not found.
@@ -412,9 +413,9 @@ class NavigationManager:
         if not token_type:
             return None
 
-        # Handle :back
-        if token_type == "back":
-            return self._resolve_back()
+        # Handle :up/:parent
+        if token_type == "up":
+            return self._resolve_up()
 
         # Handle :current_* tokens
         if token_type.startswith("current_"):
@@ -433,8 +434,8 @@ class NavigationManager:
 
         return None
 
-    def _resolve_back(self) -> Optional[str]:
-        """Resolve :back token to parent path.
+    def _resolve_up(self) -> Optional[str]:
+        """Resolve :up/:parent token to parent path.
 
         Returns:
             Parent path or None if at root.

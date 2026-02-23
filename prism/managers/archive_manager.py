@@ -50,7 +50,7 @@ class ArchiveManager:
     # Public API: Create wrappers (for ProjectManager)
     # =========================================================================
 
-    def get_archived_item(self, uuid: str) -> ArchivedItem:
+    def get_archived_item(self, uuid: str, item_type: str) -> ArchivedItem:
         """
         Create ArchivedItem wrapper for archived objective.
 
@@ -65,7 +65,7 @@ class ArchiveManager:
         if uuid in self._wrappers:
             return self._wrappers[uuid]
 
-        wrapper = ArchivedItem(uuid=uuid)
+        wrapper = ArchivedItem(uuid=uuid, item_type=item_type)
         wrapper.request_load.connect(lambda: self._load_strategic_data(wrapper))
         wrapper.request_load_children.connect(lambda: self._load_exec_tree(wrapper))
 
@@ -103,7 +103,7 @@ class ArchiveManager:
                     append_item(am, objective)
             elif isinstance(item, Objective):
                 archived.objectives.append(item)
-                am._archived_execution_tree(item)
+                am._archive_execution_tree(item)
 
         append_item(self, item)
         # Save
@@ -147,8 +147,9 @@ class ArchiveManager:
     def _place_item(self, item: BaseItem):
         # Loading an item with no ArchivedItem placeholder
         if item.uuid not in self._wrappers:
-            wrapper = ArchivedItem(item.uuid)
+            wrapper = ArchivedItem(item.uuid, item_type=item.item_type)
             self._wrappers[item.uuid] = wrapper
+            wrapper.mark_loaded(item)
             # If parent is tracked, add this item to the parent's children
             # Note: parent_uuid is None for top-level items (phases), which correctly
             # skips this block since they have no parent to add themselves to.
@@ -156,10 +157,12 @@ class ArchiveManager:
                 parent = self._wrappers[item.parent_uuid]
                 parent.add_child(wrapper)
 
-            if item.item_type == "objective":
+            # Check item_type directly on BaseItem, not through wrapper
+            if isinstance(item, Objective):
                 wrapper.request_load_children.connect(
-                    lambda: self._load_exec_tree(archived_item)
+                    lambda: self._load_exec_tree(wrapper)
                 )
+            return
 
         archived_item = self._wrappers[item.uuid]
         archived_item.mark_loaded(item)

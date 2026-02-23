@@ -35,7 +35,7 @@ def nav(path: Optional[str]):
     PATH can be:
     - A path (e.g., 1/2/1/deliverable-1)
     - A special token:
-      - :b, :back - Go to parent
+      - :u, :up, :parent - Go to parent
       - :cp, :current-phase - Current phase
       - :cm, :current-milestone - Current milestone
       - :co, :current-objective - Current objective
@@ -55,7 +55,7 @@ def nav(path: Optional[str]):
     
     Examples:
         prism crud nav                  # Show current position
-        prism crud nav :b               # Go to parent
+        prism crud nav :u               # Go to parent
         prism crud nav :co              # Jump to current objective
         prism crud nav :lasto           # Go to last objective
         prism crud nav :nextd           # Go to next deliverable
@@ -289,13 +289,13 @@ def _display_item(item, show_children: bool = True):
         children = [(d.name, d.slug) for d in item.children]
         child_type = "Deliverables"
     elif hasattr(item, "item_type") and item.item_type == "objective":  # ArchivedItem
-        children = [(d.name, d.slug) for d in item.get_deliverables()]
+        children = [(d.name, d.slug) for d in item.children]
         child_type = "Deliverables"
     elif isinstance(item, Deliverable):
         children = [(a.name, a.slug) for a in item.children]
         child_type = "Actions"
     elif hasattr(item, "item_type") and item.item_type == "deliverable":  # ArchivedItem
-        children = [(a.name, a.slug) for a in item.get_actions()]
+        children = [(a.name, a.slug) for a in item.children]
         child_type = "Actions"
 
     if children:
