@@ -406,6 +406,228 @@ class TestAddItem:
             )
 
 
+class TestAutoArchiveOnAdd:
+    """Test auto-archive behavior when adding new strategic items."""
+
+    def test_archive_current_completed_objective_when_adding_new_objective(
+        self, task_manager, mock_data, empty_prism_dir
+    ):
+        """Adding new objective archives current completed objective in same milestone."""
+        from prism.managers.storage_manager import StorageManager
+
+        # Setup: add completed objective to existing milestone
+        objective1 = mock_data.create_objective(
+            name="Objective 1",
+            slug="objective-completed",
+            status="completed",
+            parent_uuid="milestone-1-uuid",
+            uuid="objective-1-uuid",
+        )
+        task_manager.project.place_item(objective1)
+        milestone = task_manager.project.get_item("milestone-1-uuid")
+        milestone.add_child(objective1)
+
+        # Add new objective to same milestone (parent is milestone)
+        result = task_manager.add_item(
+            item_type="objective",
+            name="Objective 2",
+            description="New objective",
+            parent_path="phase-1/milestone-1",
+        )
+
+        assert result is not None
+        assert result.name == "Objective 2"
+
+        # Verify old objective is in archive file
+        storage = StorageManager(empty_prism_dir)
+        archived_file = storage.load_archived_strategic()
+        archived_uuids = [o.uuid for o in archived_file.objectives]
+        assert "objective-1-uuid" in archived_uuids
+
+    def test_does_not_archive_pending_objective(self, task_manager, mock_data):
+        """Adding new objective does not archive pending sibling."""
+        # Setup: add pending objective to existing milestone
+        objective1 = mock_data.create_objective(
+            name="Objective 1",
+            slug="objective-pending",
+            status="pending",
+            parent_uuid="milestone-1-uuid",
+            uuid="objective-1-uuid",
+        )
+        task_manager.project.place_item(objective1)
+        milestone = task_manager.project.get_item("milestone-1-uuid")
+        milestone.add_child(objective1)
+
+        # Add new objective
+        result = task_manager.add_item(
+            item_type="objective",
+            name="Objective 2",
+            description="New objective",
+            parent_path="phase-1/milestone-1",
+        )
+
+        # Old objective should still be active (not archived)
+        assert objective1.status == "pending"
+        assert objective1 in milestone.children
+
+    def test_archive_cascades_to_execution_tree(
+        self, task_manager, mock_data, empty_prism_dir
+    ):
+        """Archiving objective also archives its execution tree."""
+        from prism.managers.storage_manager import StorageManager
+
+        # Setup: completed objective with execution tree
+        objective1 = mock_data.create_objective(
+            name="Objective 1",
+            slug="objective-with-tree",
+            status="completed",
+            parent_uuid="milestone-1-uuid",
+            uuid="objective-1-uuid",
+        )
+        deliverable = mock_data.create_deliverable(
+            name="Deliverable",
+            slug="deliverable",
+            status="completed",
+            parent_uuid=objective1.uuid,
+            uuid="deliverable-uuid",
+        )
+        action = mock_data.create_action(
+            name="Action",
+            slug="action",
+            status="completed",
+            parent_uuid=deliverable.uuid,
+            uuid="action-uuid",
+        )
+        deliverable.add_child(action)
+        objective1.add_child(deliverable)
+        task_manager.project.place_item(objective1)
+        task_manager.project.place_item(deliverable)
+        task_manager.project.place_item(action)
+        milestone = task_manager.project.get_item("milestone-1-uuid")
+        milestone.add_child(objective1)
+
+        # Add new objective to trigger archive
+        task_manager.add_item(
+            item_type="objective",
+            name="Objective 2",
+            description="New objective",
+            parent_path="phase-1/milestone-1",
+        )
+
+        # Verify execution tree archived
+        storage = StorageManager(empty_prism_dir)
+        exec_tree = storage.load_archived_execution_tree("objective-1-uuid")
+        assert exec_tree is not None
+        assert len(exec_tree.deliverables) == 1
+        assert len(exec_tree.actions) == 1
+
+    def test_archive_current_completed_milestone_when_adding_new_milestone(
+        self, task_manager, mock_data, empty_prism_dir
+    ):
+        """Adding new milestone archives current completed milestone in same phase."""
+        from prism.managers.storage_manager import StorageManager
+
+        # Setup: add completed milestone to existing phase
+        milestone1 = mock_data.create_milestone(
+            name="Milestone 1",
+            slug="milestone-completed",
+            status="completed",
+            parent_uuid="phase-1-uuid",
+            uuid="milestone-1-uuid-new",
+        )
+        task_manager.project.place_item(milestone1)
+        phase = task_manager.project.get_item("phase-1-uuid")
+        phase.add_child(milestone1)
+
+        # Add new milestone to same phase
+        result = task_manager.add_item(
+            item_type="milestone",
+            name="Milestone 2",
+            description="New milestone",
+            parent_path="phase-1",
+        )
+
+        assert result is not None
+        assert result.name == "Milestone 2"
+
+        # Verify old milestone is in archive file
+        storage = StorageManager(empty_prism_dir)
+        archived_file = storage.load_archived_strategic()
+        archived_uuids = [m.uuid for m in archived_file.milestones]
+        assert "milestone-1-uuid-new" in archived_uuids
+
+    def test_does_not_archive_when_adding_non_strategic_item(
+        self, task_manager, mock_data
+    ):
+        """Adding deliverable/action does not trigger archive."""
+        # Setup: completed objective under existing milestone
+        objective1 = mock_data.create_objective(
+            name="Objective 1",
+            slug="objective-completed",
+            status="completed",
+            parent_uuid="milestone-1-uuid",
+            uuid="objective-1-uuid",
+        )
+        task_manager.project.place_item(objective1)
+        milestone = task_manager.project.get_item("milestone-1-uuid")
+        milestone.add_child(objective1)
+
+        # Add deliverable (non-strategic)
+        result = task_manager.add_item(
+            item_type="deliverable",
+            name="Deliverable 1",
+            description="New deliverable",
+            parent_path="phase-1/milestone-1/objective-completed",
+        )
+
+        # Objective should still be active
+        assert objective1 in milestone.children
+
+    def test_does_not_archive_incomplete_objective_with_pending_deliverables(
+        self, task_manager, mock_data, empty_prism_dir
+    ):
+        """Adding new objective does not archive sibling with pending deliverables."""
+        from prism.managers.storage_manager import StorageManager
+
+        # Setup: objective with completed status but pending deliverables
+        objective1 = mock_data.create_objective(
+            name="Objective 1",
+            slug="objective-incomplete",
+            status="completed",  # Marked complete but has pending work
+            parent_uuid="milestone-1-uuid",
+            uuid="objective-1-uuid",
+        )
+        deliverable = mock_data.create_deliverable(
+            name="Deliverable",
+            slug="deliverable",
+            status="pending",  # Pending deliverable
+            parent_uuid=objective1.uuid,
+            uuid="deliverable-uuid",
+        )
+        objective1.add_child(deliverable)
+        task_manager.project.place_item(objective1)
+        task_manager.project.place_item(deliverable)
+        milestone = task_manager.project.get_item("milestone-1-uuid")
+        milestone.add_child(objective1)
+
+        # Add new objective
+        result = task_manager.add_item(
+            item_type="objective",
+            name="Objective 2",
+            description="New objective",
+            parent_path="phase-1/milestone-1",
+        )
+
+        # Old objective should NOT be archived (has pending deliverables)
+        assert objective1 in milestone.children
+        
+        # Verify not in archive
+        storage = StorageManager(empty_prism_dir)
+        archived_file = storage.load_archived_strategic()
+        archived_uuids = [o.uuid for o in archived_file.objectives]
+        assert "objective-1-uuid" not in archived_uuids
+
+
 # =============================================================================
 # CRUD - Update Item Tests
 # =============================================================================

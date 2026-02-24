@@ -124,7 +124,7 @@
       "name": "Implementation Tests",
       "description": "Write tests for auto-archive on new strategic item creation.",
       "slug": "implementation-",
-      "status": "pending",
+      "status": "in-progress",
       "parent_uuid": "5b9194e3-f1a7-4f72-9652-9727ee141763",
       "created_at": "2026-02-24T11:54:51.836556",
       "updated_at": "2026-02-24T11:54:51.836562",
