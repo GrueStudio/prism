@@ -38,6 +38,11 @@ class NavigationError(PrismError):
     pass
 
 
+class StorageError(PrismError):
+    """Raised when storage operations (load/save) fail."""
+    pass
+
+
 class ArchivedItemError(PrismError):
     """Raised when attempting to modify an archived item."""
     pass

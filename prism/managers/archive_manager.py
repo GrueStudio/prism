@@ -2,255 +2,211 @@
 ArchiveManager for Prism CLI.
 
 Handles all archive operations including:
-- Archiving completed items
-- Lazy-loading archived items via ArchivedItem wrapper
-- Managing archived item metadata and order
-- Auto-archiving on item completion via EventBus
+- Creating lazy-loading ArchivedItem wrappers
+- Archiving completed strategic items and execution trees
+- Loading archived data on-demand via signals
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Dict, Optional
 
-from prism.managers.events import Event, EventListener, EventType, ItemEvent
 from prism.managers.storage_manager import StorageManager
-from prism.models.archived import ArchivedItem
-from prism.models.project import Project
+from prism.models.archived import ArchivedItem, LoadState
+from prism.models.base import Action, BaseItem, Deliverable, Milestone, Objective, Phase
+from prism.models.files import ArchivedStrategicFile, ExecutionFile
 
 
 class ArchiveManager:
     """
-    Manages all archive operations for Prism.
+    Manages archive operations for Prism.
 
     Handles:
+    - Creating lazy-loading ArchivedItem wrappers with signals connected
     - Archiving completed strategic items and execution trees
-    - Loading archived items (lazy via ArchivedItem wrappers)
-    - Managing archived item metadata and ordering
+    - Loading archived data on-demand when signals fire
+
+    Usage:
+        archive_mgr = ArchiveManager(storage)
+
+        # Create wrappers (ProjectManager)
+        phase_wrapper = archive_mgr.create_archived_phase(position=0)
+
+        # Archive completed items (TaskManager)
+        archive_mgr.archive_strategic_item(objective, "objective", position=0)
+        archive_mgr.archive_execution_tree(objective.uuid, objective)
     """
 
-    def __init__(self, storage: StorageManager):
+    def __init__(self, storage: StorageManager) -> None:
         """
         Initialize ArchiveManager.
 
         Args:
-            storage: StorageManager for persistence
+            storage: StorageManager for reading/writing archive files.
         """
         self.storage = storage
+        self._cached_strategic: Optional[ArchivedStrategicFile] = None
+        self._wrappers: Dict[str, ArchivedItem] = {}
 
-    def archive_strategic(self, item_data: Dict[str, Any], position: int = 0) -> None:
+    # =========================================================================
+    # Public API: Create wrappers (for ProjectManager)
+    # =========================================================================
+
+    def get_archived_item(self, uuid: str, item_type: str) -> ArchivedItem:
         """
-        Archive a strategic item (phase, milestone, or objective).
+        Create ArchivedItem wrapper for archived objective.
+
+        Objective data is loaded when accessed.
 
         Args:
-            item_data: Item data dict with uuid, name, slug, etc.
-            position: Position among siblings (for ordering)
+            uuid: Optional UUID if known.
+
+        Returns:
+            ArchivedItem wrapper with signals connected.
         """
-        # Add position metadata
-        item_data["position"] = position
+        if uuid in self._wrappers:
+            return self._wrappers[uuid]
+
+        wrapper = ArchivedItem(uuid=uuid, item_type=item_type)
+        wrapper.request_load.connect(lambda: self._load_strategic_data(wrapper))
+        wrapper.request_load_children.connect(lambda: self._load_exec_tree(wrapper))
+
+        self._wrappers[uuid] = wrapper
+        return wrapper
+
+    # =========================================================================
+    # Public API: Archive completed items (for TaskManager)
+    # =========================================================================
+
+    def archive_strategic_item(self, item: BaseItem, item_type: str) -> None:
+        """
+        Archive a completed strategic item.
+
+        Appends to archive/strategic.json.
+
+        Args:
+            item: The completed BaseItem to archive.
+            item_type: Type string ('phase', 'milestone', 'objective').
+        """
+        # Invalidate cache
+        self._cached_strategic = None
 
         # Load existing archived items
-        archived = self.storage.load_all_archived_strategic()
+        archived = self.storage.load_archived_strategic()
 
-        # Determine item type and add to appropriate list
-        item_type = self._infer_item_type(item_data)
-        if item_type == "phase":
-            archived["phases"].append(item_data)
-        elif item_type == "milestone":
-            archived["milestones"].append(item_data)
-        elif item_type == "objective":
-            archived["objectives"].append(item_data)
+        def append_item(am, item):
+            if isinstance(item, Phase):
+                archived.phases.append(item)
+                for milestone in item.children:
+                    append_item(am, milestone)
+            elif isinstance(item, Milestone):
+                archived.milestones.append(item)
+                for objective in item.children:
+                    append_item(am, objective)
+            elif isinstance(item, Objective):
+                archived.objectives.append(item)
+                am._archive_execution_tree(item)
 
-        # Save back
-        archive_path = self.storage._get_archive_file_path("strategic.json")
-        self.storage._atomic_write(archive_path, archived)
+        append_item(self, item)
+        # Save
+        self.storage.save_archived_strategic(archived)
 
-    def archive_execution_tree(
-        self, objective_uuid: str, tree_data: Dict[str, Any]
-    ) -> None:
+    def _archive_execution_tree(self, objective: Objective) -> None:
         """
-        Archive an execution tree (deliverables and actions).
+        Archive execution tree for completed objective.
+
+        Creates archive/{objective_uuid}.exec.json.
 
         Args:
-            objective_uuid: UUID of the objective being archived
-            tree_data: Dictionary with deliverables and actions lists
+            objective_uuid: UUID of objective being archived.
+            objective: The completed Objective with deliverables/actions.
         """
-        # Add position metadata to deliverables and actions
-        for i, deliv in enumerate(tree_data.get("deliverables", [])):
-            deliv["position"] = i
-        for i, action in enumerate(tree_data.get("actions", [])):
-            action["position"] = i
+        # Serialize deliverables and actions
+        deliverables = []
+        actions = []
+        for deliverable in objective.children:
+            deliverables.append(deliverable)
+            for action in deliverable.children:
+                actions.append(action)
 
-        self.storage.archive_execution_tree(objective_uuid, tree_data)
+        execution = ExecutionFile(
+            deliverables=deliverables,
+            actions=actions,
+        )
 
-    def get_archived_item(self, uuid: str) -> Optional[ArchivedItem]:
-        """
-        Get an archived item by UUID as an ArchivedItem wrapper.
+        self.storage.save_archived_execution_tree(objective.uuid, execution)
 
-        Args:
-            uuid: Item UUID
+    # =========================================================================
+    # Internal: Signal handlers for lazy loading
+    # =========================================================================
 
-        Returns:
-            ArchivedItem wrapper or None if not found
-        """
-        archived = self.storage.load_all_archived_strategic()
+    def _get_archived_strategic(self) -> ArchivedStrategicFile:
+        """Get cached archived strategic data, loading if needed."""
+        if self._cached_strategic is None:
+            self._cached_strategic = self.storage.load_archived_strategic()
+        return self._cached_strategic
 
-        # Search in all item types
-        for item_type in ["phases", "milestones", "objectives"]:
-            for item_data in archived.get(item_type, []):
-                if item_data.get("uuid") == uuid:
-                    return ArchivedItem(
-                        uuid=item_data["uuid"],
-                        name=item_data["name"],
-                        slug=item_data["slug"],
-                        item_type=item_type[:-1],  # 'phases' -> 'phase'
-                        status=item_data.get("status", "archived"),
-                        parent_uuid=item_data.get("parent_uuid"),
-                        description=item_data.get("description"),
-                        position=item_data.get("position", 0),
-                        storage=self.storage,
-                    )
+    def _place_item(self, item: BaseItem):
+        # Loading an item with no ArchivedItem placeholder
+        if item.uuid not in self._wrappers:
+            wrapper = ArchivedItem(item.uuid, item_type=item.item_type)
+            self._wrappers[item.uuid] = wrapper
+            wrapper.mark_loaded(item)
+            # If parent is tracked, add this item to the parent's children
+            # Note: parent_uuid is None for top-level items (phases), which correctly
+            # skips this block since they have no parent to add themselves to.
+            if item.parent_uuid in self._wrappers:
+                parent = self._wrappers[item.parent_uuid]
+                parent.add_child(wrapper)
 
-        return None
-
-    def list_archived_items(
-        self, item_type: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
-        """
-        List archived items, optionally filtered by type.
-
-        Args:
-            item_type: Optional filter ('phase', 'milestone', 'objective')
-
-        Returns:
-            List of item data dicts
-        """
-        archived = self.storage.load_all_archived_strategic()
-
-        if item_type:
-            return archived.get(f"{item_type}s", [])
-
-        # Return all items
-        all_items = []
-        for type_key in ["phases", "milestones", "objectives"]:
-            all_items.extend(archived.get(type_key, []))
-        return all_items
-
-    def _infer_item_type(self, item_data: Dict[str, Any]) -> str:
-        """Infer item type from data structure and parent_uuid relationship."""
-        # Check for type-specific fields first
-        if "deliverables" in item_data:
-            return "objective"
-        if "actions" in item_data:
-            return "deliverable"
-
-        # Fall back to parent_uuid relationship
-        parent_uuid = item_data.get("parent_uuid")
-        if parent_uuid is None:
-            # Could be a phase or an objective with missing parent_uuid
-            # Check if it has objective characteristics
-            if "child_uuids" in item_data or item_data.get("status") == "completed":
-                return "objective"
-            return "phase"
-
-        archived = self.storage.load_all_archived_strategic()
-        # Check if parent is a phase
-        for phase in archived["phases"]:
-            if phase["uuid"] == parent_uuid:
-                return "milestone"
-        # Check if parent is a milestone
-        for milestone in archived["milestones"]:
-            if milestone["uuid"] == parent_uuid:
-                return "objective"
-
-        # Default to objective (parent is likely a milestone not yet archived)
-        return "objective"
-
-
-class AutoArchiveListener(EventListener):
-    """
-    Automatically archives completed strategic items via EventBus.
-
-    When a strategic item (phase, milestone, objective) is completed:
-    1. Archive the strategic item to archive/strategic.json
-    2. If objective, archive execution tree to archive/{uuid}.exec.json
-    """
-
-    def __init__(
-        self,
-        storage: StorageManager,
-        project: "Project",
-        auto_archive_enabled: bool = True,
-    ) -> None:
-        """
-        Initialize AutoArchiveListener.
-
-        Args:
-            storage: StorageManager for archive operations.
-            project: Project for item lookup.
-            auto_archive_enabled: Whether auto-archive is enabled.
-        """
-        self.storage = storage
-        self.project = project
-        self.auto_archive_enabled = auto_archive_enabled
-        self.archive_manager = ArchiveManager(storage)
-
-    @property
-    def subscribed_events(self) -> List[EventType]:
-        """Return list of events this listener handles."""
-        return [EventType.STRATEGIC_COMPLETED]
-
-    def handle(self, event: Event) -> None:
-        """Handle a strategic completion event.
-
-        Args:
-            event: The strategic completion event.
-        """
-        if not self.auto_archive_enabled:
+            # Check item_type directly on BaseItem, not through wrapper
+            if isinstance(item, Objective):
+                wrapper.request_load_children.connect(
+                    lambda: self._load_exec_tree(wrapper)
+                )
             return
 
-        if not isinstance(event, ItemEvent):
-            return
+        archived_item = self._wrappers[item.uuid]
+        archived_item.mark_loaded(item)
 
-        # Only archive objectives for now (phases/milestones may need different handling)
-        if event.item_type != "objective":
-            return
+    def _load_strategic_data(self, wrapper: ArchivedItem) -> None:
+        """
+        Load ArchivedStrategicFile and populate wrapper.
 
-        import click
-
-        click.echo(f"  📦 Auto-archiving objective '{event.item_name}'...")
-
-        try:
-            self._archive_objective(event)
-        except Exception as e:
-            click.echo(f"  ⚠ Failed to archive objective: {e}", err=True)
-
-    def _archive_objective(self, event: ItemEvent) -> None:
-        """Archive a completed objective with its execution tree.
+        Called when request_load signal fires. Loads all phases/milestones
+        with children, objectives without children.
 
         Args:
-            event: The item event for the completed objective.
+            wrapper: The ArchivedItem requesting load.
         """
-        # Get the objective item by UUID
-        objective = self.project.get_by_uuid(event.item_uuid)
-        if not objective:
-            raise ValueError(f"Objective not found: {event.item_uuid}")
+        if wrapper._load_state != LoadState.NOT_LOADED:
+            return
 
-        # Archive strategic item via ArchiveManager
-        self.archive_manager.archive_strategic(objective.model_dump(mode="json"))
+        archived = self._get_archived_strategic()
 
-        # Archive execution tree (deliverables and actions)
-        execution_data = {"deliverables": [], "actions": []}
+        for item in archived.phases + archived.milestones + archived.objectives:
+            self._place_item(item)
 
-        for deliverable in objective.deliverables:
-            del_data = deliverable.model_dump(mode="json")
-            execution_data["deliverables"].append(del_data)
+    def _load_exec_tree(self, wrapper: ArchivedItem) -> None:
+        """
+        Load ArchivedExecTree and populate wrapper.
 
-            for action in deliverable.actions:
-                act_data = action.model_dump(mode="json")
-                execution_data["actions"].append(act_data)
+        Called when request_load_children signal fires.
+        Loads the execution tree for the objective.
 
-        self.storage.archive_execution_tree(objective.uuid, execution_data)
+        Args:
+            wrapper: The ArchivedItem requesting load.
+        """
+        if wrapper._load_state == LoadState.CHILDREN_LOADED:
+            return
 
-        import click
+        if wrapper.item_type != "objective":
+            raise ValueError(
+                f"archived children not loaded for non-objective {wrapper.uuid}"
+            )
 
-        click.echo(f"  ✓ Archived objective '{event.item_name}' to archive/")
-        click.echo(f"    - Strategic: archive/strategic.json (appended)")
-        click.echo(f"    - Execution: archive/{objective.uuid}.exec.json")
+        archived = self.storage.load_archived_execution_tree(wrapper.uuid)
+
+        if not archived:
+            raise ValueError(f"archived execution tree not found for {wrapper.uuid}")
+
+        for item in archived.deliverables + archived.actions:
+            self._place_item(item)

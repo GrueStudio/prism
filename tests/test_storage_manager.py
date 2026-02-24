@@ -1,608 +1,343 @@
 """
-Tests for the StorageManager class in prism.storage_manager module.
+Tests for StorageManager.
+
+Tests cover:
+- Directory creation
+- Atomic writes
+- All file operations (strategic, execution, cursor, config, archived)
+- Error handling
 """
 
 import json
-import shutil
-import tempfile
 from pathlib import Path
 
 import pytest
-from pydantic.types import ImportString
 
-from prism.managers.storage_manager import StorageError, StorageManager
-from prism.models.files import ConfigFile, ExecutionFile, OrphansFile, StrategicFile
-from prism.models.orphan import Orphan
-
-
-@pytest.fixture
-def temp_prism_dir():
-    """Create a temporary .prism/ directory for testing."""
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        yield Path(tmp_dir)
+from prism.exceptions import StorageError
+from prism.managers.storage_manager import StorageManager
+from prism.models.files import (
+    ArchivedStrategicFile,
+    ConfigFile,
+    CursorFile,
+    ExecutionFile,
+    StrategicFile,
+)
 
 
-@pytest.fixture
-def storage_manager(temp_prism_dir):
-    """Create a StorageManager instance with test directory."""
-    return StorageManager(temp_prism_dir)
+class TestStorageManagerInit:
+    """Test StorageManager initialization."""
+
+    def test_init_creates_prism_dir(self, temp_dir: Path):
+        """StorageManager creates .prism/ directory on init."""
+        prism_path = temp_dir / ".prism"
+        assert not prism_path.exists()
+        
+        StorageManager(prism_path)
+        assert prism_path.exists()
+        assert (prism_path / "archive").exists()
+
+    def test_init_default_path(self):
+        """StorageManager uses .prism/ in current dir by default."""
+        manager = StorageManager()
+        assert manager.prism_dir == Path(".prism")
+
+    def test_init_custom_path(self, temp_dir: Path):
+        """StorageManager uses custom path when provided."""
+        custom_path = temp_dir / "custom_prism"
+        manager = StorageManager(custom_path)
+        assert manager.prism_dir == custom_path
 
 
-class TestStorageManagerInitialization:
-    """Tests for StorageManager class initialization."""
+class TestStrategicFileOperations:
+    """Test strategic.json operations."""
 
-    def test_storage_manager_creates_prism_dir(self, temp_prism_dir):
-        """Test that StorageManager creates the .prism/ directory."""
-        # The fixture already creates the dir, but test that manager ensures it
-        manager = StorageManager(temp_prism_dir)
-        assert manager.prism_dir.exists()
-        assert manager.prism_dir.is_dir()
-
-    def test_storage_manager_default_path(self, temp_prism_dir):
-        """Test that StorageManager uses default .prism/ path."""
-        # Use temp directory instead of actual .prism/ to avoid cleanup issues
-        manager = StorageManager(temp_prism_dir)
-        assert manager.prism_dir == temp_prism_dir
-
-    def test_storage_manager_initializes_with_existing_dir(self, temp_prism_dir):
-        """Test that StorageManager works with existing directory."""
-        # Create some files in the temp directory
-        test_file = temp_prism_dir / "test.txt"
-        test_file.write_text("test content")
-
-        manager = StorageManager(temp_prism_dir)
-        assert test_file.exists()
-
-
-class TestAtomicWrite:
-    """Tests for atomic write functionality."""
-
-    def test_atomic_write_creates_file(self, storage_manager, temp_prism_dir):
-        """Test that atomic write creates a new file."""
-        test_data = {"key": "value"}
-        file_path = temp_prism_dir / "test.json"
-
-        storage_manager._atomic_write(file_path, test_data)
-
-        assert file_path.exists()
-        with open(file_path, "r") as f:
-            content = json.load(f)
-        assert content == test_data
-
-    def test_atomic_write_overwrites_existing_file(
-        self, storage_manager, temp_prism_dir
-    ):
-        """Test that atomic write overwrites existing file."""
-        file_path = temp_prism_dir / "test.json"
-
-        # Write initial data
-        storage_manager._atomic_write(file_path, {"initial": "data"})
-
-        # Overwrite with new data
-        new_data = {"updated": "data"}
-        storage_manager._atomic_write(file_path, new_data)
-
-        with open(file_path, "r") as f:
-            content = json.load(f)
-        assert content == new_data
-
-    def test_atomic_write_no_temp_files_left(self, storage_manager, temp_prism_dir):
-        """Test that atomic write cleans up temp files on success."""
-        file_path = temp_prism_dir / "test.json"
-        test_data = {"key": "value"}
-
-        storage_manager._atomic_write(file_path, test_data)
-
-        # Check no temp files remain
-        temp_files = list(temp_prism_dir.glob(".tmp_prism_*.json"))
-        assert len(temp_files) == 0
-
-
-class TestStrategicStorage:
-    """Tests for strategic.json storage operations."""
-
-    def test_load_strategic_empty(self, storage_manager):
-        """Test loading strategic data when file doesn't exist."""
-        result = storage_manager.load_strategic()
-
+    def test_load_strategic_empty(self, empty_prism_dir: Path):
+        """Load strategic.json returns empty StrategicFile when file doesn't exist."""
+        manager = StorageManager(empty_prism_dir)
+        result = manager.load_strategic()
+        
         assert isinstance(result, StrategicFile)
         assert result.phase is None
         assert result.milestone is None
         assert result.objective is None
 
-    def test_save_and_load_strategic(self, storage_manager):
-        """Test saving and loading strategic data."""
-        # Create strategic data with phase, milestone, objective
-        strategic_data = StrategicFile(
-            phase={
-                "uuid": "test-uuid-1",
-                "name": "Test Phase",
-                "description": "A test phase",
-                "slug": "test-phase",
-                "status": "pending",
-                "parent_uuid": None,
-            },
-            milestone={
-                "uuid": "test-uuid-2",
-                "name": "Test Milestone",
-                "description": "A test milestone",
-                "slug": "test-milestone",
-                "status": "pending",
-                "parent_uuid": "test-uuid-1",
-            },
-            objective={
-                "uuid": "test-uuid-3",
-                "name": "Test Objective",
-                "description": "A test objective",
-                "slug": "test-objective",
-                "status": "pending",
-                "parent_uuid": "test-uuid-2",
-            },
-        )
+    def test_save_and_load_strategic(
+        self, empty_prism_dir: Path, strategic_file: StrategicFile
+    ):
+        """Save and load strategic.json preserves data."""
+        manager = StorageManager(empty_prism_dir)
+        
+        # Save
+        manager.save_strategic(strategic_file)
+        
+        # Load
+        result = manager.load_strategic()
+        
+        assert result.phase is not None
+        assert result.phase.name == strategic_file.phase.name
+        assert result.milestone is not None
+        assert result.objective is not None
 
-        storage_manager.save_strategic(strategic_data)
-
-        # Load and verify
-        loaded = storage_manager.load_strategic()
-        assert loaded.phase is not None
-        assert loaded.phase["name"] == "Test Phase"
-        assert loaded.phase["uuid"] == "test-uuid-1"
-        assert loaded.milestone["name"] == "Test Milestone"
-        assert loaded.objective["name"] == "Test Objective"
-
-    def test_save_strategic_creates_file(self, storage_manager, temp_prism_dir):
-        """Test that save_strategic creates strategic.json."""
-        strategic_data = StrategicFile()
-        storage_manager.save_strategic(strategic_data)
-
-        file_path = temp_prism_dir / "strategic.json"
-        assert file_path.exists()
+    def test_strategic_file_persists_correctly(self, empty_prism_dir: Path):
+        """Strategic file is saved with correct JSON structure."""
+        manager = StorageManager(empty_prism_dir)
+        strategic = StrategicFile(phase_uuids=["uuid-1", "uuid-2"])
+        
+        manager.save_strategic(strategic)
+        
+        # Read raw JSON
+        file_path = empty_prism_dir / "strategic.json"
+        with open(file_path, "r") as f:
+            data = json.load(f)
+        
+        assert "phase_uuids" in data
+        assert data["phase_uuids"] == ["uuid-1", "uuid-2"]
 
 
-class TestExecutionStorage:
-    """Tests for execution.json storage operations."""
+class TestExecutionFileOperations:
+    """Test execution.json operations."""
 
-    def test_load_execution_empty(self, storage_manager):
-        """Test loading execution data when file doesn't exist."""
-        result = storage_manager.load_execution()
-
+    def test_load_execution_empty(self, empty_prism_dir: Path):
+        """Load execution.json returns empty ExecutionFile when file doesn't exist."""
+        manager = StorageManager(empty_prism_dir)
+        result = manager.load_execution()
+        
         assert isinstance(result, ExecutionFile)
         assert len(result.deliverables) == 0
         assert len(result.actions) == 0
 
-    def test_save_and_load_execution(self, storage_manager):
-        """Test saving and loading execution data."""
-        execution_data = ExecutionFile(
-            deliverables=[
-                {
-                    "uuid": "del-uuid-1",
-                    "name": "Test Deliverable",
-                    "slug": "test-deliverable",
-                    "status": "pending",
-                    "parent_uuid": "obj-uuid-1",
-                    "children": [],
-                }
-            ],
-            actions=[
-                {
-                    "uuid": "act-uuid-1",
-                    "name": "Test Action",
-                    "slug": "test-action",
-                    "status": "pending",
-                    "parent_uuid": "del-uuid-1",
-                }
-            ],
+    def test_save_and_load_execution(
+        self, empty_prism_dir: Path, execution_file: ExecutionFile
+    ):
+        """Save and load execution.json preserves data."""
+        manager = StorageManager(empty_prism_dir)
+        
+        # Save
+        manager.save_execution(execution_file)
+        
+        # Load
+        result = manager.load_execution()
+        
+        assert len(result.deliverables) == len(execution_file.deliverables)
+        assert len(result.actions) == len(execution_file.actions)
+
+
+class TestCursorFileOperations:
+    """Test cursor.json operations."""
+
+    def test_load_cursor_empty(self, empty_prism_dir: Path):
+        """Load cursor.json returns empty CursorFile when file doesn't exist."""
+        manager = StorageManager(empty_prism_dir)
+        result = manager.load_cursor()
+        
+        assert isinstance(result, CursorFile)
+        assert result.task_cursor is None
+        assert result.crud_context is None
+
+    def test_save_and_load_cursor(self, empty_prism_dir: Path):
+        """Save and load cursor.json preserves data."""
+        manager = StorageManager(empty_prism_dir)
+        cursor = CursorFile(
+            task_cursor="phase-1/milestone-1/objective-1/deliverable-1/action-1",
+            crud_context="phase-1/milestone-1/objective-1/deliverable-1",
         )
+        
+        # Save
+        manager.save_cursor(cursor)
+        
+        # Load
+        result = manager.load_cursor()
+        
+        assert result.task_cursor == cursor.task_cursor
+        assert result.crud_context == cursor.crud_context
 
-        storage_manager.save_execution(execution_data)
-
-        # Load and verify
-        loaded = storage_manager.load_execution()
-        assert len(loaded.deliverables) == 1
-        assert len(loaded.actions) == 1
-        assert loaded.deliverables[0]["name"] == "Test Deliverable"
-        assert loaded.actions[0]["name"] == "Test Action"
-
-    def test_save_execution_creates_file(self, storage_manager, temp_prism_dir):
-        """Test that save_execution creates execution.json."""
-        execution_data = ExecutionFile()
-        storage_manager.save_execution(execution_data)
-
-        file_path = temp_prism_dir / "execution.json"
-        assert file_path.exists()
+    def test_cursor_file_persists_correctly(self, empty_prism_dir: Path):
+        """Cursor file is saved with correct JSON structure."""
+        manager = StorageManager(empty_prism_dir)
+        cursor = CursorFile(task_cursor="test-path", crud_context="test-context")
+        
+        manager.save_cursor(cursor)
+        
+        # Read raw JSON
+        file_path = empty_prism_dir / "cursor.json"
+        with open(file_path, "r") as f:
+            data = json.load(f)
+        
+        assert data["task_cursor"] == "test-path"
+        assert data["crud_context"] == "test-context"
 
 
-class TestConfigStorage:
-    """Tests for config.json storage operations."""
+class TestConfigFileOperations:
+    """Test config.json operations."""
 
-    def test_load_config_default(self, storage_manager):
-        """Test loading config returns defaults when file doesn't exist."""
-        result = storage_manager.load_config()
-
+    def test_load_config_empty(self, empty_prism_dir: Path):
+        """Load config.json returns empty ConfigFile when file doesn't exist."""
+        manager = StorageManager(empty_prism_dir)
+        result = manager.load_config()
+        
         assert isinstance(result, ConfigFile)
         assert result.schema_version == "0.2.0"
-        assert result.slug_max_length == 15
-        assert result.percentage_round_precision == 1
 
-    def test_save_and_load_config(self, storage_manager):
-        """Test saving and loading config data."""
-        config_data = ConfigFile(
-            schema_version="0.3.0", slug_max_length=20, status_header_width=30
+    def test_save_and_load_config(self, empty_prism_dir: Path):
+        """Save and load config.json preserves data."""
+        manager = StorageManager(empty_prism_dir)
+        config = ConfigFile(
+            slug_max_length=20,
+            slug_word_limit=5,
+            status_header_width=30,
         )
+        
+        # Save
+        manager.save_config(config)
+        
+        # Load
+        result = manager.load_config()
+        
+        assert result.slug_max_length == 20
+        assert result.slug_word_limit == 5
+        assert result.status_header_width == 30
 
-        storage_manager.save_config(config_data)
 
-        # Load and verify
-        loaded = storage_manager.load_config()
-        assert loaded.schema_version == "0.3.0"
-        assert loaded.slug_max_length == 20
-        assert loaded.status_header_width == 30
+class TestArchivedStrategicFileOperations:
+    """Test archive/strategic.json operations."""
 
-    def test_save_config_creates_file(self, storage_manager, temp_prism_dir):
-        """Test that save_config creates config.json."""
-        config_data = ConfigFile()
-        storage_manager.save_config(config_data)
+    def test_load_archived_strategic_empty(self, empty_prism_dir: Path):
+        """Load archived strategic.json returns empty when file doesn't exist."""
+        manager = StorageManager(empty_prism_dir)
+        result = manager.load_archived_strategic()
+        
+        assert isinstance(result, ArchivedStrategicFile)
+        assert len(result.phases) == 0
+        assert len(result.milestones) == 0
+        assert len(result.objectives) == 0
 
-        file_path = temp_prism_dir / "config.json"
+    def test_save_and_load_archived_strategic(self, empty_prism_dir: Path, mock_data):
+        """Save and load archived strategic.json preserves data."""
+        manager = StorageManager(empty_prism_dir)
+        
+        # Create archived items
+        archived = ArchivedStrategicFile(
+            phases=[mock_data.create_phase(name="Archived Phase", slug="archived-phase")],
+            milestones=[mock_data.create_milestone(name="Archived Milestone", slug="archived-milestone")],
+            objectives=[mock_data.create_objective(name="Archived Objective", slug="archived-objective")],
+        )
+        
+        # Save
+        manager.save_archived_strategic(archived)
+        
+        # Load
+        result = manager.load_archived_strategic()
+        
+        assert len(result.phases) == 1
+        assert result.phases[0].name == "Archived Phase"
+        assert len(result.milestones) == 1
+        assert len(result.objectives) == 1
+
+
+class TestArchivedExecutionTreeOperations:
+    """Test archived execution tree operations."""
+
+    def test_load_archived_execution_empty(self, empty_prism_dir: Path):
+        """Load archived execution tree returns None when file doesn't exist."""
+        manager = StorageManager(empty_prism_dir)
+        result = manager.load_archived_execution_tree("test-uuid")
+        
+        assert result is None
+
+    def test_save_and_load_archived_execution(
+        self, empty_prism_dir: Path, execution_file: ExecutionFile
+    ):
+        """Save and load archived execution tree preserves data."""
+        manager = StorageManager(empty_prism_dir)
+        objective_uuid = "test-objective-uuid"
+        
+        # Save
+        manager.save_archived_execution_tree(objective_uuid, execution_file)
+        
+        # Load
+        result = manager.load_archived_execution_tree(objective_uuid)
+        
+        assert result is not None
+        assert len(result.deliverables) == len(execution_file.deliverables)
+        assert len(result.actions) == len(execution_file.actions)
+
+    def test_archived_execution_file_naming(self, empty_prism_dir: Path):
+        """Archived execution files use correct naming convention."""
+        manager = StorageManager(empty_prism_dir)
+        objective_uuid = "abc-123-xyz"
+        execution = ExecutionFile()
+        
+        manager.save_archived_execution_tree(objective_uuid, execution)
+        
+        # Check file exists with correct name
+        file_path = empty_prism_dir / "archive" / f"{objective_uuid}.exec.json"
         assert file_path.exists()
 
 
-class TestOrphansStorage:
-    """Tests for orphans.json storage operations."""
+class TestAtomicWrites:
+    """Test atomic write operations."""
 
-    def test_load_orphans_empty(self, storage_manager):
-        """Test loading orphans when file doesn't exist."""
-        result = storage_manager.load_orphans()
-
-        assert isinstance(result, OrphansFile)
-        assert len(result.orphans) == 0
-
-    def test_save_and_load_orphans(self, storage_manager):
-        """Test saving and loading orphans data."""
-        orphans_data = OrphansFile(
-            orphans=[
-                Orphan(
-                    uuid="orphan-uuid-1",
-                    name="Test Idea",
-                    description="A test orphan idea",
-                )
-            ]
-        )
-
-        storage_manager.save_orphans(orphans_data)
-
-        # Load and verify
-        loaded = storage_manager.load_orphans()
-        assert len(loaded.orphans) == 1
-        assert loaded.orphans[0].name == "Test Idea"
-
-    def test_save_orphans_creates_file(self, storage_manager, temp_prism_dir):
-        """Test that save_orphans creates orphans.json."""
-        orphans_data = OrphansFile()
-        storage_manager.save_orphans(orphans_data)
-
-        file_path = temp_prism_dir / "orphans.json"
+    def test_atomic_write_creates_file(self, empty_prism_dir: Path):
+        """Atomic write successfully creates file."""
+        manager = StorageManager(empty_prism_dir)
+        data = {"test": "data"}
+        file_path = empty_prism_dir / "test.json"
+        
+        manager._atomic_write(file_path, data)
+        
         assert file_path.exists()
+        with open(file_path, "r") as f:
+            loaded = json.load(f)
+        assert loaded == data
+
+    def test_atomic_write_overwrites(self, empty_prism_dir: Path):
+        """Atomic write overwrites existing file."""
+        manager = StorageManager(empty_prism_dir)
+        file_path = empty_prism_dir / "test.json"
+        
+        # Write initial data
+        manager._atomic_write(file_path, {"initial": "data"})
+        
+        # Overwrite
+        manager._atomic_write(file_path, {"updated": "data"})
+        
+        with open(file_path, "r") as f:
+            loaded = json.load(f)
+        assert loaded == {"updated": "data"}
+
+    def test_atomic_write_no_temp_files_left(self, empty_prism_dir: Path):
+        """Atomic write doesn't leave temp files on success."""
+        manager = StorageManager(empty_prism_dir)
+        data = {"test": "data"}
+        file_path = empty_prism_dir / "test.json"
+        
+        manager._atomic_write(file_path, data)
+        
+        # Check no temp files remain
+        temp_files = list(empty_prism_dir.glob(".tmp_prism_*.json"))
+        assert len(temp_files) == 0
 
 
-class TestIntegration:
-    """Integration tests for StorageManager."""
+class TestStorageErrors:
+    """Test error handling in StorageManager."""
 
-    def test_save_all_load_all(self, storage_manager):
-        """Test saving and loading all file types together."""
-        # Create all data types
-        strategic = StrategicFile(
-            phase={
-                "uuid": "phase-uuid",
-                "name": "Alpha Phase",
-                "slug": "alpha",
-                "status": "pending",
-                "parent_uuid": None,
-            },
-            milestone={
-                "uuid": "milestone-uuid",
-                "name": "Test Milestone",
-                "slug": "test-milestone",
-                "status": "pending",
-                "parent_uuid": "phase-uuid",
-            },
-            objective={
-                "uuid": "objective-uuid",
-                "name": "Test Objective",
-                "slug": "test-objective",
-                "status": "pending",
-                "parent_uuid": "milestone-uuid",
-            },
-        )
-        execution = ExecutionFile(
-            deliverables=[
-                {
-                    "uuid": "del-uuid",
-                    "name": "Test Deliverable",
-                    "slug": "test-deliverable",
-                    "status": "pending",
-                    "parent_uuid": "objective-uuid",
-                }
-            ],
-            actions=[
-                {
-                    "uuid": "act-uuid",
-                    "name": "Test Action",
-                    "slug": "test-action",
-                    "status": "pending",
-                    "parent_uuid": "del-uuid",
-                }
-            ],
-        )
-        config = ConfigFile(slug_max_length=20)
-        orphans = OrphansFile(
-            orphans=[
-                {
-                    "uuid": "orphan-uuid",
-                    "name": "Future Feature",
-                    "description": "Something for later",
-                }
-            ]
-        )
+    def test_invalid_json_raises_storage_error(self, empty_prism_dir: Path):
+        """Loading invalid JSON raises StorageError."""
+        manager = StorageManager(empty_prism_dir)
+        
+        # Write invalid JSON
+        file_path = empty_prism_dir / "strategic.json"
+        with open(file_path, "w") as f:
+            f.write("not valid json {{{")
+        
+        with pytest.raises(StorageError):
+            manager.load_strategic()
 
-        # Save all
-        storage_manager.save_strategic(strategic)
-        storage_manager.save_execution(execution)
-        storage_manager.save_config(config)
-        storage_manager.save_orphans(orphans)
-
-        # Load all and verify
-        loaded_strategic = storage_manager.load_strategic()
-        loaded_execution = storage_manager.load_execution()
-        loaded_config = storage_manager.load_config()
-        loaded_orphans = storage_manager.load_orphans()
-
-        assert loaded_strategic.phase is not None
-        assert loaded_strategic.phase["name"] == "Alpha Phase"
-        assert len(loaded_execution.deliverables) == 1
-        assert loaded_config.slug_max_length == 20
-        assert len(loaded_orphans.orphans) == 1
-
-    def test_multiple_saves_same_file(self, storage_manager):
-        """Test that multiple saves to the same file work correctly."""
-        config1 = ConfigFile(schema_version="1.0.0")
-        config2 = ConfigFile(schema_version="2.0.0")
-        config3 = ConfigFile(schema_version="3.0.0")
-
-        storage_manager.save_config(config1)
-        storage_manager.save_config(config2)
-        storage_manager.save_config(config3)
-
-        loaded = storage_manager.load_config()
-        assert loaded.schema_version == "3.0.0"
-
-
-class TestErrorHandling:
-    """Tests for error handling."""
-
-    def test_load_strategic_invalid_json(self, storage_manager, temp_prism_dir):
-        """Test loading strategic with invalid JSON raises exception."""
-        file_path = temp_prism_dir / "strategic.json"
-        file_path.write_text("{invalid json}")
-
-        with pytest.raises(StorageError, match="Failed to load strategic data"):
-            storage_manager.load_strategic()
-
-    def test_load_execution_invalid_json(self, storage_manager, temp_prism_dir):
-        """Test loading execution with invalid JSON raises exception."""
-        file_path = temp_prism_dir / "execution.json"
-        file_path.write_text("{invalid json}")
-
-        with pytest.raises(StorageError, match="Failed to load execution data"):
-            storage_manager.load_execution()
-
-    def test_load_config_invalid_json(self, storage_manager, temp_prism_dir):
-        """Test loading config with invalid JSON raises exception."""
-        file_path = temp_prism_dir / "config.json"
-        file_path.write_text("{invalid json}")
-
-        with pytest.raises(StorageError, match="Failed to load config"):
-            storage_manager.load_config()
-
-    def test_load_orphans_invalid_json(self, storage_manager, temp_prism_dir):
-        """Test loading orphans with invalid JSON raises exception."""
-        file_path = temp_prism_dir / "orphans.json"
-        file_path.write_text("{invalid json}")
-
-        with pytest.raises(StorageError, match="Failed to load orphans data"):
-            storage_manager.load_orphans()
-
-
-class TestArchiveStorage:
-    """Tests for archive folder functionality."""
-
-    def test_archive_strategic(self, storage_manager, temp_prism_dir):
-        """Test archiving a strategic item."""
-        item_data = {
-            "uuid": "test-uuid-123",
-            "name": "Archived Phase",
-            "slug": "archived-phase",
-            "status": "completed",
-        }
-
-        storage_manager.archive_strategic(item_data)
-
-        # Verify archive file was created
-        archive_path = temp_prism_dir / "archive" / "strategic.json"
-        assert archive_path.exists()
-
-        # Verify content
-        with open(archive_path, "r") as f:
-            content = json.load(f)
-        assert "items" in content
-        assert len(content["items"]) == 1
-        assert content["items"][0]["uuid"] == "test-uuid-123"
-        assert content["items"][0]["name"] == "Archived Phase"
-
-    def test_archive_execution_tree(self, storage_manager, temp_prism_dir):
-        """Test archiving an execution tree."""
-        tree_data = {
-            "deliverables": [
-                {
-                    "uuid": "del-uuid",
-                    "name": "Completed Deliverable",
-                    "slug": "completed-deliverable",
-                }
-            ],
-            "actions": [
-                {
-                    "uuid": "act-uuid",
-                    "name": "Completed Action",
-                    "slug": "completed-action",
-                }
-            ],
-        }
-
-        storage_manager.archive_execution_tree("my-objective-uuid", tree_data)
-
-        # Verify archive file was created (new format: {uuid}.exec.json)
-        archive_path = temp_prism_dir / "archive" / "my-objective-uuid.exec.json"
-        assert archive_path.exists()
-
-        # Verify content
-        with open(archive_path, "r") as f:
-            content = json.load(f)
-        assert len(content["deliverables"]) == 1
-        assert len(content["actions"]) == 1
-
-    def test_load_archived_strategic(self, storage_manager, temp_prism_dir):
-        """Test loading an archived strategic item."""
-        # Create archived strategic file with new structure
-        archive_path = temp_prism_dir / "archive" / "strategic.json"
-        archive_data = {
-            "phases": [
-                {
-                    "uuid": "load-test-uuid",
-                    "name": "Loaded Phase",
-                    "slug": "loaded-phase",
-                }
-            ],
-            "milestones": [],
-            "objectives": [],
-        }
-        with open(archive_path, "w") as f:
-            json.dump(archive_data, f)
-
-        # Load it back
-        loaded = storage_manager.load_archived_strategic("load-test-uuid")
-        assert loaded is not None
-        assert loaded["uuid"] == "load-test-uuid"
-        assert loaded["name"] == "Loaded Phase"
-
-    def test_load_archived_strategic_not_found(self, storage_manager):
-        """Test loading a non-existent archived strategic item."""
-        loaded = storage_manager.load_archived_strategic("non-existent-uuid")
-        assert loaded is None
-
-    def test_load_archived_execution_tree(self, storage_manager, temp_prism_dir):
-        """Test loading an archived execution tree."""
-        tree_data = {"deliverables": [], "actions": []}
-
-        # First archive the tree
-        storage_manager.archive_execution_tree("test-obj-uuid", tree_data)
-
-        # Then load it back
-        loaded = storage_manager.load_archived_execution_tree("test-obj-uuid")
-        assert loaded is not None
-        assert "deliverables" in loaded
-        assert "actions" in loaded
-
-    def test_load_archived_execution_tree_not_found(self, storage_manager):
-        """Test loading a non-existent archived execution tree."""
-        loaded = storage_manager.load_archived_execution_tree("non-existent")
-        assert loaded is None
-
-    def test_list_archived_strategic(self, storage_manager, temp_prism_dir):
-        """Test listing all archived strategic items."""
-        # Create archived strategic file with new structure
-        archive_path = temp_prism_dir / "archive" / "strategic.json"
-        archive_data = {
-            "phases": [{"uuid": "uuid-1", "name": "Phase 1"}],
-            "milestones": [{"uuid": "uuid-2", "name": "Milestone 1"}],
-            "objectives": [{"uuid": "uuid-3", "name": "Objective 1"}],
-        }
-        with open(archive_path, "w") as f:
-            json.dump(archive_data, f)
-
-        archived = storage_manager.list_archived_strategic()
-        assert len(archived) == 3
-        assert "uuid-1" in archived
-        assert "uuid-2" in archived
-        assert "uuid-3" in archived
-
-    def test_list_archived_execution_trees(self, storage_manager, temp_prism_dir):
-        """Test listing all archived execution trees."""
-        # Archive multiple trees
-        storage_manager.archive_execution_tree(
-            "obj-1", {"deliverables": [], "actions": []}
-        )
-        storage_manager.archive_execution_tree(
-            "obj-2", {"deliverables": [], "actions": []}
-        )
-
-        archived = storage_manager.list_archived_execution_trees()
-        assert len(archived) == 2
-        assert "obj-1" in archived
-        assert "obj-2" in archived
-
-    def test_archive_multiple_strategic_items(self, storage_manager, temp_prism_dir):
-        """Test archiving multiple strategic items to single file."""
-        # Create archived strategic file with new structure
-        archive_path = temp_prism_dir / "archive" / "strategic.json"
-        archive_data = {
-            "phases": [],
-            "milestones": [],
-            "objectives": [
-                {"uuid": "uuid-1", "name": "Item 1", "type": "objective"},
-                {"uuid": "uuid-2", "name": "Item 2", "type": "objective"},
-                {"uuid": "uuid-3", "name": "Item 3", "type": "objective"},
-            ],
-        }
-        with open(archive_path, "w") as f:
-            json.dump(archive_data, f)
-
-        # Verify all items are in the file
-        loaded = storage_manager.load_all_archived_strategic()
-        assert "objectives" in loaded
-        assert len(loaded["objectives"]) == 3
-        assert loaded["objectives"][0]["name"] == "Item 1"
-        assert loaded["objectives"][1]["name"] == "Item 2"
-        assert loaded["objectives"][2]["name"] == "Item 3"
-
-    def test_load_archived_strategic_by_uuid(self, storage_manager, temp_prism_dir):
-        """Test loading specific archived item by UUID from single file."""
-        # Create archived strategic file with new structure
-        archive_path = temp_prism_dir / "archive" / "strategic.json"
-        archive_data = {
-            "phases": [],
-            "milestones": [],
-            "objectives": [
-                {"uuid": "uuid-1", "name": "Item 1", "type": "objective"},
-                {"uuid": "uuid-2", "name": "Item 2", "type": "objective"},
-                {"uuid": "uuid-3", "name": "Item 3", "type": "objective"},
-            ],
-        }
-        with open(archive_path, "w") as f:
-            json.dump(archive_data, f)
-
-        # Load specific item by UUID
-        loaded = storage_manager.load_archived_strategic("uuid-2")
-        assert loaded is not None
-        assert loaded["uuid"] == "uuid-2"
-        assert loaded["name"] == "Item 2"
-
-        # Load non-existent item
-        not_found = storage_manager.load_archived_strategic("non-existent")
-        assert not_found is None
-
-    def test_archive_dir_created(self, temp_prism_dir):
-        """Test that archive directory is created on initialization."""
-        manager = StorageManager(temp_prism_dir)
-        archive_path = temp_prism_dir / "archive"
-        assert archive_path.exists()
-        assert archive_path.is_dir()
+    def test_write_to_invalid_path_raises(self, temp_dir: Path):
+        """Writing to invalid path raises StorageError."""
+        # Use a path that doesn't exist and can't be created
+        invalid_path = temp_dir / "nonexistent" / "strategic.json"
+        manager = StorageManager(temp_dir / ".prism")
+        
+        with pytest.raises(StorageError):
+            manager._atomic_write(invalid_path, {"test": "data"})

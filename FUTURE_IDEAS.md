@@ -124,3 +124,18 @@ This file tracks future ideas and enhancements for the Prism CLI that are not cu
     *   **Concern:** `datetime.now()` uses local time without timezone info.
     *   **Future:** Use `datetime.now(timezone.utc)` throughout, store timezone in config.
     *   **Benefit:** Correct date comparisons across timezones and DST changes.
+
+---
+## Architectural Concerns (Post-Refactor):
+
+1.  **Signal Descriptor uses instance as dictionary key:**
+    *   **Concern:** `SignalDescriptor.instance_signals` uses the instance object as a dictionary key. This is fragile because if `__hash__()` changes behavior (e.g., based on load state), signal connections are lost.
+    *   **Current workaround:** `ArchivedItem.__hash__()` always returns `hash(id(self))` to ensure stability.
+    *   **Future:** Refactor signal system to not rely on instance identity as dictionary keys. Consider using `id(obj)` directly or a weak reference-based approach.
+    *   **Benefit:** More robust signal system that doesn't depend on hash stability hacks.
+
+2.  **item_type validation in get_archived_item():**
+    *   **Concern:** `ArchiveManager.get_archived_item(uuid, item_type)` accepts `item_type` from caller but doesn't validate it against what actually exists in the archive.
+    *   **Current behavior:** Creates wrapper with given `item_type`, only fails when accessing properties if item doesn't exist.
+    *   **Future:** Add validation to check if UUID exists in archive and verify item_type matches before creating wrapper.
+    *   **Benefit:** Earlier error detection, clearer error messages for invalid UUIDs.
