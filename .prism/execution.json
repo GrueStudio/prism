@@ -9,6 +9,7 @@
       "parent_uuid": "f0a9f21f-d1e8-4ac0-9df4-d08d7037cafd",
       "created_at": "2026-02-17T01:30:00.533966",
       "updated_at": "2026-02-17T02:11:40.047821",
+      "time_spent": null,
       "child_uuids": [
         "fbdf2ef9-d13d-4415-b30d-2e3f41d4a08b",
         "dfaee30c-86da-4af8-8084-1a05de9375f3",
@@ -26,6 +27,7 @@
       "parent_uuid": "f0a9f21f-d1e8-4ac0-9df4-d08d7037cafd",
       "created_at": "2026-02-17T01:30:00.534047",
       "updated_at": "2026-02-17T12:40:52.661247",
+      "time_spent": null,
       "child_uuids": [
         "e05c27cc-8d65-4282-a272-3ab661bdfc52",
         "7c09ec90-9a6d-4256-aa9f-a0a764c6193c",
@@ -44,6 +46,7 @@
       "parent_uuid": "f0a9f21f-d1e8-4ac0-9df4-d08d7037cafd",
       "created_at": "2026-02-17T01:30:00.534136",
       "updated_at": "2026-02-17T14:26:02.665858",
+      "time_spent": null,
       "child_uuids": [
         "7b5f9ded-6825-4b6a-ad24-11efce95f0b8",
         "23bf41eb-356d-4110-8e4a-aa735fd6dd87",
@@ -61,6 +64,7 @@
       "parent_uuid": "f0a9f21f-d1e8-4ac0-9df4-d08d7037cafd",
       "created_at": "2026-02-17T01:30:00.534195",
       "updated_at": "2026-02-17T16:23:17.389872",
+      "time_spent": null,
       "child_uuids": [
         "6fc7660e-2f8b-4dcc-8c85-cb1009f11445",
         "b9e6cf41-2f89-483a-be59-f43ff5705752",
@@ -78,6 +82,7 @@
       "parent_uuid": "f0a9f21f-d1e8-4ac0-9df4-d08d7037cafd",
       "created_at": "2026-02-17T01:30:00.534356",
       "updated_at": "2026-02-17T01:30:00.534357",
+      "time_spent": null,
       "child_uuids": [
         "88878a15-ff32-468d-8f3f-52a66721ac13",
         "0479bbb1-3f04-4628-b414-66a3e748f2cd",
@@ -93,6 +98,7 @@
       "parent_uuid": "f0a9f21f-d1e8-4ac0-9df4-d08d7037cafd",
       "created_at": "2026-02-17T01:30:00.534414",
       "updated_at": "2026-02-18T15:15:49.065361",
+      "time_spent": null,
       "child_uuids": [
         "ef914cef-b214-4100-b854-00f0636436e7",
         "1978d67a-27da-4dc8-b38d-b9c609a23e74",
@@ -110,6 +116,7 @@
       "parent_uuid": "f0a9f21f-d1e8-4ac0-9df4-d08d7037cafd",
       "created_at": "2026-02-17T01:30:00.534544",
       "updated_at": "2026-02-18T17:31:41.343601",
+      "time_spent": null,
       "child_uuids": [
         "445fba80-01e0-43cb-9c66-a6df91da0685",
         "dd1e99cd-809c-4b73-ae82-9bb1a20be33e",
@@ -124,10 +131,11 @@
       "name": "Add Comprehensive Tests for New Storage",
       "description": "Test all new storage functionality thoroughly.",
       "slug": "add-comprehensi",
-      "status": "pending",
+      "status": "completed",
       "parent_uuid": "f0a9f21f-d1e8-4ac0-9df4-d08d7037cafd",
       "created_at": "2026-02-17T01:30:00.534680",
       "updated_at": "2026-02-17T01:30:00.534681",
+      "time_spent": null,
       "child_uuids": [
         "b0226099-efc9-4e2d-9b04-66dcc7076bf9",
         "2431fa9f-7d3d-4359-8c6f-42f51c498917",
@@ -148,6 +156,7 @@
       "created_at": "2026-02-17T01:30:00.533993",
       "updated_at": "2026-02-17T01:58:02.846700",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -160,6 +169,7 @@
       "created_at": "2026-02-17T01:30:00.534010",
       "updated_at": "2026-02-17T02:01:57.953107",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -172,6 +182,7 @@
       "created_at": "2026-02-17T01:30:00.534024",
       "updated_at": "2026-02-17T02:04:24.600165",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -184,6 +195,7 @@
       "created_at": "2026-02-17T01:30:00.534035",
       "updated_at": "2026-02-17T02:10:44.656814",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -196,6 +208,7 @@
       "created_at": "2026-02-17T02:06:35.135294",
       "updated_at": "2026-02-17T02:11:40.047624",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -208,6 +221,7 @@
       "created_at": "2026-02-17T01:30:00.534059",
       "updated_at": "2026-02-17T12:25:35.518642",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -220,6 +234,7 @@
       "created_at": "2026-02-17T01:30:00.534071",
       "updated_at": "2026-02-17T12:30:56.221375",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -232,6 +247,7 @@
       "created_at": "2026-02-17T01:30:00.534082",
       "updated_at": "2026-02-17T12:31:20.270621",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -244,6 +260,7 @@
       "created_at": "2026-02-17T01:30:00.534098",
       "updated_at": "2026-02-17T12:31:26.982322",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -256,6 +273,7 @@
       "created_at": "2026-02-17T01:30:00.534109",
       "updated_at": "2026-02-17T12:31:32.800472",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -268,6 +286,7 @@
       "created_at": "2026-02-17T01:30:00.534124",
       "updated_at": "2026-02-17T12:40:52.661025",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -280,6 +299,7 @@
       "created_at": "2026-02-17T01:30:00.534149",
       "updated_at": "2026-02-17T13:39:23.433688",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -292,6 +312,7 @@
       "created_at": "2026-02-17T01:30:00.534161",
       "updated_at": "2026-02-17T13:40:15.787224",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -304,6 +325,7 @@
       "created_at": "2026-02-17T01:30:00.534173",
       "updated_at": "2026-02-17T13:40:26.510230",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -316,6 +338,7 @@
       "created_at": "2026-02-17T01:30:00.534184",
       "updated_at": "2026-02-17T14:14:02.916735",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -328,6 +351,7 @@
       "created_at": "2026-02-17T13:24:38.284399",
       "updated_at": "2026-02-17T14:26:02.665623",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -340,6 +364,7 @@
       "created_at": "2026-02-17T01:30:00.534205",
       "updated_at": "2026-02-17T15:56:31.041488",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -352,6 +377,7 @@
       "created_at": "2026-02-17T01:30:00.534215",
       "updated_at": "2026-02-17T15:58:50.122673",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -364,6 +390,7 @@
       "created_at": "2026-02-17T01:30:00.534225",
       "updated_at": "2026-02-17T16:00:42.247536",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -376,6 +403,7 @@
       "created_at": "2026-02-17T01:30:00.534238",
       "updated_at": "2026-02-17T16:13:07.496523",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -388,6 +416,7 @@
       "created_at": "2026-02-17T01:30:00.534266",
       "updated_at": "2026-02-17T16:23:17.389625",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -400,6 +429,7 @@
       "created_at": "2026-02-17T01:30:00.534368",
       "updated_at": "2026-02-17T17:25:43.373390",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -412,6 +442,7 @@
       "created_at": "2026-02-17T01:30:00.534379",
       "updated_at": "2026-02-17T21:37:58.283152",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -424,6 +455,7 @@
       "created_at": "2026-02-17T01:30:00.534391",
       "updated_at": "2026-02-18T00:59:04.579104",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -436,6 +468,7 @@
       "created_at": "2026-02-17T01:30:00.534448",
       "updated_at": "2026-02-18T14:45:13.416720",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -448,6 +481,7 @@
       "created_at": "2026-02-17T01:30:00.534464",
       "updated_at": "2026-02-18T14:52:56.120572",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -460,6 +494,7 @@
       "created_at": "2026-02-17T01:30:00.534476",
       "updated_at": "2026-02-18T14:55:32.037710",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -472,6 +507,7 @@
       "created_at": "2026-02-17T01:30:00.534486",
       "updated_at": "2026-02-18T14:55:43.672527",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -484,6 +520,7 @@
       "created_at": "2026-02-17T01:30:00.534521",
       "updated_at": "2026-02-18T15:15:49.065092",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -496,6 +533,7 @@
       "created_at": "2026-02-17T01:30:00.534564",
       "updated_at": "2026-02-18T17:26:00.848281",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -508,6 +546,7 @@
       "created_at": "2026-02-17T01:30:00.534596",
       "updated_at": "2026-02-18T17:26:55.956638",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -520,6 +559,7 @@
       "created_at": "2026-02-17T01:30:00.534614",
       "updated_at": "2026-02-18T17:27:06.700882",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -532,6 +572,7 @@
       "created_at": "2026-02-17T01:30:00.534626",
       "updated_at": "2026-02-18T17:31:26.473234",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -544,6 +585,7 @@
       "created_at": "2026-02-17T01:30:00.534647",
       "updated_at": "2026-02-18T17:31:34.816776",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -556,6 +598,7 @@
       "created_at": "2026-02-17T01:30:00.534667",
       "updated_at": "2026-02-18T17:31:41.343281",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -563,11 +606,12 @@
       "name": "Create tests for new model classes",
       "description": "Test Phase, Milestone, Objective, Deliverable, Action models.",
       "slug": "create-tests-fo",
-      "status": "in-progress",
+      "status": "completed",
       "parent_uuid": "57772ced-e65b-4be2-b46b-66429404e636",
       "created_at": "2026-02-17T01:30:00.534690",
       "updated_at": "2026-02-17T01:30:00.534691",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -575,11 +619,12 @@
       "name": "Create tests for StorageManager",
       "description": "Test load/save for all file types.",
       "slug": "create-tests--1",
-      "status": "pending",
+      "status": "completed",
       "parent_uuid": "57772ced-e65b-4be2-b46b-66429404e636",
       "created_at": "2026-02-17T01:30:00.534704",
-      "updated_at": "2026-02-17T01:30:00.534705",
+      "updated_at": "2026-02-23T22:51:18.719647",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -587,11 +632,12 @@
       "name": "Create tests for manager classes",
       "description": "Test ItemManager, TaskManager, CompletionTracker, NavigationManager.",
       "slug": "create-tests--2",
-      "status": "pending",
+      "status": "completed",
       "parent_uuid": "57772ced-e65b-4be2-b46b-66429404e636",
       "created_at": "2026-02-17T01:30:00.534719",
-      "updated_at": "2026-02-17T01:30:00.534719",
+      "updated_at": "2026-02-23T22:51:26.661960",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -599,11 +645,12 @@
       "name": "Create tests for migration logic",
       "description": "Test project.json to .prism/ migration.",
       "slug": "create-tests--3",
-      "status": "pending",
+      "status": "completed",
       "parent_uuid": "57772ced-e65b-4be2-b46b-66429404e636",
       "created_at": "2026-02-17T01:30:00.534731",
-      "updated_at": "2026-02-17T01:30:00.534732",
+      "updated_at": "2026-02-23T22:52:56.195002",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     },
     {
@@ -611,11 +658,12 @@
       "name": "Create integration tests for CLI commands",
       "description": "Test all CLI commands with new storage.",
       "slug": "create-integrat",
-      "status": "pending",
+      "status": "completed",
       "parent_uuid": "57772ced-e65b-4be2-b46b-66429404e636",
       "created_at": "2026-02-17T01:30:00.534741",
-      "updated_at": "2026-02-17T01:30:00.534742",
+      "updated_at": "2026-02-23T22:53:03.429413",
       "time_spent": null,
+      "child_uuids": [],
       "due_date": null
     }
   ]
