@@ -30,12 +30,27 @@ def task_manager(sample_project):
     """Create TaskManager with sample project."""
     navigator = NavigationManager(sample_project)
     save_count = {"count": 0}
-    
+
     def save_callback():
         save_count["count"] += 1
-    
+
     manager = TaskManager(sample_project, navigator, save_callback)
     manager._save_count = save_count
+    return manager
+
+
+@pytest.fixture
+def crud_manager(sample_project, empty_prism_dir):
+    """Create CRUDManager with sample project."""
+    from prism.managers.archive_manager import ArchiveManager
+    from prism.managers.crud_manager import CRUDManager
+    from prism.managers.storage_manager import StorageManager
+
+    storage = StorageManager(empty_prism_dir)
+    archive_mgr = ArchiveManager(storage)
+
+    navigator = NavigationManager(sample_project)
+    manager = CRUDManager(sample_project, navigator, archive_mgr)
     return manager
 
 
@@ -346,59 +361,59 @@ class TestIsExecTreeComplete:
 class TestAddItem:
     """Test add_item method."""
 
-    def test_add_phase(self, task_manager, mock_data):
+    def test_add_phase(self, crud_manager, mock_data):
         """Add phase to project."""
-        result = task_manager.add_item(
+        result = crud_manager.add_item(
             item_type="phase",
             name="New Phase",
             description="Test phase",
             parent_path=None,
         )
-        
+
         assert result is not None
         assert result.name == "New Phase"
         assert result.slug == "new-phase"
-        assert len(task_manager.project.phases) == 2
+        assert len(crud_manager.project.phases) == 2
 
-    def test_add_milestone(self, task_manager):
+    def test_add_milestone(self, crud_manager):
         """Add milestone to phase."""
-        result = task_manager.add_item(
+        result = crud_manager.add_item(
             item_type="milestone",
             name="New Milestone",
             description="Test milestone",
             parent_path="phase-1",
         )
-        
+
         assert result is not None
         assert result.name == "New Milestone"
-        assert len(task_manager.project.phases[0].children) == 2
+        assert len(crud_manager.project.phases[0].children) == 2
 
-    def test_add_action(self, task_manager):
+    def test_add_action(self, crud_manager):
         """Add action to deliverable."""
-        result = task_manager.add_item(
+        result = crud_manager.add_item(
             item_type="action",
             name="New Action",
             description="Test action",
             parent_path="phase-1/milestone-1/objective-1/deliverable-1",
         )
-        
+
         assert result is not None
         assert result.name == "New Action"
 
-    def test_add_item_invalid_parent_type(self, task_manager):
+    def test_add_item_invalid_parent_type(self, crud_manager):
         """Add item raises error for invalid parent type."""
         with pytest.raises(InvalidOperationError):
-            task_manager.add_item(
+            crud_manager.add_item(
                 item_type="action",
                 name="Bad Action",
                 description="Test",
                 parent_path="phase-1",  # Actions need deliverable parent
             )
 
-    def test_add_item_parent_not_found(self, task_manager):
+    def test_add_item_parent_not_found(self, crud_manager):
         """Add item raises error when parent not found."""
         with pytest.raises(NotFoundError):
-            task_manager.add_item(
+            crud_manager.add_item(
                 item_type="milestone",
                 name="Bad Milestone",
                 description="Test",
@@ -410,7 +425,7 @@ class TestAutoArchiveOnAdd:
     """Test auto-archive behavior when adding new strategic items."""
 
     def test_archive_current_completed_objective_when_adding_new_objective(
-        self, task_manager, mock_data, empty_prism_dir
+        self, crud_manager, mock_data, empty_prism_dir
     ):
         """Adding new objective archives current completed objective in same milestone."""
         from prism.managers.storage_manager import StorageManager
@@ -423,12 +438,12 @@ class TestAutoArchiveOnAdd:
             parent_uuid="milestone-1-uuid",
             uuid="objective-1-uuid",
         )
-        task_manager.project.place_item(objective1)
-        milestone = task_manager.project.get_item("milestone-1-uuid")
+        crud_manager.project.place_item(objective1)
+        milestone = crud_manager.project.get_item("milestone-1-uuid")
         milestone.add_child(objective1)
 
         # Add new objective to same milestone (parent is milestone)
-        result = task_manager.add_item(
+        result = crud_manager.add_item(
             item_type="objective",
             name="Objective 2",
             description="New objective",
@@ -444,7 +459,7 @@ class TestAutoArchiveOnAdd:
         archived_uuids = [o.uuid for o in archived_file.objectives]
         assert "objective-1-uuid" in archived_uuids
 
-    def test_does_not_archive_pending_objective(self, task_manager, mock_data):
+    def test_does_not_archive_pending_objective(self, crud_manager, mock_data):
         """Adding new objective does not archive pending sibling."""
         # Setup: add pending objective to existing milestone
         objective1 = mock_data.create_objective(
@@ -454,12 +469,12 @@ class TestAutoArchiveOnAdd:
             parent_uuid="milestone-1-uuid",
             uuid="objective-1-uuid",
         )
-        task_manager.project.place_item(objective1)
-        milestone = task_manager.project.get_item("milestone-1-uuid")
+        crud_manager.project.place_item(objective1)
+        milestone = crud_manager.project.get_item("milestone-1-uuid")
         milestone.add_child(objective1)
 
         # Add new objective
-        result = task_manager.add_item(
+        result = crud_manager.add_item(
             item_type="objective",
             name="Objective 2",
             description="New objective",
@@ -471,7 +486,7 @@ class TestAutoArchiveOnAdd:
         assert objective1 in milestone.children
 
     def test_archive_cascades_to_execution_tree(
-        self, task_manager, mock_data, empty_prism_dir
+        self, crud_manager, mock_data, empty_prism_dir
     ):
         """Archiving objective also archives its execution tree."""
         from prism.managers.storage_manager import StorageManager
@@ -500,14 +515,14 @@ class TestAutoArchiveOnAdd:
         )
         deliverable.add_child(action)
         objective1.add_child(deliverable)
-        task_manager.project.place_item(objective1)
-        task_manager.project.place_item(deliverable)
-        task_manager.project.place_item(action)
-        milestone = task_manager.project.get_item("milestone-1-uuid")
+        crud_manager.project.place_item(objective1)
+        crud_manager.project.place_item(deliverable)
+        crud_manager.project.place_item(action)
+        milestone = crud_manager.project.get_item("milestone-1-uuid")
         milestone.add_child(objective1)
 
         # Add new objective to trigger archive
-        task_manager.add_item(
+        crud_manager.add_item(
             item_type="objective",
             name="Objective 2",
             description="New objective",
@@ -522,7 +537,7 @@ class TestAutoArchiveOnAdd:
         assert len(exec_tree.actions) == 1
 
     def test_archive_current_completed_milestone_when_adding_new_milestone(
-        self, task_manager, mock_data, empty_prism_dir
+        self, crud_manager, mock_data, empty_prism_dir
     ):
         """Adding new milestone archives current completed milestone in same phase."""
         from prism.managers.storage_manager import StorageManager
@@ -535,12 +550,12 @@ class TestAutoArchiveOnAdd:
             parent_uuid="phase-1-uuid",
             uuid="milestone-1-uuid-new",
         )
-        task_manager.project.place_item(milestone1)
-        phase = task_manager.project.get_item("phase-1-uuid")
+        crud_manager.project.place_item(milestone1)
+        phase = crud_manager.project.get_item("phase-1-uuid")
         phase.add_child(milestone1)
 
         # Add new milestone to same phase
-        result = task_manager.add_item(
+        result = crud_manager.add_item(
             item_type="milestone",
             name="Milestone 2",
             description="New milestone",
@@ -557,7 +572,7 @@ class TestAutoArchiveOnAdd:
         assert "milestone-1-uuid-new" in archived_uuids
 
     def test_does_not_archive_when_adding_non_strategic_item(
-        self, task_manager, mock_data
+        self, crud_manager, mock_data
     ):
         """Adding deliverable/action does not trigger archive."""
         # Setup: completed objective under existing milestone
@@ -568,12 +583,12 @@ class TestAutoArchiveOnAdd:
             parent_uuid="milestone-1-uuid",
             uuid="objective-1-uuid",
         )
-        task_manager.project.place_item(objective1)
-        milestone = task_manager.project.get_item("milestone-1-uuid")
+        crud_manager.project.place_item(objective1)
+        milestone = crud_manager.project.get_item("milestone-1-uuid")
         milestone.add_child(objective1)
 
         # Add deliverable (non-strategic)
-        result = task_manager.add_item(
+        result = crud_manager.add_item(
             item_type="deliverable",
             name="Deliverable 1",
             description="New deliverable",
@@ -584,7 +599,7 @@ class TestAutoArchiveOnAdd:
         assert objective1 in milestone.children
 
     def test_does_not_archive_incomplete_objective_with_pending_deliverables(
-        self, task_manager, mock_data, empty_prism_dir
+        self, crud_manager, mock_data, empty_prism_dir
     ):
         """Adding new objective does not archive sibling with pending deliverables."""
         from prism.managers.storage_manager import StorageManager
@@ -605,13 +620,13 @@ class TestAutoArchiveOnAdd:
             uuid="deliverable-uuid",
         )
         objective1.add_child(deliverable)
-        task_manager.project.place_item(objective1)
-        task_manager.project.place_item(deliverable)
-        milestone = task_manager.project.get_item("milestone-1-uuid")
+        crud_manager.project.place_item(objective1)
+        crud_manager.project.place_item(deliverable)
+        milestone = crud_manager.project.get_item("milestone-1-uuid")
         milestone.add_child(objective1)
 
         # Add new objective
-        result = task_manager.add_item(
+        result = crud_manager.add_item(
             item_type="objective",
             name="Objective 2",
             description="New objective",
@@ -636,60 +651,60 @@ class TestAutoArchiveOnAdd:
 class TestUpdateItem:
     """Test update_item method."""
 
-    def test_update_name(self, task_manager):
+    def test_update_name(self, crud_manager):
         """Update item name."""
-        result = task_manager.update_item(
+        result = crud_manager.update_item(
             path="phase-1",
             name="Updated Phase",
         )
-        
+
         assert result.name == "Updated Phase"
         assert result.slug != "phase-1"  # Slug regenerated
 
-    def test_update_description(self, task_manager):
+    def test_update_description(self, crud_manager):
         """Update item description."""
-        result = task_manager.update_item(
+        result = crud_manager.update_item(
             path="phase-1",
             description="New description",
         )
-        
+
         assert result.description == "New description"
 
-    def test_update_status(self, task_manager):
+    def test_update_status(self, crud_manager):
         """Update item status."""
-        result = task_manager.update_item(
+        result = crud_manager.update_item(
             path="phase-1",
             status="in-progress",
         )
-        
+
         assert result.status == "in-progress"
 
-    def test_update_due_date(self, task_manager):
+    def test_update_due_date(self, crud_manager):
         """Update action due date."""
-        result = task_manager.update_item(
+        result = crud_manager.update_item(
             path="phase-1/milestone-1/objective-1/deliverable-1/action-1",
             due_date="2025-12-31",
         )
-        
+
         assert result.due_date is not None
         assert result.due_date.year == 2025
 
-    def test_update_completed_item_raises(self, task_manager):
+    def test_update_completed_item_raises(self, crud_manager):
         """Update raises error for completed item."""
         # First complete the item
-        phase = task_manager.project.phases[0]
+        phase = crud_manager.project.phases[0]
         phase.status = "completed"
-        
+
         with pytest.raises(InvalidOperationError):
-            task_manager.update_item(
+            crud_manager.update_item(
                 path="phase-1",
                 name="Cannot Update",
             )
 
-    def test_update_no_params_raises(self, task_manager):
+    def test_update_no_params_raises(self, crud_manager):
         """Update raises error when no params provided."""
         with pytest.raises(ValidationError):
-            task_manager.update_item(path="phase-1")
+            crud_manager.update_item(path="phase-1")
 
 
 # =============================================================================
@@ -700,45 +715,45 @@ class TestUpdateItem:
 class TestDeleteItem:
     """Test delete_item method."""
 
-    def test_delete_action(self, task_manager):
+    def test_delete_action(self, crud_manager):
         """Delete action from deliverable."""
-        task_manager.delete_item(
+        crud_manager.delete_item(
             path="phase-1/milestone-1/objective-1/deliverable-1/action-1"
         )
-        
-        phase = task_manager.project.phases[0]
+
+        phase = crud_manager.project.phases[0]
         milestone = phase.children[0]
         objective = milestone.children[0]
         deliverable = objective.children[0]
-        
+
         assert len(deliverable.children) == 1
 
-    def test_delete_phase(self, task_manager):
+    def test_delete_phase(self, crud_manager):
         """Delete phase from project."""
         # Add a second phase first
-        task_manager.add_item(
+        crud_manager.add_item(
             item_type="phase",
             name="Phase 2",
             description="To be deleted",
             parent_path=None,
         )
-        
-        task_manager.delete_item(path="phase-2")
-        
-        assert len(task_manager.project.phases) == 1
 
-    def test_delete_completed_item_raises(self, task_manager):
+        crud_manager.delete_item(path="phase-2")
+
+        assert len(crud_manager.project.phases) == 1
+
+    def test_delete_completed_item_raises(self, crud_manager):
         """Delete raises error for completed item."""
-        phase = task_manager.project.phases[0]
+        phase = crud_manager.project.phases[0]
         phase.status = "completed"
-        
-        with pytest.raises(InvalidOperationError):
-            task_manager.delete_item(path="phase-1")
 
-    def test_delete_not_found_raises(self, task_manager):
+        with pytest.raises(InvalidOperationError):
+            crud_manager.delete_item(path="phase-1")
+
+    def test_delete_not_found_raises(self, crud_manager):
         """Delete raises error when item not found."""
         with pytest.raises(NotFoundError):
-            task_manager.delete_item(path="nonexistent/item")
+            crud_manager.delete_item(path="nonexistent/item")
 
 
 # =============================================================================
@@ -789,43 +804,43 @@ class TestGenerateUniqueSlug:
 class TestTaskManagerIntegration:
     """Integration tests for TaskManager workflows."""
 
-    def test_full_workflow(self, task_manager):
+    def test_full_workflow(self, task_manager, crud_manager):
         """Test complete workflow: add, start, complete, cascade."""
         # Add new action
-        action = task_manager.add_item(
+        action = crud_manager.add_item(
             item_type="action",
             name="Test Action",
             description="Integration test",
             parent_path="phase-1/milestone-1/objective-1/deliverable-1",
         )
-        
+
         # Start action
         task_manager.project.task_cursor = (
             "phase-1/milestone-1/objective-1/deliverable-1/" + action.slug
         )
         started = task_manager.start_next_action()
         assert started.status == "in-progress"
-        
+
         # Complete action
         completed = task_manager.complete_current_action()
         assert completed.status == "completed"
 
-    def test_slug_uniqueness_across_operations(self, task_manager):
+    def test_slug_uniqueness_across_operations(self, crud_manager):
         """Test slugs remain unique across add/update operations."""
         # Add item
-        item1 = task_manager.add_item(
+        item1 = crud_manager.add_item(
             item_type="action",
             name="Same Name",
             description="First",
             parent_path="phase-1/milestone-1/objective-1/deliverable-1",
         )
-        
+
         # Add another with same name
-        item2 = task_manager.add_item(
+        item2 = crud_manager.add_item(
             item_type="action",
             name="Same Name",
             description="Second",
             parent_path="phase-1/milestone-1/objective-1/deliverable-1",
         )
-        
+
         assert item1.slug != item2.slug
