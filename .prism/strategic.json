@@ -24,28 +24,32 @@
     "created_at": "2026-02-16T23:43:36.694109",
     "updated_at": "2026-02-16T23:43:36.694113",
     "time_spent": null,
-    "child_uuids": ["f0a9f21f-d1e8-4ac0-9df4-d08d7037cafd"]
-  },
-  "objective": {
-    "uuid": "f0a9f21f-d1e8-4ac0-9df4-d08d7037cafd",
-    "name": "Revamp Data Storage",
-    "description": "Replace single project.json with folder-based storage using .prism directory structure for better organization and scalability.",
-    "slug": "revamp-data-sto",
-    "status": "completed",
-    "parent_uuid": "72621149-cc7f-499c-a517-71363172f7a4",
-    "created_at": "2026-02-16T23:45:44.026487",
-    "updated_at": "2026-02-16T23:45:44.026490",
-    "time_spent": null,
     "child_uuids": [
-      "459b1de8-db28-410e-898b-a3dbc60dcbd2",
-      "4035b6a4-548a-42a8-8e26-bccfda55958e",
-      "5dbdd370-f5fa-4273-8b0b-1e9835490318",
-      "f4d11b49-aed6-4739-bc9f-1f862eb24a3a",
-      "a74e4c48-cb68-4066-92f0-34f77cef7e8e",
-      "067f2adb-f181-4e4e-a5b5-0c36a3fb0b27",
-      "d162b621-c071-4afb-b95d-7de74a0355b1",
-      "57772ced-e65b-4be2-b46b-66429404e636"
+      "f0a9f21f-d1e8-4ac0-9df4-d08d7037cafd",
+      "9807fbc9-60a3-41d6-b0f0-b00111ed9ca3"
     ]
   },
-  "phase_uuids": ["c5a03636-3793-4b14-81b2-c2339d570a2d"]
+  "objective": {
+    "uuid": "9807fbc9-60a3-41d6-b0f0-b00111ed9ca3",
+    "name": "Orphan Adoption System",
+    "description": "Complete workflow for managing orphan ideas and adopting them into project structure.",
+    "slug": "orphan-adoption",
+    "status": "pending",
+    "parent_uuid": "72621149-cc7f-499c-a517-71363172f7a4",
+    "created_at": "2026-02-24T11:20:49.531264",
+    "updated_at": "2026-02-24T11:20:49.531268",
+    "time_spent": null,
+    "child_uuids": [
+      "5b9194e3-f1a7-4f72-9652-9727ee141763",
+      "442c13c1-8695-4c84-a398-19ce2c8bbcf6",
+      "922a24eb-d517-49be-b4e8-17ccbe14bfad",
+      "c1f90c0e-3898-44e6-9d76-b5dd63ca847e",
+      "4dccf171-70a8-4aa0-a465-aa738a127332",
+      "3efc42e2-a252-4aab-b762-5fa3e4ee450a",
+      "c15c1a4f-acdf-44e5-a253-cf8ce6451f2d"
+    ]
+  },
+  "phase_uuids": [
+    "c5a03636-3793-4b14-81b2-c2339d570a2d"
+  ]
 }

@@ -10,7 +10,7 @@
       "parent_uuid": "c5a03636-3793-4b14-81b2-c2339d570a2d",
       "created_at": "2026-02-12T12:35:36.694541",
       "updated_at": "2026-02-12T12:35:36.694545",
-      "position": 0,
+      "time_spent": null,
       "child_uuids": [
         "4d815b38-fe84-4e29-a67e-d3ddbc680da9",
         "e9625283-e6de-470b-9f2a-cc33fe914973"
@@ -27,7 +27,7 @@
       "parent_uuid": "7d501d81-d995-4a29-9d17-51ea9240a53f",
       "created_at": "2026-02-12T12:36:20.271536",
       "updated_at": "2026-02-12T12:36:20.271539",
-      "position": 0,
+      "time_spent": null,
       "child_uuids": [
         "67d9d892-d4a1-4d8c-be69-759863a10c2c",
         "db9b2c77-27ac-4717-95a3-c69fc5360270",
@@ -43,7 +43,7 @@
       "parent_uuid": "7d501d81-d995-4a29-9d17-51ea9240a53f",
       "created_at": "2026-02-15T02:35:31.108920",
       "updated_at": "2026-02-15T02:35:31.108923",
-      "position": 1,
+      "time_spent": null,
       "child_uuids": [
         "6169b846-bea0-4559-892c-567462a6ec21",
         "1078db13-a411-4110-99c8-8a05faa5b0f7",
@@ -54,6 +54,27 @@
         "e15b62cd-bdd5-4c5e-b2e3-58774a8f2ed0",
         "15078121-ec7f-417e-a680-bdfa0d0afb3b",
         "137e9054-0714-4ebe-a3e7-ec667012067e"
+      ]
+    },
+    {
+      "uuid": "f0a9f21f-d1e8-4ac0-9df4-d08d7037cafd",
+      "name": "Revamp Data Storage",
+      "description": "Replace single project.json with folder-based storage using .prism directory structure for better organization and scalability.",
+      "slug": "revamp-data-sto",
+      "status": "archived",
+      "parent_uuid": "72621149-cc7f-499c-a517-71363172f7a4",
+      "created_at": "2026-02-16T23:45:44.026487",
+      "updated_at": "2026-02-16T23:45:44.026490",
+      "time_spent": null,
+      "child_uuids": [
+        "459b1de8-db28-410e-898b-a3dbc60dcbd2",
+        "4035b6a4-548a-42a8-8e26-bccfda55958e",
+        "5dbdd370-f5fa-4273-8b0b-1e9835490318",
+        "f4d11b49-aed6-4739-bc9f-1f862eb24a3a",
+        "a74e4c48-cb68-4066-92f0-34f77cef7e8e",
+        "067f2adb-f181-4e4e-a5b5-0c36a3fb0b27",
+        "d162b621-c071-4afb-b95d-7de74a0355b1",
+        "57772ced-e65b-4be2-b46b-66429404e636"
       ]
     }
   ]
