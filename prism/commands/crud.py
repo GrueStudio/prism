@@ -400,11 +400,14 @@ def add(
             if not parent_item:
                 raise NotFoundError(f"Parent not found at '{resolved_parent}'.")
 
-            if isinstance(parent_item, Objective):
-                if not core.is_exec_tree_complete(resolved_parent):
-                    raise InvalidOperationError(
-                        f"Cannot add strategic item. Execution tree for '{resolved_parent}' is not complete."
-                    )
+            # When adding an objective to a milestone, check if current objective is complete
+            if item_type == "objective" and isinstance(parent_item, Milestone):
+                # Find any existing active objective under this milestone
+                for existing_obj in parent_item.children:
+                    if isinstance(existing_obj, Objective) and existing_obj.status != "completed":
+                        raise InvalidOperationError(
+                            f"Cannot add objective. Current objective '{existing_obj.name}' is not complete."
+                        )
         else:
             resolved_parent = None
 

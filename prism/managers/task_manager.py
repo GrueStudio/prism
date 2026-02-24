@@ -352,10 +352,10 @@ class TaskManager:
             objective: Objective to check.
 
         Returns:
-            True if all deliverables and actions are complete.
+            True if all deliverables and actions are complete (or empty).
         """
         if not objective.children:
-            return False
+            return True  # Empty tree is considered complete (ready for new items)
 
         for deliverable in objective.children:
             if deliverable.status != "completed":

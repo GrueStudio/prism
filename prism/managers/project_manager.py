@@ -81,7 +81,6 @@ class ProjectManager:
         """
         # Load active items from storage
         strategic = self.storage.load_strategic()
-        execution = self.storage.load_execution()
 
         project = Project(strategic.phase_uuids)
 
@@ -112,12 +111,18 @@ class ProjectManager:
         _load_strategic(strategic.phase, project, "phase")
 
         # Load milestone if phase exists
-        if strategic.milestone and strategic.phase:
+        if strategic.phase:
             _load_strategic(strategic.milestone, strategic.phase, "milestone")
+        else:
+            return project
 
         # Load objective if milestone exists
-        if strategic.objective and strategic.milestone:
+        if strategic.milestone:
             _load_strategic(strategic.objective, strategic.milestone, "objective")
+        else:
+            return project
+
+        execution = self.storage.load_execution()
 
         # Load execution items
         for item in execution.deliverables + execution.actions:
