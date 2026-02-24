@@ -1,0 +1,159 @@
+{
+  "deliverables": [
+    {
+      "uuid": "67d9d892-d4a1-4d8c-be69-759863a10c2c",
+      "name": "Migrate DEVPLAN.md content to Prism CLI",
+      "description": "Transfer the existing development plan from DEVPLAN.md into the Prism CLI's data structure.",
+      "slug": "migrate-devplan",
+      "status": "archived",
+      "parent_uuid": "4d815b38-fe84-4e29-a67e-d3ddbc680da9",
+      "created_at": "2026-02-12T16:02:40.052305",
+      "updated_at": "2026-02-12T16:02:40.052309",
+      "child_uuids": [
+        "f2385c70-ab36-4455-8579-648646fcc5f8",
+        "06cc0ad6-622b-47ae-9829-0ee76b9a9161"
+      ]
+    },
+    {
+      "uuid": "db9b2c77-27ac-4717-95a3-c69fc5360270",
+      "name": "Establish Initial Prism Workflow",
+      "description": "Define and document the initial Git workflow for the Prism project, as described in GEMINI.md.",
+      "slug": "establish-initi",
+      "status": "archived",
+      "parent_uuid": "4d815b38-fe84-4e29-a67e-d3ddbc680da9",
+      "created_at": "2026-02-12T16:02:40.052363",
+      "updated_at": "2026-02-12T16:02:40.052363",
+      "child_uuids": [
+        "3639d003-8210-4c47-9ccf-80238e94b74e",
+        "fd241ecf-a16e-4e2b-bdbf-591973b052cb",
+        "7cc5511a-834c-4b0d-b863-0eba386fb463"
+      ]
+    },
+    {
+      "uuid": "7adee449-e14e-4f67-a4f9-e740925b5242",
+      "name": "Implement Basic Time Tracking",
+      "description": "Add basic time tracking functionality to the Prism CLI.",
+      "slug": "implement-basic",
+      "status": "archived",
+      "parent_uuid": "4d815b38-fe84-4e29-a67e-d3ddbc680da9",
+      "created_at": "2026-02-12T17:31:33.523365",
+      "updated_at": "2026-02-12T17:31:33.523368",
+      "child_uuids": [
+        "1ab3717e-1904-4404-b99b-e0e45b5bbf89",
+        "bddb9dde-39de-4c48-9cfb-072ef4d354a7",
+        "6b122611-ede8-4c50-81f9-80a81880c2cd",
+        "9bec11c0-0815-4c2e-b31d-b695d074ef80"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "uuid": "f2385c70-ab36-4455-8579-648646fcc5f8",
+      "name": "Migrate 'Alpha' Phase items from DEVPLAN.md",
+      "description": "Add all milestones, objectives, deliverables, and actions from the 'Alpha' phase in DEVPLAN.md to the Prism project.",
+      "slug": "migrate-alpha-p",
+      "status": "archived",
+      "parent_uuid": "67d9d892-d4a1-4d8c-be69-759863a10c2c",
+      "created_at": "2026-02-12T16:02:40.052333",
+      "updated_at": "2026-02-12T16:02:40.052334",
+      "time_spent": null,
+      "due_date": null
+    },
+    {
+      "uuid": "06cc0ad6-622b-47ae-9829-0ee76b9a9161",
+      "name": "Verify migrated 'Alpha' Phase items",
+      "description": "Use 'prism strat show' and 'prism exec show' to verify that all 'Alpha' phase items have been migrated correctly.",
+      "slug": "verify-migrated",
+      "status": "archived",
+      "parent_uuid": "67d9d892-d4a1-4d8c-be69-759863a10c2c",
+      "created_at": "2026-02-12T16:02:40.052349",
+      "updated_at": "2026-02-12T16:02:40.052350",
+      "time_spent": null,
+      "due_date": null
+    },
+    {
+      "uuid": "3639d003-8210-4c47-9ccf-80238e94b74e",
+      "name": "Create BUGS.md for bug tracking",
+      "description": "Create a BUGS.md file to track bugs and issues, as a temporary measure until the 'prism bug' command is implemented.",
+      "slug": "create-bugs-md-",
+      "status": "archived",
+      "parent_uuid": "db9b2c77-27ac-4717-95a3-c69fc5360270",
+      "created_at": "2026-02-12T16:02:40.052374",
+      "updated_at": "2026-02-12T16:02:40.052375",
+      "time_spent": null,
+      "due_date": null
+    },
+    {
+      "uuid": "fd241ecf-a16e-4e2b-bdbf-591973b052cb",
+      "name": "Create FUTURE_IDEAS.md for orphan ideas",
+      "description": "Create a FUTURE_IDEAS.md file to track orphan ideas and future enhancements, as a temporary measure until the 'prism idea' command is implemented.",
+      "slug": "create-future-i",
+      "status": "archived",
+      "parent_uuid": "db9b2c77-27ac-4717-95a3-c69fc5360270",
+      "created_at": "2026-02-12T16:02:40.052385",
+      "updated_at": "2026-02-12T16:02:40.052385",
+      "time_spent": null,
+      "due_date": null
+    },
+    {
+      "uuid": "7cc5511a-834c-4b0d-b863-0eba386fb463",
+      "name": "Document the Prism workflow in GEMINI.md",
+      "description": "Add a section to README.md that explains the Git branching and merging strategy, as outlined in GEMINI.md.",
+      "slug": "document-the-gi",
+      "status": "archived",
+      "parent_uuid": "db9b2c77-27ac-4717-95a3-c69fc5360270",
+      "created_at": "2026-02-12T16:02:40.052395",
+      "updated_at": "2026-02-15T01:39:54.900333",
+      "time_spent": null,
+      "due_date": null
+    },
+    {
+      "uuid": "1ab3717e-1904-4404-b99b-e0e45b5bbf89",
+      "name": "Add 'in-progress' status",
+      "description": "Add a new 'in-progress' status to the list of available statuses in the BaseItem model.",
+      "slug": "add-in-progress",
+      "status": "archived",
+      "parent_uuid": "7adee449-e14e-4f67-a4f9-e740925b5242",
+      "created_at": "2026-02-12T17:31:33.523387",
+      "updated_at": "2026-02-15T01:51:51.526390",
+      "time_spent": null,
+      "due_date": null
+    },
+    {
+      "uuid": "bddb9dde-39de-4c48-9cfb-072ef4d354a7",
+      "name": "Implement 'prism time start'",
+      "description": "Implement a 'prism time start' command that sets the status of the current action to 'in-progress' and records the start time.",
+      "slug": "implement-prism",
+      "status": "archived",
+      "parent_uuid": "7adee449-e14e-4f67-a4f9-e740925b5242",
+      "created_at": "2026-02-12T17:31:33.523402",
+      "updated_at": "2026-02-15T01:52:07.541845",
+      "time_spent": null,
+      "due_date": null
+    },
+    {
+      "uuid": "6b122611-ede8-4c50-81f9-80a81880c2cd",
+      "name": "Implement 'prism time done'",
+      "description": "Implement a 'prism time done' command that sets the status of the current action to 'completed', records the end time, and displays a list of all completed items.",
+      "slug": "implement-pri-1",
+      "status": "archived",
+      "parent_uuid": "7adee449-e14e-4f67-a4f9-e740925b5242",
+      "created_at": "2026-02-12T17:31:33.523417",
+      "updated_at": "2026-02-15T01:52:37.431127",
+      "time_spent": null,
+      "due_date": null
+    },
+    {
+      "uuid": "9bec11c0-0815-4c2e-b31d-b695d074ef80",
+      "name": "Implement 'prism time next'",
+      "description": "Implement a 'prism time next' command that functions as a combination of 'prism time done' and 'prism time start'.",
+      "slug": "implement-pri-2",
+      "status": "archived",
+      "parent_uuid": "7adee449-e14e-4f67-a4f9-e740925b5242",
+      "created_at": "2026-02-12T17:31:33.523431",
+      "updated_at": "2026-02-15T01:52:48.690952",
+      "time_spent": null,
+      "due_date": null
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "phases": [],
+  "milestones": [
+    {
+      "uuid": "7d501d81-d995-4a29-9d17-51ea9240a53f",
+      "name": "CLI Operationalization",
+      "description": "Ensure the Prism CLI is fully operational and stable in its current state.",
+      "slug": "cli-operational",
+      "status": "archived",
+      "parent_uuid": "c5a03636-3793-4b14-81b2-c2339d570a2d",
+      "created_at": "2026-02-12T12:35:36.694541",
+      "updated_at": "2026-02-12T12:35:36.694545",
+      "position": 0,
+      "child_uuids": [
+        "4d815b38-fe84-4e29-a67e-d3ddbc680da9",
+        "e9625283-e6de-470b-9f2a-cc33fe914973"
+      ]
+    }
+  ],
+  "objectives": [
+    {
+      "uuid": "4d815b38-fe84-4e29-a67e-d3ddbc680da9",
+      "name": "Dogfooding the Project",
+      "description": "Use the Prism CLI to manage its own development, migrating from DEVPLAN.md.",
+      "slug": "dogfooding-the-",
+      "status": "archived",
+      "parent_uuid": "7d501d81-d995-4a29-9d17-51ea9240a53f",
+      "created_at": "2026-02-12T12:36:20.271536",
+      "updated_at": "2026-02-12T12:36:20.271539",
+      "position": 0,
+      "child_uuids": [
+        "67d9d892-d4a1-4d8c-be69-759863a10c2c",
+        "db9b2c77-27ac-4717-95a3-c69fc5360270",
+        "7adee449-e14e-4f67-a4f9-e740925b5242"
+      ]
+    },
+    {
+      "uuid": "e9625283-e6de-470b-9f2a-cc33fe914973",
+      "name": "Refactor Persistence Layer and Enhance Status Command",
+      "description": "Abstract the persistence layer for better modularity and enhance the status command to provide more detailed project insights.",
+      "slug": "refactor-persis",
+      "status": "archived",
+      "parent_uuid": "7d501d81-d995-4a29-9d17-51ea9240a53f",
+      "created_at": "2026-02-15T02:35:31.108920",
+      "updated_at": "2026-02-15T02:35:31.108923",
+      "position": 1,
+      "child_uuids": [
+        "6169b846-bea0-4559-892c-567462a6ec21",
+        "1078db13-a411-4110-99c8-8a05faa5b0f7",
+        "7e775a9c-e554-4589-80e4-76dd823181a0",
+        "4d0937b9-4dfe-4a98-93ed-42b0c93bd122",
+        "9201ebd4-bb4b-43f9-a8ae-2cb344924805",
+        "b82bbbd4-9dcf-4122-910b-a2999a8a037d",
+        "e15b62cd-bdd5-4c5e-b2e3-58774a8f2ed0",
+        "15078121-ec7f-417e-a680-bdfa0d0afb3b",
+        "137e9054-0714-4ebe-a3e7-ec667012067e"
+      ]
+    }
+  ]
+}

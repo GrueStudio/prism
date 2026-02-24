@@ -31,3 +31,18 @@ class DuplicateError(PrismError):
 class ConfigurationError(PrismError):
     """Raised when there's a configuration or setup issue."""
     pass
+
+
+class NavigationError(PrismError):
+    """Raised when navigation or path resolution fails."""
+    pass
+
+
+class StorageError(PrismError):
+    """Raised when storage operations (load/save) fail."""
+    pass
+
+
+class ArchivedItemError(PrismError):
+    """Raised when attempting to modify an archived item."""
+    pass
