@@ -200,7 +200,10 @@ class NavigationManager:
             raise NavigationError(f"Failed to find path for item: {e}")
 
     def get_current_objective(self) -> Optional[Objective]:
-        """Get the current (most recent non-completed) objective.
+        """Get the current objective (most recent non-archived objective).
+
+        Completed objectives are included - they're still current until a new one starts.
+        Only archived objectives are excluded (old completed items moved to archive).
 
         Returns:
             Current objective or None if not found.
@@ -209,7 +212,8 @@ class NavigationManager:
         for phase in self.project.phases:
             for milestone in phase.children:
                 for objective in milestone.children:
-                    if objective.status not in ["completed", "archived"]:
+                    # Only exclude archived objectives, not completed ones
+                    if objective.status != "archived":
                         if (
                             current_objective is None
                             or objective.created_at > current_objective.created_at
@@ -218,36 +222,45 @@ class NavigationManager:
         return current_objective
 
     def get_current_milestone(self) -> Optional[Milestone]:
-        """Get the milestone containing the current objective.
+        """Get the current milestone (most recent non-archived milestone).
+
+        Completed milestones are included - they're still current until a new one starts.
+        Only archived milestones are excluded (old completed items moved to archive).
 
         Returns:
             Current milestone or None if not found.
         """
-        current_objective = self.get_current_objective()
-        if not current_objective:
-            return None
-
+        current_milestone = None
         for phase in self.project.phases:
             for milestone in phase.children:
-                if current_objective in milestone.children:
-                    return milestone
-        return None
+                # Only exclude archived milestones, not completed ones
+                if milestone.status != "archived":
+                    if (
+                        current_milestone is None
+                        or milestone.created_at > current_milestone.created_at
+                    ):
+                        current_milestone = milestone
+        return current_milestone
 
     def get_current_phase(self) -> Optional[Phase]:
-        """Get the phase containing the current objective.
+        """Get the current phase (most recent non-archived phase).
+
+        Completed phases are included - they're still current until a new one starts.
+        Only archived phases are excluded (old completed items moved to archive).
 
         Returns:
             Current phase or None if not found.
         """
-        current_objective = self.get_current_objective()
-        if not current_objective:
-            return None
-
+        current_phase = None
         for phase in self.project.phases:
-            for milestone in phase.children:
-                if current_objective in milestone.children:
-                    return phase
-        return None
+            # Only exclude archived phases, not completed ones
+            if phase.status != "archived":
+                if (
+                    current_phase is None
+                    or phase.created_at > current_phase.created_at
+                ):
+                    current_phase = phase
+        return current_phase
 
     def get_current_strategic_items(
         self,
