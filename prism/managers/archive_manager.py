@@ -93,6 +93,7 @@ class ArchiveManager:
         archived = self.storage.load_archived_strategic()
 
         def append_item(am, item):
+            item.status = "archived"
             if isinstance(item, Phase):
                 archived.phases.append(item)
                 for milestone in item.children:
@@ -123,8 +124,10 @@ class ArchiveManager:
         deliverables = []
         actions = []
         for deliverable in objective.children:
+            deliverable.status = "archived"
             deliverables.append(deliverable)
             for action in deliverable.children:
+                action.status = "archived"
                 actions.append(action)
 
         execution = ExecutionFile(
