@@ -18,7 +18,6 @@ import click
 from prism.constants import (
     ARCHIVED_STATUS,
     COMPLETED_STATUS,
-    DATE_FORMAT_ERROR,
     DEFAULT_STATUS,
     PERCENTAGE_ROUND_PRECISION,
     VALID_STATUSES,
@@ -41,7 +40,6 @@ from prism.models.base import (
     Phase,
 )
 from prism.models.project import Project
-from prism.utils import parse_date, validate_date_range
 
 
 class TaskManager:

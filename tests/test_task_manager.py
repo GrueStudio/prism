@@ -9,16 +9,13 @@ Tests cover:
 - Slug generation
 """
 
-from datetime import datetime, timedelta
-from pathlib import Path
+from datetime import datetime
 
 import pytest
 
 from prism.exceptions import InvalidOperationError, NotFoundError, ValidationError
 from prism.managers.navigation_manager import NavigationManager
 from prism.managers.task_manager import TaskManager
-from prism.models.base import Action, Deliverable, Objective
-
 
 # =============================================================================
 # Fixtures
@@ -70,17 +67,19 @@ class TestGetCurrentAction:
     def test_get_current_action_not_action(self, task_manager):
         """Get current action returns None when cursor is not action."""
         task_manager.project.task_cursor = "phase-1/milestone-1/objective-1"
-        
+
         result = task_manager.get_current_action()
-        
+
         assert result is None
 
     def test_get_current_action_valid(self, task_manager):
         """Get current action returns action when cursor points to action."""
-        task_manager.project.task_cursor = "phase-1/milestone-1/objective-1/deliverable-1/action-1"
-        
+        task_manager.project.task_cursor = (
+            "phase-1/milestone-1/objective-1/deliverable-1/action-1"
+        )
+
         result = task_manager.get_current_action()
-        
+
         assert result is not None
         assert result.name == "Action 1"
 
@@ -91,7 +90,7 @@ class TestStartNextAction:
     def test_start_next_action_finds_pending(self, task_manager):
         """Start next action finds first pending action."""
         result = task_manager.start_next_action()
-        
+
         assert result is not None
         assert result.status == "in-progress"
         assert task_manager.project.task_cursor is not None
@@ -101,10 +100,10 @@ class TestStartNextAction:
         # Start an action
         task_manager.start_next_action()
         first_action = task_manager.get_current_action()
-        
+
         # Start again should return same action
         result = task_manager.start_next_action()
-        
+
         assert result is first_action
 
     def test_start_next_action_none_when_complete(self, task_manager):
@@ -116,16 +115,16 @@ class TestStartNextAction:
         for deliverable in objective.children:
             for action in deliverable.children:
                 action.status = "completed"
-        
+
         result = task_manager.start_next_action()
-        
+
         assert result is None
         assert task_manager.project.task_cursor is None
 
     def test_start_next_action_updates_cursor(self, task_manager):
         """Start next action updates task_cursor."""
         task_manager.start_next_action()
-        
+
         assert task_manager.project.task_cursor is not None
         assert "action" in task_manager.project.task_cursor
 
@@ -142,9 +141,9 @@ class TestCompleteCurrentAction:
         """Complete current action marks action completed."""
         # Start action first
         task_manager.start_next_action()
-        
+
         result = task_manager.complete_current_action()
-        
+
         assert result is not None
         assert result.status == "completed"
 
@@ -153,18 +152,18 @@ class TestCompleteCurrentAction:
         task_manager.start_next_action()
         action = task_manager.get_current_action()
         before = action.updated_at
-        
+
         task_manager.complete_current_action()
-        
+
         assert action.updated_at > before
 
     def test_complete_current_action_triggers_save(self, task_manager):
         """Complete current action triggers save callback."""
         task_manager.start_next_action()
         before = task_manager._save_count["count"]
-        
+
         task_manager.complete_current_action()
-        
+
         assert task_manager._save_count["count"] > before
 
 
@@ -174,9 +173,9 @@ class TestCompleteCurrentAndStartNext:
     def test_complete_and_start_next_success(self, task_manager):
         """Complete and start next returns both actions."""
         task_manager.start_next_action()
-        
+
         completed, next_action = task_manager.complete_current_and_start_next()
-        
+
         assert completed is not None
         assert completed.status == "completed"
         # Next action might be None if all complete or might be another action
@@ -184,7 +183,7 @@ class TestCompleteCurrentAndStartNext:
     def test_complete_and_start_next_none_when_not_started(self, task_manager):
         """Complete and start next returns (None, None) when not started."""
         completed, next_action = task_manager.complete_current_and_start_next()
-        
+
         assert completed is None
         assert next_action is None
 
@@ -222,24 +221,22 @@ class TestCascadeCompletion:
 
         assert deliverable.status == "completed"
 
-    def test_cascade_completes_objective_when_all_deliverables_done(
-        self, task_manager
-    ):
+    def test_cascade_completes_objective_when_all_deliverables_done(self, task_manager):
         """Cascade marks objective complete when all deliverables complete."""
         # Complete all actions in all deliverables
         phase = task_manager.project.phases[0]
         milestone = phase.children[0]
         objective = milestone.children[0]
-        
+
         for deliverable in objective.children:
             for action in deliverable.children:
                 action.status = "completed"
                 action.updated_at = datetime.now()
             deliverable.status = "completed"
-        
+
         # Manually trigger cascade on last deliverable
         task_manager._cascade_completion(deliverable)
-        
+
         assert objective.status == "completed"
 
     def test_cascade_stops_at_objective(self, task_manager):
@@ -248,16 +245,16 @@ class TestCascadeCompletion:
         phase = task_manager.project.phases[0]
         milestone = phase.children[0]
         objective = milestone.children[0]
-        
+
         for deliverable in objective.children:
             for action in deliverable.children:
                 action.status = "completed"
             deliverable.status = "completed"
         objective.status = "completed"
-        
+
         # Trigger cascade
         task_manager._cascade_completion(objective)
-        
+
         # Milestone and phase should NOT be completed
         assert milestone.status != "completed"
         assert phase.status != "completed"
@@ -277,12 +274,12 @@ class TestCalculateCompletionPercentage:
         milestone = phase.children[0]
         objective = milestone.children[0]
         deliverable = objective.children[0]
-        
+
         # 1 of 2 actions complete
         deliverable.children[0].status = "completed"
-        
+
         result = task_manager.calculate_completion_percentage(deliverable)
-        
+
         assert result["overall"] == 50.0
 
     def test_percentage_deliverable_complete(self, task_manager):
@@ -291,12 +288,12 @@ class TestCalculateCompletionPercentage:
         milestone = phase.children[0]
         objective = milestone.children[0]
         deliverable = objective.children[0]
-        
+
         for action in deliverable.children:
             action.status = "completed"
-        
+
         result = task_manager.calculate_completion_percentage(deliverable)
-        
+
         assert result["overall"] == 100.0
 
     def test_percentage_objective_partial(self, task_manager):
@@ -304,23 +301,23 @@ class TestCalculateCompletionPercentage:
         phase = task_manager.project.phases[0]
         milestone = phase.children[0]
         objective = milestone.children[0]
-        
+
         # Complete first deliverable
         for action in objective.children[0].children:
             action.status = "completed"
         objective.children[0].status = "completed"
-        
+
         result = task_manager.calculate_completion_percentage(objective)
-        
+
         # 1 of 2 deliverables complete = 50%
         assert result["overall"] == 50.0
 
     def test_percentage_empty_item(self, task_manager, mock_data):
         """Calculate percentage for item with no children."""
         empty_deliv = mock_data.create_deliverable(slug="empty")
-        
+
         result = task_manager.calculate_completion_percentage(empty_deliv)
-        
+
         assert result["overall"] == 0.0
 
 
@@ -332,14 +329,14 @@ class TestIsExecTreeComplete:
         phase = task_manager.project.phases[0]
         milestone = phase.children[0]
         objective = milestone.children[0]
-        
+
         for deliverable in objective.children:
             for action in deliverable.children:
                 action.status = "completed"
             deliverable.status = "completed"
-        
+
         result = task_manager.is_exec_tree_complete(objective)
-        
+
         assert result is True
 
     def test_exec_tree_incomplete(self, task_manager):
@@ -347,9 +344,9 @@ class TestIsExecTreeComplete:
         phase = task_manager.project.phases[0]
         milestone = phase.children[0]
         objective = milestone.children[0]
-        
+
         result = task_manager.is_exec_tree_complete(objective)
-        
+
         assert result is False
 
 
@@ -635,7 +632,7 @@ class TestAutoArchiveOnAdd:
 
         # Old objective should NOT be archived (has pending deliverables)
         assert objective1 in milestone.children
-        
+
         # Verify not in archive
         storage = StorageManager(empty_prism_dir)
         archived_file = storage.load_archived_strategic()
@@ -767,13 +764,13 @@ class TestGenerateUniqueSlug:
     def test_generate_slug_basic(self, task_manager):
         """Generate basic slug from name."""
         slug = task_manager._generate_unique_slug([], "My Test Item")
-        
+
         assert slug == "my-test-item"
 
     def test_generate_slug_filters_filler_words(self, task_manager):
         """Generate slug filters out filler words."""
         slug = task_manager._generate_unique_slug([], "The Quick And Easy Test")
-        
+
         # "and", "the" should be filtered
         assert "and" not in slug
         assert "the" not in slug
@@ -783,16 +780,16 @@ class TestGenerateUniqueSlug:
         existing = [
             mock_data.create_deliverable(slug="test-item"),
         ]
-        
+
         slug = task_manager._generate_unique_slug(existing, "Test Item")
-        
+
         assert slug == "test-item-1"
 
     def test_generate_slug_truncates(self, task_manager):
         """Generate slug truncates to max length."""
         long_name = "This Is A Very Long Name That Should Be Truncated Because It Exceeds The Maximum Slug Length"
         slug = task_manager._generate_unique_slug([], long_name)
-        
+
         assert len(slug) <= 15  # Default max length
 
 

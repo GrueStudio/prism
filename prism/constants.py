@@ -85,9 +85,9 @@ SLUG_ERROR_DETAILED = (
     f"Example: 'my-awesome-project'"
 )
 DATE_FORMAT_ERROR = (
-    f"Invalid date format. Supported formats: YYYY-MM-DD, YYYY/MM/DD, DD-MM-YYYY, DD/MM/YYYY, "
-    f"MM-DD-YYYY, MM/DD/YYYY, YYYYMMDD, 'DD Month YYYY', 'Month DD, YYYY'. "
-    f"Examples: 2024-12-31, 31/12/2024, 12-31-2024, '31 December 2024', 'December 31, 2024'."
+    "Invalid date format. Supported formats: YYYY-MM-DD, YYYY/MM/DD, DD-MM-YYYY, DD/MM/YYYY, "
+    "MM-DD-YYYY, MM/DD/YYYY, YYYYMMDD, 'DD Month YYYY', 'Month DD, YYYY'. "
+    "Examples: 2024-12-31, 31/12/2024, 12-31-2024, '31 December 2024', 'December 31, 2024'."
 )
 
 # Aliases for backward compatibility

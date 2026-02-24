@@ -6,7 +6,7 @@ Handles all CRUD operations for strategic and execution items.
 
 import re
 from datetime import datetime
-from typing import Any, List, Optional
+from typing import List, Optional
 
 import click
 
@@ -16,17 +16,16 @@ from prism.constants import (
     DATE_FORMAT_ERROR,
     DEFAULT_STATUS,
     VALID_STATUSES,
-    get_slug_filler_words,
     get_slug_max_length,
     get_slug_word_limit,
 )
 from prism.exceptions import InvalidOperationError, NotFoundError, ValidationError
+from prism.managers.archive_manager import ArchiveManager
 from prism.managers.navigation_manager import NavigationManager
 from prism.models.base import (
     Action,
     BaseItem,
     Deliverable,
-    ItemStatus,
     Milestone,
     Objective,
     Phase,
@@ -50,7 +49,7 @@ class CRUDManager:
         self,
         project: Project,
         navigator: NavigationManager,
-        archive_manager: Any,
+        archive_manager: ArchiveManager,
     ) -> None:
         """
         Initialize CRUDManager.
@@ -65,7 +64,6 @@ class CRUDManager:
         self.archive_manager = archive_manager
         self._slug_max_length = get_slug_max_length()
         self._slug_word_limit = get_slug_word_limit()
-        self._slug_filler_words = get_slug_filler_words()
 
     def add_item(
         self,
@@ -146,9 +144,9 @@ class CRUDManager:
             if child.item_type == item_type and child.status == "completed":
                 # For objectives, verify execution tree is complete
                 if item_type == "objective":
-                    if isinstance(child, Objective) and not self._is_objective_exec_tree_complete(
-                        child
-                    ):
+                    if isinstance(
+                        child, Objective
+                    ) and not self._is_objective_exec_tree_complete(child):
                         continue  # Skip - has pending deliverables/actions
 
                 # Archive this item
@@ -451,9 +449,7 @@ class CRUDManager:
                         f"Item with slug '{item_slug_to_delete}' not found under parent '{parent_path}'."
                     )
             else:
-                raise NotFoundError(
-                    f"Parent '{parent_path}' has no children list."
-                )
+                raise NotFoundError(f"Parent '{parent_path}' has no children list.")
         else:
             # Deleting a phase
             original_len = len(self.project.phases)
