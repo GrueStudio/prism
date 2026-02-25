@@ -14,14 +14,12 @@ import json
 from pathlib import Path
 
 import pytest
-from click.testing import CliRunner
 
 from prism.cli import cli
 from prism.core import PrismCore
-from prism.managers.storage_manager import StorageManager
 from prism.managers.archive_manager import ArchiveManager
 from prism.managers.project_manager import ProjectManager
-
+from prism.managers.storage_manager import StorageManager
 
 # =============================================================================
 # Fixtures
@@ -34,33 +32,34 @@ def temp_prism_dir(temp_dir: Path, sample_project):
     prism_dir = temp_dir / ".prism"
     prism_dir.mkdir()
     (prism_dir / "archive").mkdir()
-    
+
     # Save sample project using ProjectManager
     storage = StorageManager(prism_dir)
     archive_mgr = ArchiveManager(storage)
     project_mgr = ProjectManager(storage, archive_mgr)
     project_mgr.save(sample_project)
-    
+
     return prism_dir
 
 
 @pytest.fixture
 def runner(temp_prism_dir, monkeypatch):
     """Create CliRunner with PrismCore patched to use temp directory.
-    
+
     Uses monkeypatch to inject the temp directory for all PrismCore instances.
     """
     from click.testing import CliRunner
+
     from prism.core import PrismCore
-    
+
     original_init = PrismCore.__init__
-    
+
     def patched_init(self, prism_dir=None, **kwargs):
         # Always use temp_prism_dir
         original_init(self, prism_dir=temp_prism_dir, **kwargs)
-    
-    monkeypatch.setattr(PrismCore, '__init__', patched_init)
-    
+
+    monkeypatch.setattr(PrismCore, "__init__", patched_init)
+
     yield CliRunner()
 
 
@@ -79,7 +78,7 @@ class TestCrudAddCommand:
             ["crud", "add", "-t", "phase", "-n", "New Phase", "-d", "Test"],
             catch_exceptions=False,
         )
-        
+
         assert result.exit_code == 0
         assert "created successfully" in result.output
 
@@ -90,7 +89,7 @@ class TestCrudAddCommand:
             ["crud", "add", "-t", "milestone", "-n", "New Milestone", "-p", "phase-1"],
             catch_exceptions=False,
         )
-        
+
         assert result.exit_code == 0
         assert "created successfully" in result.output
 
@@ -99,12 +98,18 @@ class TestCrudAddCommand:
         result = runner.invoke(
             cli,
             [
-                "crud", "add", "-t", "action", "-n", "New Action",
-                "-p", "phase-1/milestone-1/objective-1/deliverable-1",
+                "crud",
+                "add",
+                "-t",
+                "action",
+                "-n",
+                "New Action",
+                "-p",
+                "phase-1/milestone-1/objective-1/deliverable-1",
             ],
             catch_exceptions=False,
         )
-        
+
         assert result.exit_code == 0
         assert "created successfully" in result.output
 
@@ -113,13 +118,19 @@ class TestCrudAddCommand:
         result = runner.invoke(
             cli,
             [
-                "crud", "add", "-t", "action", "-n", "Nav Test",
-                "-p", "phase-1/milestone-1/objective-1/deliverable-1",
+                "crud",
+                "add",
+                "-t",
+                "action",
+                "-n",
+                "Nav Test",
+                "-p",
+                "phase-1/milestone-1/objective-1/deliverable-1",
                 "--nav",
             ],
             catch_exceptions=False,
         )
-        
+
         assert result.exit_code == 0
         assert "navigating to" in result.output.lower()
 
@@ -130,7 +141,7 @@ class TestCrudAddCommand:
             ["crud", "add", "-t", "phase"],
             catch_exceptions=False,
         )
-        
+
         assert result.exit_code != 0
 
 
@@ -144,7 +155,7 @@ class TestCrudShowCommand:
             ["crud", "show", "phase-1"],
             catch_exceptions=False,
         )
-        
+
         assert result.exit_code == 0
         assert "Phase 1" in result.output
 
@@ -154,13 +165,13 @@ class TestCrudShowCommand:
         core = PrismCore()
         core.project.crud_context = "phase-1"
         core._save_project()
-        
+
         result = runner.invoke(
             cli,
             ["crud", "show"],
             catch_exceptions=False,
         )
-        
+
         assert result.exit_code == 0
 
     def test_show_json_output(self, runner):
@@ -170,7 +181,7 @@ class TestCrudShowCommand:
             ["crud", "show", "phase-1", "--json"],
             catch_exceptions=False,
         )
-        
+
         assert result.exit_code == 0
         data = json.loads(result.output)
         assert "name" in data or "slug" in data
@@ -182,7 +193,7 @@ class TestCrudShowCommand:
             ["crud", "show", "nonexistent"],
             catch_exceptions=False,
         )
-        
+
         assert result.exit_code != 0
         assert "not found" in result.output.lower()
 
@@ -197,7 +208,7 @@ class TestCrudEditCommand:
             ["crud", "edit", "phase-1", "-n", "Updated Phase"],
             catch_exceptions=False,
         )
-        
+
         assert result.exit_code == 0
         assert "updated successfully" in result.output.lower()
 
@@ -208,7 +219,7 @@ class TestCrudEditCommand:
             ["crud", "edit", "phase-1", "-s", "in-progress"],
             catch_exceptions=False,
         )
-        
+
         assert result.exit_code == 0
 
     def test_edit_no_params(self, runner):
@@ -218,7 +229,7 @@ class TestCrudEditCommand:
             ["crud", "edit", "phase-1"],
             catch_exceptions=False,
         )
-        
+
         assert result.exit_code != 0
 
 
@@ -229,11 +240,15 @@ class TestCrudDeleteCommand:
         """Delete action via CLI."""
         result = runner.invoke(
             cli,
-            ["crud", "delete", "phase-1/milestone-1/objective-1/deliverable-1/action-1"],
+            [
+                "crud",
+                "delete",
+                "phase-1/milestone-1/objective-1/deliverable-1/action-1",
+            ],
             input="y\n",  # Confirm deletion
             catch_exceptions=False,
         )
-        
+
         assert result.exit_code == 0
         assert "deleted successfully" in result.output.lower()
 
@@ -241,11 +256,15 @@ class TestCrudDeleteCommand:
         """Delete requires confirmation."""
         result = runner.invoke(
             cli,
-            ["crud", "delete", "phase-1/milestone-1/objective-1/deliverable-1/action-1"],
+            [
+                "crud",
+                "delete",
+                "phase-1/milestone-1/objective-1/deliverable-1/action-1",
+            ],
             input="n\n",  # Decline
             catch_exceptions=False,
         )
-        
+
         # Click's confirmation should abort on 'n'
         assert result.exit_code != 0 or "Aborted" in result.output
 
@@ -260,7 +279,7 @@ class TestCrudNavCommand:
             ["crud", "nav"],
             catch_exceptions=False,
         )
-        
+
         assert result.exit_code == 0
 
     def test_nav_to_path(self, runner):
@@ -270,7 +289,7 @@ class TestCrudNavCommand:
             ["crud", "nav", "phase-1/milestone-1/objective-1"],
             catch_exceptions=False,
         )
-        
+
         assert result.exit_code == 0
         assert "Navigated to" in result.output
 
@@ -278,15 +297,17 @@ class TestCrudNavCommand:
         """Nav with :up token."""
         # First set a position
         core = PrismCore()
-        core.project.task_cursor = "phase-1/milestone-1/objective-1/deliverable-1/action-1"
+        core.project.task_cursor = (
+            "phase-1/milestone-1/objective-1/deliverable-1/action-1"
+        )
         core._save_project()
-        
+
         result = runner.invoke(
             cli,
             ["crud", "nav", ":u"],
             catch_exceptions=False,
         )
-        
+
         assert result.exit_code == 0
 
     def test_nav_current_token(self, runner):
@@ -296,26 +317,29 @@ class TestCrudNavCommand:
             ["crud", "nav", ":co"],
             catch_exceptions=False,
         )
-        
+
         assert result.exit_code == 0
         assert "Navigated to" in result.output
 
     def test_nav_behind_task_cursor(self, temp_dir, monkeypatch):
         """Nav to ancestor is allowed even when task_cursor is deep."""
         from click.testing import CliRunner
+
         from prism.core import PrismCore
-        
+
         # Create clean temp directory (not pre-populated like runner fixture)
         prism_dir = temp_dir / ".prism"
         prism_dir.mkdir()
         (prism_dir / "archive").mkdir()
-        
+
         # Patch PrismCore to use our clean temp dir
         original_init = PrismCore.__init__
+
         def patched_init(self, prism_dir_arg=None, **kwargs):
             original_init(self, prism_dir=prism_dir, **kwargs)
-        monkeypatch.setattr(PrismCore, '__init__', patched_init)
-        
+
+        monkeypatch.setattr(PrismCore, "__init__", patched_init)
+
         # Create project structure
         core = PrismCore()
         core.add_item("phase", "Phase", "Desc", None)
@@ -356,7 +380,7 @@ class TestTaskStartCommand:
             ["task", "start"],
             catch_exceptions=False,
         )
-        
+
         assert result.exit_code == 0
         assert "working on" in result.output.lower() or "No pending" in result.output
 
@@ -365,13 +389,13 @@ class TestTaskStartCommand:
         # Start an action first
         core = PrismCore()
         core.task_manager.start_next_action()
-        
+
         result = runner.invoke(
             cli,
             ["task", "start"],
             catch_exceptions=False,
         )
-        
+
         assert result.exit_code == 0
         assert "Currently working on" in result.output
 
@@ -384,13 +408,13 @@ class TestTaskDoneCommand:
         # Start an action first
         core = PrismCore()
         core.task_manager.start_next_action()
-        
+
         result = runner.invoke(
             cli,
             ["task", "done"],
             catch_exceptions=False,
         )
-        
+
         assert result.exit_code == 0
         assert "Completed" in result.output
 
@@ -401,7 +425,7 @@ class TestTaskDoneCommand:
             ["task", "done"],
             catch_exceptions=False,
         )
-        
+
         assert result.exit_code == 0
         assert "No task in progress" in result.output
 
@@ -414,13 +438,13 @@ class TestTaskNextCommand:
         # Start an action first
         core = PrismCore()
         core.task_manager.start_next_action()
-        
+
         result = runner.invoke(
             cli,
             ["task", "next"],
             catch_exceptions=False,
         )
-        
+
         assert result.exit_code == 0
         assert "Completed" in result.output
 
@@ -440,7 +464,7 @@ class TestStatusCommand:
             ["status"],
             catch_exceptions=False,
         )
-        
+
         assert result.exit_code == 0
         assert "Project Status" in result.output
 
@@ -451,7 +475,7 @@ class TestStatusCommand:
             ["status", "--json"],
             catch_exceptions=False,
         )
-        
+
         assert result.exit_code == 0
         data = json.loads(result.output)
         assert "current_strategic_focus" in data
@@ -464,7 +488,7 @@ class TestStatusCommand:
             ["status", "--current-deliverable"],
             catch_exceptions=False,
         )
-        
+
         assert result.exit_code == 0
 
 
@@ -483,7 +507,7 @@ class TestCliErrorHandling:
             ["invalid-command"],
             catch_exceptions=False,
         )
-        
+
         assert result.exit_code != 0
 
     def test_missing_required_option(self, runner):
@@ -493,7 +517,7 @@ class TestCliErrorHandling:
             ["crud", "add", "-t", "phase"],  # Missing -n
             catch_exceptions=False,
         )
-        
+
         assert result.exit_code != 0
 
     def test_invalid_item_type(self, runner):
@@ -503,6 +527,6 @@ class TestCliErrorHandling:
             ["crud", "add", "-t", "invalid", "-n", "Test"],
             catch_exceptions=False,
         )
-        
+
         assert result.exit_code != 0
         assert "Invalid value" in result.output

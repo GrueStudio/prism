@@ -6,7 +6,6 @@ Path is positional argument, UUID is optional flag.
 """
 
 import json
-from pathlib import Path
 from typing import Optional
 
 import click
@@ -18,7 +17,7 @@ from prism.exceptions import (
     PrismError,
     ValidationError,
 )
-from prism.models.base import Action, Deliverable, Milestone, Objective, Phase
+from prism.models.base import Deliverable, Milestone, Objective, Phase
 
 
 @click.group()
@@ -31,7 +30,7 @@ def crud():
 @click.argument("path", required=False)
 def nav(path: Optional[str]):
     """Navigate to a position in the project tree.
-    
+
     PATH can be:
     - A path (e.g., 1/2/1/deliverable-1)
     - A special token:
@@ -49,10 +48,10 @@ def nav(path: Optional[str]):
       - :nd, :next-deliverable - Next deliverable
       - :na, :next-action - Next action
     - Omitted to show current position
-    
+
     Note: Navigation is restricted to paths not 'behind' the task cursor in
     depth-first order. You cannot navigate to earlier branches of the tree.
-    
+
     Examples:
         prism crud nav                  # Show current position
         prism crud nav :u               # Go to parent
@@ -62,7 +61,7 @@ def nav(path: Optional[str]):
         prism crud nav 1/2/1/deliverable-1
     """
     core = PrismCore()
-    
+
     if path is None:
         # Show current position
         context = core.navigator.get_crud_context()
@@ -77,13 +76,13 @@ def nav(path: Optional[str]):
         else:
             click.echo("No current position set.")
         return
-    
+
     # Resolve path (handles special tokens)
     resolved = core.navigator.resolve_path(path)
-    
+
     if not resolved:
         raise click.ClickException(f"Cannot navigate to '{path}' - path not resolved.")
-    
+
     # Validate: path must not be behind task_cursor in depth-first order
     if core.project.task_cursor:
         if core.navigator._is_path_behind(resolved, core.project.task_cursor):
@@ -92,12 +91,14 @@ def nav(path: Optional[str]):
                 f"'{core.project.task_cursor}' in depth-first order. "
                 f"You can only navigate to the current position, ancestors, or later branches."
             )
-    
+
     # Verify item exists
     item = core.get_item_by_path(resolved)
     if not item:
-        raise click.ClickException(f"Cannot navigate to '{path}' - item not found at '{resolved}'.")
-    
+        raise click.ClickException(
+            f"Cannot navigate to '{path}' - item not found at '{resolved}'."
+        )
+
     # Set crud_context (task_cursor is managed by TaskManager only)
     if not core.navigator.set_crud_context(resolved):
         raise click.ClickException(
@@ -105,7 +106,7 @@ def nav(path: Optional[str]):
             f"The path must not be behind the current task cursor."
         )
     core._save_project()
-    
+
     click.echo(f"Navigated to: {resolved}")
     click.echo(f"  Type: {type(item).__name__}")
     click.echo(f"  Name: {item.name}")
@@ -157,7 +158,7 @@ def _get_item_by_path_or_uuid(
 
     # Resolve path (handles special tokens and relative paths)
     resolved = core.navigator.resolve_path(path)
-    
+
     try:
         item = core.get_item_by_path(resolved)
         if not item:
@@ -193,7 +194,7 @@ def _get_parent_path_for_add(
 
     # For other types, infer from current context
     current_context = core.navigator.get_crud_context()
-    
+
     if item_type == "milestone":
         # Need a phase to add milestone to
         if current_context:
@@ -230,7 +231,7 @@ def _get_parent_path_for_add(
             else:  # action
                 if context_item and isinstance(context_item, Deliverable):
                     return current_context
-        
+
         current_objective = core.navigator.get_current_objective()
         if current_objective:
             if item_type == "deliverable":
@@ -404,7 +405,10 @@ def add(
             if item_type == "objective" and isinstance(parent_item, Milestone):
                 # Find any existing active objective under this milestone
                 for existing_obj in parent_item.children:
-                    if isinstance(existing_obj, Objective) and existing_obj.status != "completed":
+                    if (
+                        isinstance(existing_obj, Objective)
+                        and existing_obj.status != "completed"
+                    ):
                         raise InvalidOperationError(
                             f"Cannot add objective. Current objective '{existing_obj.name}' is not complete."
                         )
@@ -418,7 +422,7 @@ def add(
             parent_path=resolved_parent,
             status=status,
         )
-        
+
         # Navigate to created item if requested
         if nav:
             item_path = core.navigator.get_item_path(new_item)
@@ -426,7 +430,9 @@ def add(
                 core.project.task_cursor = item_path
                 core.project.crud_context = item_path
                 core._save_project()
-                click.echo(f"{item_type.capitalize()} '{name}' created and navigating to: {item_path}")
+                click.echo(
+                    f"{item_type.capitalize()} '{name}' created and navigating to: {item_path}"
+                )
             else:
                 click.echo(f"{item_type.capitalize()} '{name}' created successfully.")
         else:
