@@ -11,10 +11,10 @@ from pydantic import BaseModel, Field
 
 class Orphan(BaseModel):
     """Orphan model - typeless ideas waiting to be adopted.
-    
-    Minimal fields: uuid, name, description only.
-    Timestamps are added when adopted into the project structure.
+
+    Minimal fields only. Orphans are deleted when adopted.
     """
     uuid: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
-    description: Optional[str] = None
+    description: str
+    priority: int = 0

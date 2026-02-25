@@ -94,6 +94,20 @@ class ConfigFile(BaseModel):
     status_header_width: int = DEFAULT_STATUS_HEADER_WIDTH
     percentage_round_precision: int = DEFAULT_PERCENTAGE_ROUND_PRECISION
 
+    # Orphan settings
+    orphan_name_regex: str = r"^[a-zA-Z0-9\s\-_'\"]+$"
+    orphan_default_priority: int = 0
+    orphan_priority_min: int = -100
+    orphan_priority_max: int = 100
+    orphan_priority_labels: dict[str, int] = Field(
+        default_factory=lambda: {
+            "low": -10,
+            "medium": 0,
+            "high": 10,
+            "critical": 50,
+        }
+    )
+
 
 class CursorFile(BaseModel):
     """Model for cursor.json file.
