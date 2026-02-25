@@ -75,6 +75,18 @@ DEFAULT_DATE_FORMATS = [
 DEFAULT_DATE_MAX_YEARS_FUTURE = 10
 DEFAULT_DATE_MAX_YEARS_PAST = 1
 
+# Orphan defaults
+DEFAULT_ORPHAN_NAME_REGEX = r"^[a-zA-Z0-9\s\-_'\"]+$"
+DEFAULT_ORPHAN_DEFAULT_PRIORITY = 0
+DEFAULT_ORPHAN_PRIORITY_MIN = -100
+DEFAULT_ORPHAN_PRIORITY_MAX = 100
+DEFAULT_ORPHAN_PRIORITY_LABELS: dict[str, int] = {
+    "low": -10,
+    "medium": 0,
+    "high": 10,
+    "critical": 50,
+}
+
 # Error messages (constructed from defaults, not configurable)
 SLUG_MAX_LENGTH = DEFAULT_SLUG_MAX_LENGTH
 SLUG_REGEX_PATTERN = DEFAULT_SLUG_REGEX_PATTERN
@@ -187,6 +199,11 @@ class ConfigManager:
         value = self.get(key, default)
         return str(value) if value is not None else default
 
+    def get_dict(self, key: str, default: dict) -> dict:
+        """Get a dict config value with fallback."""
+        value = self.get(key, default)
+        return dict(value) if isinstance(value, dict) else default
+
     def reload(self) -> dict:
         """Force reload of config from disk."""
         self._config = None
@@ -274,4 +291,37 @@ def get_percentage_round_precision() -> int:
     """Get percentage round precision from config or default."""
     return get_config_manager().get_int(
         "percentage_round_precision", DEFAULT_PERCENTAGE_ROUND_PRECISION
+    )
+
+
+def get_orphan_name_regex() -> str:
+    """Get orphan name regex from config or default."""
+    return get_config_manager().get_str("orphan_name_regex", DEFAULT_ORPHAN_NAME_REGEX)
+
+
+def get_orphan_default_priority() -> int:
+    """Get orphan default priority from config or default."""
+    return get_config_manager().get_int(
+        "orphan_default_priority", DEFAULT_ORPHAN_DEFAULT_PRIORITY
+    )
+
+
+def get_orphan_priority_min() -> int:
+    """Get orphan priority min from config or default."""
+    return get_config_manager().get_int(
+        "orphan_priority_min", DEFAULT_ORPHAN_PRIORITY_MIN
+    )
+
+
+def get_orphan_priority_max() -> int:
+    """Get orphan priority max from config or default."""
+    return get_config_manager().get_int(
+        "orphan_priority_max", DEFAULT_ORPHAN_PRIORITY_MAX
+    )
+
+
+def get_orphan_priority_labels() -> dict[str, int]:
+    """Get orphan priority labels from config or default."""
+    return get_config_manager().get_dict(
+        "orphan_priority_labels", DEFAULT_ORPHAN_PRIORITY_LABELS
     )

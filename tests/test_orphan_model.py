@@ -63,11 +63,12 @@ class TestOrphanDescriptionRequired:
         with pytest.raises(ValidationError):
             Orphan(name="Test", description=None)
 
-    def test_description_empty_string_allowed(self):
-        """Empty string description is allowed (no validation yet)."""
-        orphan = Orphan(name="Test", description="")
+    def test_description_empty_string_raises(self):
+        """Empty string description raises error."""
+        with pytest.raises(ValidationError) as exc_info:
+            Orphan(name="Test", description="")
 
-        assert orphan.description == ""
+        assert "description" in str(exc_info.value).lower()
 
 
 class TestOrphanPriority:
@@ -102,10 +103,33 @@ class TestOrphanPriority:
         with pytest.raises(ValidationError):
             Orphan(name="Test", description="Float priority", priority=5.5)
 
-    def test_priority_string_raises_error(self):
-        """String priority raises validation error (no labels yet)."""
-        with pytest.raises(ValidationError):
-            Orphan(name="Test", description="String priority", priority="high")
+    def test_priority_string_converts_via_labels(self):
+        """String priority converts to int via labels."""
+        orphan_low = Orphan(name="Low", description="Test", priority="low")
+        orphan_high = Orphan(name="High", description="Test", priority="high")
+
+        assert orphan_low.priority == -10
+        assert orphan_high.priority == 10
+
+    def test_priority_string_unknown_uses_default(self):
+        """Unknown string priority uses default value."""
+        orphan = Orphan(name="Test", description="Unknown label", priority="unknown")
+
+        assert orphan.priority == 0  # Default
+
+    def test_priority_exceeds_max_raises(self):
+        """Priority above max raises error."""
+        with pytest.raises(ValidationError) as exc_info:
+            Orphan(name="Test", description="Too high", priority=101)
+
+        assert "priority" in str(exc_info.value).lower()
+
+    def test_priority_below_min_raises(self):
+        """Priority below min raises error."""
+        with pytest.raises(ValidationError) as exc_info:
+            Orphan(name="Test", description="Too low", priority=-101)
+
+        assert "priority" in str(exc_info.value).lower()
 
 
 class TestOrphanName:
@@ -123,29 +147,35 @@ class TestOrphanName:
         with pytest.raises(ValidationError):
             Orphan(name=None, description="Test")
 
-    def test_name_empty_string_allowed(self):
-        """Empty string name is allowed (no validation yet)."""
-        orphan = Orphan(name="", description="Test")
+    def test_name_empty_string_raises(self):
+        """Empty string name raises error."""
+        with pytest.raises(ValidationError) as exc_info:
+            Orphan(name="", description="Test")
 
-        assert orphan.name == ""
+        assert "name" in str(exc_info.value).lower()
 
-    def test_name_with_special_chars(self):
-        """Name accepts special characters (no validation yet)."""
+    def test_name_with_allowed_special_chars(self):
+        """Name accepts allowed special characters (space, hyphen, underscore, quotes)."""
         orphan = Orphan(
-            name="Test! @#$%^&*() Name",
+            name="Test-Name_With 'Quotes' and \"double\"",
             description="Special chars"
         )
 
-        assert orphan.name == "Test! @#$%^&*() Name"
+        assert orphan.name == "Test-Name_With 'Quotes' and \"double\""
 
-    def test_name_with_unicode(self):
-        """Name accepts unicode characters."""
-        orphan = Orphan(
-            name="Idée de test 日本語",
-            description="Unicode test"
-        )
+    def test_name_with_disallowed_special_chars_raises(self):
+        """Name rejects disallowed special characters."""
+        with pytest.raises(ValidationError) as exc_info:
+            Orphan(name="Test! @#$%^&*() Name", description="Special")
 
-        assert orphan.name == "Idée de test 日本語"
+        assert "pattern" in str(exc_info.value).lower()
+
+    def test_name_with_unicode_raises(self):
+        """Name rejects unicode characters outside ASCII range."""
+        with pytest.raises(ValidationError) as exc_info:
+            Orphan(name="Idée de test 日本語", description="Unicode")
+
+        assert "pattern" in str(exc_info.value).lower()
 
 
 class TestOrphanModelFields:
