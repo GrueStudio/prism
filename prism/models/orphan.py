@@ -54,7 +54,7 @@ class Orphan(BaseModel):
 
     @field_validator("priority")
     @classmethod
-    def validate_priority(cls, v: int | str) -> int | str:
+    def validate_priority(cls, v: int | str) -> int:
         """Validate priority is within bounds."""
         if isinstance(v, str):
             labels: dict[str, int] = get_orphan_priority_labels()
