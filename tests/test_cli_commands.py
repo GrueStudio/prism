@@ -704,6 +704,272 @@ class TestOrphanShowCommand:
         assert "not found" in result.output.lower()
 
 
+class TestOrphanAddCommand:
+    """Test orphan add command."""
+
+    def test_add_orphan_minimal(self, temp_prism_dir, monkeypatch):
+        """Add orphan with minimal required fields."""
+        from click.testing import CliRunner
+
+        from prism.core import PrismCore
+
+        # Patch PrismCore to use temp directory
+        original_init = PrismCore.__init__
+
+        def patched_init(self, prism_dir=None, **kwargs):
+            original_init(self, prism_dir=temp_prism_dir, **kwargs)
+
+        monkeypatch.setattr(PrismCore, "__init__", patched_init)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            ["orphan", "add", "-n", "New Orphan", "-d", "A new idea"],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+        assert "added successfully" in result.output.lower()
+        assert "UUID:" in result.output
+
+        # Verify orphan was persisted
+        core = PrismCore(prism_dir=temp_prism_dir)
+        orphans = core.list_orphans()
+        assert len(orphans) == 1
+        assert orphans[0].name == "New Orphan"
+
+    def test_add_orphan_with_priority(self, temp_prism_dir, monkeypatch):
+        """Add orphan with custom priority."""
+        from click.testing import CliRunner
+
+        from prism.core import PrismCore
+
+        original_init = PrismCore.__init__
+
+        def patched_init(self, prism_dir=None, **kwargs):
+            original_init(self, prism_dir=temp_prism_dir, **kwargs)
+
+        monkeypatch.setattr(PrismCore, "__init__", patched_init)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            ["orphan", "add", "-n", "High Priority", "-d", "Important", "-p", "5"],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+
+        # Verify priority was set
+        core = PrismCore(prism_dir=temp_prism_dir)
+        orphans = core.list_orphans()
+        assert orphans[0].priority == 5
+
+    def test_add_orphan_default_priority(self, temp_prism_dir, monkeypatch):
+        """Add orphan uses default priority when not specified."""
+        from click.testing import CliRunner
+
+        from prism.core import PrismCore
+
+        original_init = PrismCore.__init__
+
+        def patched_init(self, prism_dir=None, **kwargs):
+            original_init(self, prism_dir=temp_prism_dir, **kwargs)
+
+        monkeypatch.setattr(PrismCore, "__init__", patched_init)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            ["orphan", "add", "-n", "Default Priority", "-d", "Test"],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+
+        core = PrismCore(prism_dir=temp_prism_dir)
+        orphans = core.list_orphans()
+        assert orphans[0].priority == 0
+
+    def test_add_orphan_missing_name(self, runner):
+        """Add fails without required name."""
+        result = runner.invoke(
+            cli,
+            ["orphan", "add", "-d", "No name"],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code != 0
+        assert "Missing option" in result.output or "Error" in result.output
+
+
+class TestOrphanDeleteCommand:
+    """Test orphan delete command."""
+
+    def test_delete_by_id(self, temp_prism_dir, monkeypatch):
+        """Delete orphan by numeric ID."""
+        from click.testing import CliRunner
+
+        from prism.core import PrismCore
+
+        # Add an orphan first
+        core = PrismCore(prism_dir=temp_prism_dir)
+        orphan = core.add_orphan(name="To Delete", description="Will be deleted")
+
+        # Patch PrismCore to use temp directory
+        original_init = PrismCore.__init__
+
+        def patched_init(self, prism_dir=None, **kwargs):
+            original_init(self, prism_dir=temp_prism_dir, **kwargs)
+
+        monkeypatch.setattr(PrismCore, "__init__", patched_init)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            ["orphan", "delete", str(orphan.id), "--yes"],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+        assert "deleted successfully" in result.output.lower()
+
+        # Verify orphan was removed
+        core = PrismCore(prism_dir=temp_prism_dir)
+        orphans = core.list_orphans()
+        assert len(orphans) == 0
+
+    def test_delete_by_uuid(self, temp_prism_dir, monkeypatch):
+        """Delete orphan by UUID."""
+        from click.testing import CliRunner
+
+        from prism.core import PrismCore
+
+        core = PrismCore(prism_dir=temp_prism_dir)
+        orphan = core.add_orphan(name="UUID Delete", description="Test")
+
+        original_init = PrismCore.__init__
+
+        def patched_init(self, prism_dir=None, **kwargs):
+            original_init(self, prism_dir=temp_prism_dir, **kwargs)
+
+        monkeypatch.setattr(PrismCore, "__init__", patched_init)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            ["orphan", "delete", orphan.uuid, "--yes"],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+        assert "deleted successfully" in result.output.lower()
+
+    def test_delete_by_name(self, temp_prism_dir, monkeypatch):
+        """Delete orphan by name."""
+        from click.testing import CliRunner
+
+        from prism.core import PrismCore
+
+        core = PrismCore(prism_dir=temp_prism_dir)
+        core.add_orphan(name="Name Delete Test", description="Test")
+
+        original_init = PrismCore.__init__
+
+        def patched_init(self, prism_dir=None, **kwargs):
+            original_init(self, prism_dir=temp_prism_dir, **kwargs)
+
+        monkeypatch.setattr(PrismCore, "__init__", patched_init)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            ["orphan", "delete", "Name Delete Test", "--yes"],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+        assert "deleted successfully" in result.output.lower()
+
+    def test_delete_not_found(self, temp_prism_dir, monkeypatch):
+        """Delete fails for nonexistent orphan."""
+        from click.testing import CliRunner
+
+        from prism.core import PrismCore
+
+        # Patch PrismCore to use temp directory
+        original_init = PrismCore.__init__
+
+        def patched_init(self, prism_dir=None, **kwargs):
+            original_init(self, prism_dir=temp_prism_dir, **kwargs)
+
+        monkeypatch.setattr(PrismCore, "__init__", patched_init)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            ["orphan", "delete", "nonexistent", "--yes"],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code != 0
+        assert "not found" in result.output.lower()
+
+    def test_delete_with_confirmation(self, temp_prism_dir, monkeypatch):
+        """Delete with interactive confirmation."""
+        from click.testing import CliRunner
+
+        from prism.core import PrismCore
+
+        core = PrismCore(prism_dir=temp_prism_dir)
+        orphan = core.add_orphan(name="Confirm Delete", description="Test")
+
+        original_init = PrismCore.__init__
+
+        def patched_init(self, prism_dir=None, **kwargs):
+            original_init(self, prism_dir=temp_prism_dir, **kwargs)
+
+        monkeypatch.setattr(PrismCore, "__init__", patched_init)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            ["orphan", "delete", str(orphan.id)],
+            input="y\n",  # Confirm
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+        assert "deleted successfully" in result.output.lower()
+
+    def test_delete_declined(self, temp_prism_dir, monkeypatch):
+        """Delete aborted when user declines confirmation."""
+        from click.testing import CliRunner
+
+        from prism.core import PrismCore
+
+        core = PrismCore(prism_dir=temp_prism_dir)
+        orphan = core.add_orphan(name="Not Deleted", description="Test")
+
+        original_init = PrismCore.__init__
+
+        def patched_init(self, prism_dir=None, **kwargs):
+            original_init(self, prism_dir=temp_prism_dir, **kwargs)
+
+        monkeypatch.setattr(PrismCore, "__init__", patched_init)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            ["orphan", "delete", str(orphan.id)],
+            input="n\n",  # Decline
+            catch_exceptions=False,
+        )
+
+        # Click's confirmation should abort on 'n'
+        assert result.exit_code != 0 or "Aborted" in result.output
+
+
 # =============================================================================
 # CLI Error Handling Tests
 # =============================================================================

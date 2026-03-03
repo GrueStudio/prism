@@ -108,8 +108,27 @@ def adopt_orphan(orphan_id, type, parent_path):
 
 @orphan.command(name="delete")
 @click.argument("orphan_id")
-@click.confirmation_option(prompt="Are you sure you want to delete this orphan?")
-def delete_orphan(orphan_id):
-    """Delete an orphan idea."""
-    click.echo("Orphan delete - TODO: Implement")
-    click.echo(f"Would delete orphan: {orphan_id}")
+@click.option("-y", "--yes", is_flag=True, help="Skip confirmation prompt.")
+def delete_orphan(orphan_id: str, yes: bool):
+    """Delete an orphan idea.
+
+    ORPHAN_ID can be the numeric ID, UUID, or name of the orphan.
+    
+    Use -y/--yes to skip the confirmation prompt.
+    """
+    core = PrismCore()
+    orphan = core.get_orphan(orphan_id)
+
+    if not orphan:
+        raise click.ClickException(
+            f"Orphan '{orphan_id}' not found. Use 'prism orphan list' to see all orphans."
+        )
+
+    if not yes:
+        click.confirm(f"Are you sure you want to delete orphan '{orphan.name}'?", abort=True)
+
+    removed = core.remove_orphan(orphan.uuid)
+    if removed:
+        click.echo(f"Orphan '{orphan.name}' deleted successfully.")
+    else:
+        raise click.ClickException(f"Failed to delete orphan '{orphan_id}'.")
