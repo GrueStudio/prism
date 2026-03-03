@@ -14,6 +14,7 @@ from prism.exceptions import NavigationError
 from prism.managers.archive_manager import ArchiveManager
 from prism.managers.crud_manager import CRUDManager
 from prism.managers.navigation_manager import NavigationManager
+from prism.managers.orphan_manager import OrphanManager
 from prism.managers.project_manager import ProjectManager
 from prism.managers.storage_manager import StorageError, StorageManager
 from prism.managers.task_manager import TaskManager
@@ -27,4 +28,5 @@ __all__ = [
     "StorageError",
     "ProjectManager",
     "ArchiveManager",
+    "OrphanManager",
 ]

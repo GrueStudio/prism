@@ -493,6 +493,218 @@ class TestStatusCommand:
 
 
 # =============================================================================
+# Orphan Command Tests
+# =============================================================================
+
+
+class TestOrphanListCommand:
+    """Test orphan list command."""
+
+    def test_list_no_orphans(self, runner):
+        """List shows message when no orphans exist."""
+        result = runner.invoke(
+            cli,
+            ["orphan", "list"],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+        assert "No orphan ideas found" in result.output
+
+    def test_list_with_orphans(self, temp_prism_dir, monkeypatch):
+        """List shows orphan ideas."""
+        from click.testing import CliRunner
+
+        from prism.core import PrismCore
+        from prism.managers.orphan_manager import OrphanManager
+
+        # Add an orphan to the temp directory
+        core = PrismCore(prism_dir=temp_prism_dir)
+        core.add_orphan(name="Test Orphan", description="A test orphan")
+
+        # Patch PrismCore to use temp directory for CLI command
+        original_init = PrismCore.__init__
+
+        def patched_init(self, prism_dir=None, **kwargs):
+            original_init(self, prism_dir=temp_prism_dir, **kwargs)
+
+        monkeypatch.setattr(PrismCore, "__init__", patched_init)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            ["orphan", "list"],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+        assert "Orphan Ideas" in result.output
+        assert "Test Orphan" in result.output
+
+    def test_list_json_output(self, temp_prism_dir, monkeypatch):
+        """List with --json outputs JSON array."""
+        from click.testing import CliRunner
+
+        from prism.core import PrismCore
+
+        # Add an orphan to the temp directory
+        core = PrismCore(prism_dir=temp_prism_dir)
+        core.add_orphan(name="JSON Test", description="Test")
+
+        # Patch PrismCore to use temp directory for CLI command
+        original_init = PrismCore.__init__
+
+        def patched_init(self, prism_dir=None, **kwargs):
+            original_init(self, prism_dir=temp_prism_dir, **kwargs)
+
+        monkeypatch.setattr(PrismCore, "__init__", patched_init)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            ["orphan", "list", "--json"],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert isinstance(data, list)
+        assert len(data) > 0
+        assert "name" in data[0]
+
+
+class TestOrphanShowCommand:
+    """Test orphan show command."""
+
+    def test_show_by_name(self, temp_prism_dir, monkeypatch):
+        """Show orphan by name."""
+        from click.testing import CliRunner
+
+        from prism.core import PrismCore
+
+        # Add an orphan to the temp directory
+        core = PrismCore(prism_dir=temp_prism_dir)
+        core.add_orphan(name="Show Test", description="Testing show command")
+
+        # Patch PrismCore to use temp directory for CLI command
+        original_init = PrismCore.__init__
+
+        def patched_init(self, prism_dir=None, **kwargs):
+            original_init(self, prism_dir=temp_prism_dir, **kwargs)
+
+        monkeypatch.setattr(PrismCore, "__init__", patched_init)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            ["orphan", "show", "Show Test"],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+        assert "Show Test" in result.output
+        assert "ID:" in result.output
+
+    def test_show_by_uuid(self, temp_prism_dir, monkeypatch):
+        """Show orphan by UUID."""
+        from click.testing import CliRunner
+
+        from prism.core import PrismCore
+
+        # Add an orphan to the temp directory
+        core = PrismCore(prism_dir=temp_prism_dir)
+        orphan = core.add_orphan(name="UUID Test", description="Testing UUID lookup")
+
+        # Patch PrismCore to use temp directory for CLI command
+        original_init = PrismCore.__init__
+
+        def patched_init(self, prism_dir=None, **kwargs):
+            original_init(self, prism_dir=temp_prism_dir, **kwargs)
+
+        monkeypatch.setattr(PrismCore, "__init__", patched_init)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            ["orphan", "show", orphan.uuid],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+        assert "UUID Test" in result.output
+
+    def test_show_by_id(self, temp_prism_dir, monkeypatch):
+        """Show orphan by numeric ID."""
+        from click.testing import CliRunner
+
+        from prism.core import PrismCore
+
+        # Add an orphan to the temp directory
+        core = PrismCore(prism_dir=temp_prism_dir)
+        orphan = core.add_orphan(name="ID Test", description="Testing ID lookup")
+
+        # Patch PrismCore to use temp directory for CLI command
+        original_init = PrismCore.__init__
+
+        def patched_init(self, prism_dir=None, **kwargs):
+            original_init(self, prism_dir=temp_prism_dir, **kwargs)
+
+        monkeypatch.setattr(PrismCore, "__init__", patched_init)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            ["orphan", "show", str(orphan.id)],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+        assert "ID Test" in result.output
+        assert f"ID: {orphan.id}" in result.output
+
+    def test_show_json_output(self, temp_prism_dir, monkeypatch):
+        """Show with --json outputs JSON object."""
+        from click.testing import CliRunner
+
+        from prism.core import PrismCore
+
+        # Add an orphan to the temp directory
+        core = PrismCore(prism_dir=temp_prism_dir)
+        core.add_orphan(name="JSON Show Test", description="Test")
+
+        # Patch PrismCore to use temp directory for CLI command
+        original_init = PrismCore.__init__
+
+        def patched_init(self, prism_dir=None, **kwargs):
+            original_init(self, prism_dir=temp_prism_dir, **kwargs)
+
+        monkeypatch.setattr(PrismCore, "__init__", patched_init)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            ["orphan", "show", "JSON Show Test", "--json"],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert "name" in data
+        assert "uuid" in data
+
+    def test_show_not_found(self, runner):
+        """Show fails for nonexistent orphan."""
+        result = runner.invoke(
+            cli,
+            ["orphan", "show", "nonexistent"],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code != 0
+        assert "not found" in result.output.lower()
+
+
+# =============================================================================
 # CLI Error Handling Tests
 # =============================================================================
 

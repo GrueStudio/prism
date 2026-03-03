@@ -26,6 +26,15 @@ class TestOrphanCreation:
         assert orphan.description == "A test orphan idea"
         assert orphan.priority == 0  # Default
         assert orphan.uuid is not None
+        assert orphan.id == 0  # Default, auto-assigned by manager
+
+    def test_create_orphan_with_id(self):
+        """Create orphan with explicit ID."""
+        orphan = Orphan(id=42, name="Test Idea", description="A test orphan idea")
+
+        assert orphan.id == 42
+        assert orphan.name == "Test Idea"
+        assert orphan.description == "A test orphan idea"
 
     def test_create_orphan_with_priority(self):
         """Create orphan with custom priority."""
@@ -203,7 +212,7 @@ class TestOrphanModelFields:
     def test_orphan_no_extra_fields(self):
         """Orphan has only expected fields."""
         # Check only expected fields exist
-        expected_fields = {"uuid", "name", "description", "priority"}
+        expected_fields = {"id", "uuid", "name", "description", "priority"}
         actual_fields = set(Orphan.model_fields.keys())
 
         assert actual_fields == expected_fields

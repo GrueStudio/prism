@@ -1,10 +1,14 @@
 """
-Orphan command group for new Prism CLI (stubs).
+Orphan command group for new Prism CLI.
 
 Commands for managing orphan ideas that can be adopted into the project structure.
-TODO: Implement full orphan management.
 """
+import json
+from typing import Optional
+
 import click
+
+from prism.core import PrismCore
 
 
 @click.group()
@@ -18,19 +22,76 @@ def orphan():
 
 
 @orphan.command(name="list")
-def list_orphans():
-    """List all orphan ideas."""
-    click.echo("Orphan list - TODO: Implement")
-    click.echo("Orphans are stored in .prism/orphans.json")
+@click.option(
+    "-j", "--json", "json_output", is_flag=True, help="Output in JSON format."
+)
+def list_orphans(json_output: bool):
+    """List all orphan ideas.
+
+    Orphans are stored in .prism/orphans.json and can be adopted
+    into the project structure at any level.
+    
+    Use the numeric ID with 'prism orphan show <ID>' to view details.
+    """
+    core = PrismCore()
+    orphans = core.list_orphans()
+
+    if not orphans:
+        click.echo("No orphan ideas found.")
+        return
+
+    if json_output:
+        data = [orphan.model_dump(mode="json") for orphan in orphans]
+        click.echo(json.dumps(data, indent=2))
+    else:
+        click.echo(f"Orphan Ideas ({len(orphans)}):")
+        click.echo("-" * 50)
+        for orphan in orphans:
+            click.echo(f"[{orphan.id}] {orphan.name}")
+            click.echo(f"    Priority: {orphan.priority}")
+            if orphan.description:
+                click.echo(f"    Description: {orphan.description}")
+            click.echo()
+
+
+@orphan.command(name="show")
+@click.argument("orphan_id")
+@click.option(
+    "-j", "--json", "json_output", is_flag=True, help="Output in JSON format."
+)
+def show_orphan(orphan_id: str, json_output: bool):
+    """Show details for an orphan idea.
+
+    ORPHAN_ID can be the numeric ID, UUID, or name of the orphan.
+    """
+    core = PrismCore()
+    orphan = core.get_orphan(orphan_id)
+
+    if not orphan:
+        raise click.ClickException(
+            f"Orphan '{orphan_id}' not found. Use 'prism orphan list' to see all orphans."
+        )
+
+    if json_output:
+        click.echo(json.dumps(orphan.model_dump(mode="json"), indent=2))
+    else:
+        click.echo(f"ID: {orphan.id}")
+        click.echo(f"Name: {orphan.name}")
+        click.echo(f"UUID: {orphan.uuid}")
+        click.echo(f"Priority: {orphan.priority}")
+        click.echo(f"Description: {orphan.description or 'N/A'}")
 
 
 @orphan.command(name="add")
 @click.option("-n", "--name", required=True, help="Orphan idea name.")
 @click.option("-d", "--desc", help="Orphan idea description.")
-def add_orphan(name, desc):
+@click.option("-p", "--priority", type=int, default=0, help="Priority value (default: 0).")
+def add_orphan(name: str, desc: Optional[str], priority: int):
     """Add a new orphan idea."""
-    click.echo("Orphan add - TODO: Implement")
-    click.echo(f"Would add orphan: {name}")
+    core = PrismCore()
+    new_orphan = core.add_orphan(name=name, description=desc or "", priority=priority)
+    click.echo(f"Orphan '{name}' added successfully.")
+    click.echo(f"UUID: {new_orphan.uuid}")
 
 
 @orphan.command(name="adopt")
