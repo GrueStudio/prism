@@ -970,6 +970,128 @@ class TestOrphanDeleteCommand:
         assert result.exit_code != 0 or "Aborted" in result.output
 
 
+class TestOrphanAdoptCommand:
+    """Test orphan adopt command."""
+
+    def test_adopt_as_phase(self, empty_prism_dir, monkeypatch):
+        """Adopt orphan as a phase."""
+        from click.testing import CliRunner
+
+        from prism.core import PrismCore
+
+        # Use empty prism directory (no sample data)
+        core = PrismCore(prism_dir=empty_prism_dir)
+        orphan = core.add_orphan(name="Adopt as Phase", description="Will become a phase")
+
+        # Patch PrismCore to use empty directory
+        original_init = PrismCore.__init__
+
+        def patched_init(self, prism_dir=None, **kwargs):
+            original_init(self, prism_dir=empty_prism_dir, **kwargs)
+
+        monkeypatch.setattr(PrismCore, "__init__", patched_init)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            ["orphan", "adopt", str(orphan.id), "-t", "phase", "--yes"],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+        assert "Adopted" in result.output
+        assert "phase" in result.output.lower()
+
+        # Reload core to get updated data from disk
+        core = PrismCore(prism_dir=empty_prism_dir)
+
+        # Verify orphan was removed
+        orphans = core.list_orphans()
+        assert len(orphans) == 0
+
+        # Verify phase was created
+        phases = core.project.phases
+        assert len(phases) == 1
+        assert phases[0].name == "Adopt as Phase"
+
+    def test_adopt_not_found(self, empty_prism_dir, monkeypatch):
+        """Adopt fails for nonexistent orphan."""
+        from click.testing import CliRunner
+
+        from prism.core import PrismCore
+
+        original_init = PrismCore.__init__
+
+        def patched_init(self, prism_dir=None, **kwargs):
+            original_init(self, prism_dir=empty_prism_dir, **kwargs)
+
+        monkeypatch.setattr(PrismCore, "__init__", patched_init)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            ["orphan", "adopt", "nonexistent", "-t", "phase", "--yes"],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code != 0
+        assert "not found" in result.output.lower()
+
+    def test_adopt_with_confirmation(self, empty_prism_dir, monkeypatch):
+        """Adopt with interactive confirmation."""
+        from click.testing import CliRunner
+
+        from prism.core import PrismCore
+
+        core = PrismCore(prism_dir=empty_prism_dir)
+        orphan = core.add_orphan(name="Confirm Adopt", description="Test")
+
+        original_init = PrismCore.__init__
+
+        def patched_init(self, prism_dir=None, **kwargs):
+            original_init(self, prism_dir=empty_prism_dir, **kwargs)
+
+        monkeypatch.setattr(PrismCore, "__init__", patched_init)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            ["orphan", "adopt", str(orphan.id), "-t", "phase"],
+            input="y\n",  # Confirm
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+        assert "Adopted" in result.output
+
+    def test_adopt_declined(self, empty_prism_dir, monkeypatch):
+        """Adopt aborted when user declines confirmation."""
+        from click.testing import CliRunner
+
+        from prism.core import PrismCore
+
+        core = PrismCore(prism_dir=empty_prism_dir)
+        orphan = core.add_orphan(name="Not Adopted", description="Test")
+
+        original_init = PrismCore.__init__
+
+        def patched_init(self, prism_dir=None, **kwargs):
+            original_init(self, prism_dir=empty_prism_dir, **kwargs)
+
+        monkeypatch.setattr(PrismCore, "__init__", patched_init)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            ["orphan", "adopt", str(orphan.id), "-t", "phase"],
+            input="n\n",  # Decline
+            catch_exceptions=False,
+        )
+
+        # Click's confirmation should abort on 'n'
+        assert result.exit_code != 0 or "Aborted" in result.output
+
+
 # =============================================================================
 # CLI Error Handling Tests
 # =============================================================================

@@ -140,6 +140,10 @@ def status(current_deliverable_only, json_output):
     current_milestone = core.navigator.get_current_milestone()
     current_phase = core.navigator.get_current_phase()
 
+    # Get orphans and sort by priority descending
+    orphans = core.list_orphans()
+    orphans = sorted(orphans, key=lambda o: o.priority, reverse=True)
+
     # Handle JSON output first
     if json_output:
         result = {
@@ -147,6 +151,7 @@ def status(current_deliverable_only, json_output):
             "execution_tree": [],
             "overdue_actions": [],
             "orphaned_items": [],
+            "orphan_ideas": [],
         }
 
         if current_objective:
@@ -185,6 +190,18 @@ def status(current_deliverable_only, json_output):
                 core, current_objective, current_action, current_deliverable_only
             )
 
+        # Add orphan ideas to JSON output
+        result["orphan_ideas"] = [
+            {
+                "id": orphan.id,
+                "uuid": orphan.uuid,
+                "name": orphan.name,
+                "description": orphan.description,
+                "priority": orphan.priority,
+            }
+            for orphan in orphans
+        ]
+
         click.echo(json.dumps(result, indent=2))
         return
 
@@ -221,6 +238,13 @@ def status(current_deliverable_only, json_output):
 
     click.echo("No overdue actions.")
     click.echo()
-    click.echo("No orphaned items found.")
+
+    # Display orphan ideas
+    if orphans:
+        click.echo(f"Orphan Ideas ({len(orphans)}):")
+        for orphan in orphans:
+            click.echo(f"  [{orphan.id}] {orphan.name} (priority: {orphan.priority})")
+    else:
+        click.echo("No orphaned items found.")
     click.echo()
     click.echo("=========================")

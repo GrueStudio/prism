@@ -40,6 +40,9 @@ def list_orphans(json_output: bool):
         click.echo("No orphan ideas found.")
         return
 
+    # Sort by priority descending
+    orphans = sorted(orphans, key=lambda o: o.priority, reverse=True)
+
     if json_output:
         data = [orphan.model_dump(mode="json") for orphan in orphans]
         click.echo(json.dumps(data, indent=2))
@@ -96,14 +99,49 @@ def add_orphan(name: str, desc: Optional[str], priority: int):
 
 @orphan.command(name="adopt")
 @click.argument("orphan_id")
-@click.option("-t", "--type", required=True, 
+@click.option("-t", "--type", required=True,
               type=click.Choice(['phase', 'milestone', 'objective', 'deliverable', 'action']),
               help="Type to adopt as.")
 @click.option("-p", "--parent-path", help="Parent path for the adopted item.")
-def adopt_orphan(orphan_id, type, parent_path):
-    """Adopt an orphan idea into the project structure."""
-    click.echo("Orphan adopt - TODO: Implement")
-    click.echo(f"Would adopt {orphan_id} as {type}")
+@click.option("-y", "--yes", is_flag=True, help="Skip confirmation prompt.")
+def adopt_orphan(orphan_id: str, type: str, parent_path: Optional[str], yes: bool):
+    """Adopt an orphan idea into the project structure.
+
+    ORPHAN_ID can be the numeric ID, UUID, or name of the orphan.
+    
+    The orphan is converted to the specified type and added to the project tree.
+    After adoption, the orphan is removed from the orphans list.
+    
+    Use -y/--yes to skip the confirmation prompt.
+    """
+    core = PrismCore()
+    orphan = core.get_orphan(orphan_id)
+
+    if not orphan:
+        raise click.ClickException(
+            f"Orphan '{orphan_id}' not found. Use 'prism orphan list' to see all orphans."
+        )
+
+    if not yes:
+        click.confirm(
+            f"Adopt '{orphan.name}' as a {type}?" +
+            (f" Parent: {parent_path}" if parent_path else ""),
+            abort=True
+        )
+
+    # Add the item to the project tree
+    new_item = core.add_item(
+        item_type=type,
+        name=orphan.name,
+        description=orphan.description,
+        parent_path=parent_path,
+    )
+
+    # Remove the orphan after successful adoption
+    core.remove_orphan(orphan.uuid)
+
+    item_path = core.navigator.get_item_path(new_item)
+    click.echo(f"Adopted '{orphan.name}' as {type}: {item_path}")
 
 
 @orphan.command(name="delete")
