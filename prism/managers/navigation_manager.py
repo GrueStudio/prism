@@ -7,17 +7,13 @@ Handles all tree traversal, path resolution, navigation logic, and special token
 from typing import Dict, List, Optional
 
 from prism.exceptions import NavigationError
-from prism.models.archived import ArchivedItem
 from prism.models.base import (
-    Action,
     BaseItem,
-    Deliverable,
     Milestone,
     Objective,
     Phase,
 )
 from prism.models.project import Project
-
 
 # Special navigation tokens
 SPECIAL_TOKENS = {
@@ -255,10 +251,7 @@ class NavigationManager:
         for phase in self.project.phases:
             # Only exclude archived phases, not completed ones
             if phase.status != "archived":
-                if (
-                    current_phase is None
-                    or phase.created_at > current_phase.created_at
-                ):
+                if current_phase is None or phase.created_at > current_phase.created_at:
                     current_phase = phase
         return current_phase
 
@@ -312,7 +305,9 @@ class NavigationManager:
         if self.project.crud_context:
             # Validate it's not behind task_cursor in depth-first order
             if self.project.task_cursor:
-                if self._is_path_behind(self.project.crud_context, self.project.task_cursor):
+                if self._is_path_behind(
+                    self.project.crud_context, self.project.task_cursor
+                ):
                     # crud_context is behind task_cursor, reset it
                     self.project.crud_context = None
                 else:

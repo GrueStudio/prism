@@ -13,10 +13,12 @@ from prism.exceptions import ValidationError
 from prism.managers import (
     ArchiveManager,
     NavigationManager,
+    OrphanManager,
     ProjectManager,
     StorageManager,
     TaskManager,
 )
+from prism.managers.crud_manager import CRUDManager
 from prism.models.base import (
     Action,
     Deliverable,
@@ -56,11 +58,17 @@ class PrismCore:
 
         # Initialize managers
         self.navigator = NavigationManager(self.project)
+        self.crud_manager = CRUDManager(
+            self.project,
+            self.navigator,
+            self.archive_manager,
+        )
         self.task_manager = TaskManager(
             self.project,
             self.navigator,
             self._save_project,
         )
+        self.orphan_manager = OrphanManager(self.storage)
 
     def _save_project(self) -> None:
         """Save project to storage."""
@@ -79,7 +87,7 @@ class PrismCore:
         status: Optional[str] = None,
     ) -> Any:
         """Add a new item to the project."""
-        result = self.task_manager.add_item(
+        result = self.crud_manager.add_item(
             item_type, name, description, parent_path, status
         )
         self._save_project()
@@ -94,13 +102,13 @@ class PrismCore:
         status: Optional[str] = None,
     ) -> Any:
         """Update an existing item."""
-        result = self.task_manager.update_item(path, name, description, due_date, status)
+        result = self.crud_manager.update_item(path, name, description, due_date, status)
         self._save_project()
         return result
 
     def delete_item(self, path: str) -> None:
         """Delete an existing item."""
-        self.task_manager.delete_item(path)
+        self.crud_manager.delete_item(path)
         self._save_project()
 
     # =========================================================================
@@ -207,6 +215,47 @@ class PrismCore:
             current_objective.add_child(new_deliverable)
 
         self._save_project()
+
+    # =========================================================================
+    # Orphan Operations
+    # =========================================================================
+
+    def list_orphans(self) -> List[Any]:
+        """List all orphan ideas."""
+        return self.orphan_manager.read()
+
+    def get_orphan(self, orphan_id: str) -> Optional[Any]:
+        """Get an orphan by ID, UUID, or name."""
+        # Try numeric ID first
+        try:
+            orphan = self.orphan_manager.get_by_id(int(orphan_id))
+            if orphan:
+                return orphan
+        except ValueError:
+            pass
+        
+        # Try UUID
+        orphan = self.orphan_manager.get_by_uuid(orphan_id)
+        if orphan:
+            return orphan
+        
+        # Try name
+        orphan = self.orphan_manager.get_by_name(orphan_id)
+        return orphan
+
+    def add_orphan(
+        self, name: str, description: str = "", priority: int = 0
+    ) -> Any:
+        """Add a new orphan idea."""
+        return self.orphan_manager.add(name=name, description=description, priority=priority)
+
+    def remove_orphan(self, uuid: str) -> bool:
+        """Remove an orphan by UUID."""
+        return self.orphan_manager.remove(uuid)
+
+    def update_orphan(self, uuid: str, **kwargs) -> Optional[Any]:
+        """Update an orphan's fields."""
+        return self.orphan_manager.update(uuid, **kwargs)
 
     # =========================================================================
     # Status Summary

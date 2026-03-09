@@ -10,12 +10,9 @@ Tests cover:
 
 from pathlib import Path
 
-import pytest
-
 from prism.managers.archive_manager import ArchiveManager
 from prism.managers.storage_manager import StorageManager
 from prism.models.archived import ArchivedItem
-from prism.models.base import Action, Deliverable, Objective
 
 
 class TestArchiveManagerInit:
@@ -25,7 +22,7 @@ class TestArchiveManagerInit:
         """ArchiveManager initializes with storage manager."""
         storage = StorageManager(empty_prism_dir)
         manager = ArchiveManager(storage)
-        
+
         assert manager.storage == storage
 
 
@@ -36,14 +33,17 @@ class TestArchiveStrategicItem:
         """Archive a phase with all children."""
         storage = StorageManager(empty_prism_dir)
         manager = ArchiveManager(storage)
-        
+
         # Create phase with hierarchy
         phase = mock_data.create_phase(name="Phase", slug="phase", uuid="phase-uuid")
         milestone = mock_data.create_milestone(
-            name="Milestone", slug="milestone", parent_uuid=phase.uuid, uuid="milestone-uuid"
+            name="Milestone",
+            slug="milestone",
+            parent_uuid=phase.uuid,
+            uuid="milestone-uuid",
         )
         phase.add_child(milestone)
-        
+
         # Archive
         manager.archive_strategic_item(phase, "phase")
 
@@ -57,15 +57,18 @@ class TestArchiveStrategicItem:
         """Archive a milestone with all children."""
         storage = StorageManager(empty_prism_dir)
         manager = ArchiveManager(storage)
-        
+
         milestone = mock_data.create_milestone(
             name="Milestone", slug="milestone", uuid="milestone-uuid"
         )
         objective = mock_data.create_objective(
-            name="Objective", slug="objective", parent_uuid=milestone.uuid, uuid="objective-uuid"
+            name="Objective",
+            slug="objective",
+            parent_uuid=milestone.uuid,
+            uuid="objective-uuid",
         )
         milestone.add_child(objective)
-        
+
         # Archive
         manager.archive_strategic_item(milestone, "milestone")
 
@@ -78,12 +81,12 @@ class TestArchiveStrategicItem:
         """Archive an objective with its execution tree."""
         storage = StorageManager(empty_prism_dir)
         manager = ArchiveManager(storage)
-        
+
         # Get objective from sample project
         phase = sample_project.phases[0]
         milestone = phase.children[0]
         objective = milestone.children[0]
-        
+
         # Archive
         manager.archive_strategic_item(objective, "objective")
 
@@ -98,15 +101,17 @@ class TestArchiveStrategicItem:
         assert len(exec_tree.deliverables) == 2
         assert len(exec_tree.actions) == 3
 
-    def test_archive_updates_archived_strategic_file(self, empty_prism_dir: Path, mock_data):
+    def test_archive_updates_archived_strategic_file(
+        self, empty_prism_dir: Path, mock_data
+    ):
         """Archiving adds item to archive/strategic.json."""
         storage = StorageManager(empty_prism_dir)
         manager = ArchiveManager(storage)
-        
+
         phase = mock_data.create_phase(name="Phase", slug="phase", uuid="phase-uuid")
-        
+
         manager.archive_strategic_item(phase, "phase")
-        
+
         # Load archived strategic file
         archived = storage.load_archived_strategic()
         assert len(archived.phases) == 1
@@ -123,7 +128,10 @@ class TestArchiveExecutionTree:
 
         objective = mock_data.create_objective(uuid="obj-uuid")
         deliv = mock_data.create_deliverable(
-            name="Deliverable", slug="deliv", parent_uuid=objective.uuid, uuid="deliv-uuid"
+            name="Deliverable",
+            slug="deliv",
+            parent_uuid=objective.uuid,
+            uuid="deliv-uuid",
         )
         action = mock_data.create_action(
             name="Action", slug="action", parent_uuid=deliv.uuid, uuid="action-uuid"
@@ -203,13 +211,13 @@ class TestLazyLoading:
         """Archived phase lazy-loads milestone children."""
         storage = StorageManager(empty_prism_dir)
         manager = ArchiveManager(storage)
-        
+
         phase = mock_data.create_phase(name="Phase", slug="phase", uuid="phase-uuid")
         milestone = mock_data.create_milestone(
             name="Milestone", slug="milestone", parent_uuid=phase.uuid, uuid="ms-uuid"
         )
         phase.add_child(milestone)
-        
+
         manager.archive_strategic_item(phase, "phase")
 
         # Get archived phase
@@ -250,7 +258,10 @@ class TestLazyLoading:
 
         objective = mock_data.create_objective(uuid="obj-uuid")
         deliv = mock_data.create_deliverable(
-            name="Deliverable", slug="deliv", parent_uuid=objective.uuid, uuid="deliv-uuid"
+            name="Deliverable",
+            slug="deliv",
+            parent_uuid=objective.uuid,
+            uuid="deliv-uuid",
         )
         objective.add_child(deliv)
 
@@ -271,7 +282,10 @@ class TestLazyLoading:
 
         objective = mock_data.create_objective(uuid="obj-uuid")
         deliv = mock_data.create_deliverable(
-            name="Deliverable", slug="deliv", parent_uuid=objective.uuid, uuid="deliv-uuid"
+            name="Deliverable",
+            slug="deliv",
+            parent_uuid=objective.uuid,
+            uuid="deliv-uuid",
         )
         action = mock_data.create_action(
             name="Action", slug="action", parent_uuid=deliv.uuid, uuid="action-uuid"

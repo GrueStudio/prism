@@ -9,7 +9,7 @@ Provides:
 
 import shutil
 import tempfile
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from typing import Generator, Optional
 
@@ -30,7 +30,6 @@ from prism.models.files import (
 )
 from prism.models.project import Project
 
-
 # =============================================================================
 # Temporary Directory Fixtures
 # =============================================================================
@@ -39,7 +38,7 @@ from prism.models.project import Project
 @pytest.fixture
 def temp_dir() -> Generator[Path, None, None]:
     """Create a temporary directory for test isolation.
-    
+
     Ensures tests don't modify the project's actual .prism/ directory.
     """
     temp_path = Path(tempfile.mkdtemp(prefix="prism_test_"))
@@ -51,7 +50,7 @@ def temp_dir() -> Generator[Path, None, None]:
 @pytest.fixture
 def prism_dir(temp_dir: Path) -> Generator[Path, None, None]:
     """Create a temporary .prism/ directory structure.
-    
+
     Returns the path to the .prism/ directory.
     """
     prism_path = temp_dir / ".prism"
@@ -199,9 +198,7 @@ def sample_project(mock_data: MockDataBuilder) -> Project:
     project = Project([])
 
     # Create phase
-    phase = mock_data.create_phase(
-        name="Phase 1", slug="phase-1", uuid="phase-1-uuid"
-    )
+    phase = mock_data.create_phase(name="Phase 1", slug="phase-1", uuid="phase-1-uuid")
     project.add_child(phase)
 
     # Create milestone
@@ -281,7 +278,7 @@ def strategic_file(sample_project: Project) -> StrategicFile:
     phase = sample_project.phases[0]
     milestone = phase.children[0]
     objective = milestone.children[0]
-    
+
     return StrategicFile(
         phase=phase,
         milestone=milestone,
@@ -296,15 +293,15 @@ def execution_file(sample_project: Project) -> ExecutionFile:
     phase = sample_project.phases[0]
     milestone = phase.children[0]
     objective = milestone.children[0]
-    
+
     deliverables = []
     actions = []
-    
+
     for deliv in objective.children:
         deliverables.append(deliv)
         for action in deliv.children:
             actions.append(action)
-    
+
     return ExecutionFile(deliverables=deliverables, actions=actions)
 
 
@@ -327,7 +324,7 @@ def config_file() -> ConfigFile:
 
 def count_items(project: Project) -> dict:
     """Count items by type in a project.
-    
+
     Returns:
         Dict with counts for each item type.
     """
@@ -338,7 +335,7 @@ def count_items(project: Project) -> dict:
         "Deliverable": 0,
         "Action": 0,
     }
-    
+
     def traverse(items):
         for item in items:
             item_type = type(item).__name__
@@ -346,17 +343,18 @@ def count_items(project: Project) -> dict:
                 counts[item_type] += 1
             if hasattr(item, "children") and item.children:
                 traverse(item.children)
-    
+
     traverse(project.phases)
     return counts
 
 
 def get_item_by_slug(project: Project, slug: str):
     """Find an item by its slug in the project tree.
-    
+
     Returns:
         The item if found, None otherwise.
     """
+
     def traverse(items):
         for item in items:
             if hasattr(item, "slug") and item.slug == slug:
@@ -366,17 +364,17 @@ def get_item_by_slug(project: Project, slug: str):
                 if result:
                     return result
         return None
-    
+
     return traverse(project.phases)
 
 
 def build_path(project: Project, slugs: list) -> str:
     """Build a path string from a list of slugs.
-    
+
     Args:
         project: Project to search in.
         slugs: List of slugs forming the path.
-    
+
     Returns:
         Path string (e.g., "phase-1/milestone-1/objective-1").
     """
