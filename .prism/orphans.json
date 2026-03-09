@@ -1,3 +1,25 @@
 {
-  "orphans": []
+  "orphans": [
+    {
+      "id": 1,
+      "uuid": "8477409d-da34-4f50-92a2-a2fa30beb12b",
+      "name": "Implement prism bug command",
+      "description": "Define Bug Pydantic model and implement bug add/list/show/status commands for bug tracking",
+      "priority": 1
+    },
+    {
+      "id": 2,
+      "uuid": "f0cb294a-9adc-43c6-9b2b-9e4cd3d47f2d",
+      "name": "Implement time tracking",
+      "description": "Add time start/stop/report commands with cursor-based action tracking",
+      "priority": 2
+    },
+    {
+      "id": 3,
+      "uuid": "5ae6cdcc-74b0-4efc-a1e9-755da31b6c7a",
+      "name": "Undo or reopen mechanism",
+      "description": "Add prism reopen command to reset completed items and undo cascade completion",
+      "priority": 1
+    }
+  ]
 }

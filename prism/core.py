@@ -13,6 +13,7 @@ from prism.exceptions import ValidationError
 from prism.managers import (
     ArchiveManager,
     NavigationManager,
+    OrphanManager,
     ProjectManager,
     StorageManager,
     TaskManager,
@@ -67,6 +68,7 @@ class PrismCore:
             self.navigator,
             self._save_project,
         )
+        self.orphan_manager = OrphanManager(self.storage)
 
     def _save_project(self) -> None:
         """Save project to storage."""
@@ -213,6 +215,47 @@ class PrismCore:
             current_objective.add_child(new_deliverable)
 
         self._save_project()
+
+    # =========================================================================
+    # Orphan Operations
+    # =========================================================================
+
+    def list_orphans(self) -> List[Any]:
+        """List all orphan ideas."""
+        return self.orphan_manager.read()
+
+    def get_orphan(self, orphan_id: str) -> Optional[Any]:
+        """Get an orphan by ID, UUID, or name."""
+        # Try numeric ID first
+        try:
+            orphan = self.orphan_manager.get_by_id(int(orphan_id))
+            if orphan:
+                return orphan
+        except ValueError:
+            pass
+        
+        # Try UUID
+        orphan = self.orphan_manager.get_by_uuid(orphan_id)
+        if orphan:
+            return orphan
+        
+        # Try name
+        orphan = self.orphan_manager.get_by_name(orphan_id)
+        return orphan
+
+    def add_orphan(
+        self, name: str, description: str = "", priority: int = 0
+    ) -> Any:
+        """Add a new orphan idea."""
+        return self.orphan_manager.add(name=name, description=description, priority=priority)
+
+    def remove_orphan(self, uuid: str) -> bool:
+        """Remove an orphan by UUID."""
+        return self.orphan_manager.remove(uuid)
+
+    def update_orphan(self, uuid: str, **kwargs) -> Optional[Any]:
+        """Update an orphan's fields."""
+        return self.orphan_manager.update(uuid, **kwargs)
 
     # =========================================================================
     # Status Summary

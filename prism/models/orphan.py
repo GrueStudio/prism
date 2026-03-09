@@ -24,6 +24,7 @@ class Orphan(BaseModel):
     Minimal fields only. Orphans are deleted when adopted.
     """
 
+    id: int = Field(default=0)  # Auto-incremented numeric ID
     uuid: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
     description: str

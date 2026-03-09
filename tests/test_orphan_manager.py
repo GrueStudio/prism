@@ -99,3 +99,26 @@ class TestOrphanManager:
             data = json.load(f)
         assert len(data["orphans"]) == 1
         assert data["orphans"][0]["name"] == "New Name"
+
+    def test_add_auto_assigns_id(self, orphan_manager):
+        """Test that adding orphans auto-assigns incrementing IDs."""
+        orphan1 = orphan_manager.add(name="First", description="First orphan")
+        orphan2 = orphan_manager.add(name="Second", description="Second orphan")
+        orphan3 = orphan_manager.add(name="Third", description="Third orphan")
+
+        assert orphan1.id == 1
+        assert orphan2.id == 2
+        assert orphan3.id == 3
+
+    def test_get_by_id(self, orphan_manager):
+        """Test getting an orphan by numeric ID."""
+        orphan = orphan_manager.add(name="ID Test", description="test")
+        found_orphan = orphan_manager.get_by_id(orphan.id)
+        assert found_orphan is not None
+        assert found_orphan.id == orphan.id
+        assert found_orphan.name == "ID Test"
+
+    def test_get_by_id_not_found(self, orphan_manager):
+        """Test getting non-existent orphan by ID."""
+        found_orphan = orphan_manager.get_by_id(999)
+        assert found_orphan is None

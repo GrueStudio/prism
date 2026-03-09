@@ -82,6 +82,22 @@ class OrphanManager:
                 return orphan
         return None
 
+    def get_by_id(self, id: int) -> Optional[Orphan]:
+        """
+        Find orphan by numeric ID.
+
+        Args:
+            id: Numeric ID of the orphan to find.
+
+        Returns:
+            Orphan object or None if not found.
+        """
+        orphans = self.read()
+        for orphan in orphans:
+            if orphan.id == id:
+                return orphan
+        return None
+
     def get_by_name(self, name: str) -> Optional[Orphan]:
         """
         Find orphan by name (case-insensitive).
@@ -112,7 +128,9 @@ class OrphanManager:
             The newly created Orphan object.
         """
         orphans = self.read()
-        new_orphan = Orphan(name=name, description=description, priority=priority)
+        # Auto-assign next ID
+        next_id = max((o.id for o in orphans), default=0) + 1
+        new_orphan = Orphan(id=next_id, name=name, description=description, priority=priority)
         orphans.append(new_orphan)
         self.write(orphans)
         return new_orphan
