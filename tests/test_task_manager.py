@@ -764,17 +764,32 @@ class TestUpdateItem:
         assert result.due_date is not None
         assert result.due_date.year == 2025
 
-    def test_update_completed_item_raises(self, crud_manager):
-        """Update raises error for completed item."""
-        # First complete the item
+    def test_update_archived_item_raises(self, crud_manager):
+        """Update raises error for archived item."""
+        # Set item to archived
         phase = crud_manager.project.phases[0]
-        phase.status = "completed"
+        phase.status = "archived"
 
         with pytest.raises(InvalidOperationError):
             crud_manager.update_item(
                 path="phase-1",
                 name="Cannot Update",
             )
+
+    def test_update_completed_item_allowed(self, crud_manager):
+        """Update allows modifying completed items."""
+        # Set item to completed
+        phase = crud_manager.project.phases[0]
+        phase.status = "completed"
+
+        # Should be able to update completed item
+        result = crud_manager.update_item(
+            path="phase-1",
+            name="Updated Completed Phase",
+        )
+
+        assert result.name == "Updated Completed Phase"
+        assert result.status == "completed"
 
     def test_update_no_params_raises(self, crud_manager):
         """Update raises error when no params provided."""

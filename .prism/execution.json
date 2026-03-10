@@ -96,10 +96,10 @@
       "name": "Editing Block Logic",
       "description": "Implement logic to ensure only 'archived' status blocks item editing, allowing other completed items to be modified.",
       "slug": "editing-block-logic",
-      "status": "pending",
+      "status": "completed",
       "parent_uuid": "6629326e-de01-4941-87e4-2456986fa3c7",
       "created_at": "2026-03-09T16:32:51.777560",
-      "updated_at": "2026-03-09T16:32:51.777563",
+      "updated_at": "2026-03-10T13:52:27.647830",
       "time_spent": null,
       "child_uuids": [],
       "due_date": null

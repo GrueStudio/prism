@@ -352,7 +352,7 @@ class CRUDManager:
 
         Raises:
             NotFoundError: If item not found.
-            InvalidOperationError: If item is completed/archived.
+            InvalidOperationError: If item is archived.
             ValidationError: If no update parameters or invalid date format.
         """
         item_to_update = self.navigator.get_item_by_path(path)
@@ -362,10 +362,10 @@ class CRUDManager:
                 f"Please verify the path is correct and the item exists."
             )
 
-        if item_to_update.status in ["completed", "archived"]:
+        if item_to_update.status == "archived":
             raise InvalidOperationError(
                 f"Cannot update item '{path}' because it is already in '{item_to_update.status}' status. "
-                f"Items in 'completed' or 'archived' status cannot be modified to maintain historical accuracy."
+                f"Items in 'archived' status cannot be modified to maintain historical accuracy."
             )
 
         updated = False
