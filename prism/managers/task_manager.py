@@ -253,6 +253,39 @@ class TaskManager:
             if isinstance(parent, Deliverable):
                 self._cascade_completion(parent)
 
+    def cascade_status_to_in_progress(self, item: BaseItem) -> None:
+        """Cascade status change to 'in-progress' up the tree when child added to completed parent.
+
+        When a child is added to a completed milestone/objective/deliverable,
+        change its status to 'in-progress' and cascade up to the phase level.
+
+        Args:
+            item: The item whose status changed to 'in-progress'.
+        """
+        # Get the parent of the item
+        item_path = self.navigator.get_item_path(item)
+        if not item_path:
+            return
+
+        segments = item_path.split("/")
+        if len(segments) < 2:
+            return  # Top-level item, no parent to update
+
+        parent_path = "/".join(segments[:-1])
+        parent = self.navigator.get_item_by_path(parent_path)
+        if not parent:
+            return
+
+        # If parent is completed, change it to in-progress
+        if parent.status == "completed":
+            parent.status = "in-progress"
+            parent.updated_at = datetime.now()
+            click.echo(f"  ✓ {type(parent).__name__} '{parent.name}' changed to in-progress")
+
+            # Continue cascading up to phase level
+            if isinstance(parent, (Objective, Milestone)):
+                self.cascade_status_to_in_progress(parent)
+
     def complete_current_and_start_next(
         self,
     ) -> Tuple[Optional[Action], Optional[Action]]:

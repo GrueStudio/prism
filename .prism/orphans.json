@@ -13,6 +13,13 @@
       "name": "Undo or reopen mechanism",
       "description": "Add prism reopen command to reset completed items and undo cascade completion",
       "priority": 1
+    },
+    {
+      "id": 4,
+      "uuid": "72c48f22-ce9b-44b0-a8a2-be9386c0e1e6",
+      "name": "Status change notification",
+      "description": "When cascading status changes a parent from completed to in-progress, print a notification message to inform the user.",
+      "priority": -10
     }
   ]
 }

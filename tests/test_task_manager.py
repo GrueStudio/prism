@@ -47,7 +47,13 @@ def crud_manager(sample_project, empty_prism_dir):
     archive_mgr = ArchiveManager(storage)
 
     navigator = NavigationManager(sample_project)
-    manager = CRUDManager(sample_project, navigator, archive_mgr)
+    save_count = {"count": 0}
+
+    def save_callback():
+        save_count["count"] += 1
+
+    task_mgr = TaskManager(sample_project, navigator, save_callback)
+    manager = CRUDManager(sample_project, navigator, archive_mgr, task_mgr)
     return manager
 
 
@@ -258,6 +264,105 @@ class TestCascadeCompletion:
         # Milestone and phase should NOT be completed
         assert milestone.status != "completed"
         assert phase.status != "completed"
+
+    def test_cascade_status_to_in_progress_milestone(self, task_manager):
+        """Cascade changes milestone to in-progress when child added to completed milestone."""
+        phase = task_manager.project.phases[0]
+        milestone = phase.children[0]
+        
+        # Mark milestone as completed
+        milestone.status = "completed"
+        
+        # Create a new objective and add it to the milestone
+        from prism.models.base import Objective
+        new_objective = Objective(
+            name="New Objective",
+            description="Test",
+            slug="new-obj"
+        )
+        milestone.add_child(new_objective)
+        
+        # Trigger cascade
+        task_manager.cascade_status_to_in_progress(new_objective)
+        
+        # Milestone should be in-progress
+        assert milestone.status == "in-progress"
+        # Phase should remain unchanged (not completed)
+        assert phase.status == "pending"
+
+    def test_cascade_status_to_in_progress_cascades_to_phase(self, task_manager):
+        """Cascade propagates to phase when milestone was completed."""
+        phase = task_manager.project.phases[0]
+        milestone = phase.children[0]
+
+        # Mark both milestone and phase as completed
+        milestone.status = "completed"
+        phase.status = "completed"
+
+        # Create a new objective and add it to the milestone
+        from prism.models.base import Objective
+        new_objective = Objective(
+            name="New Objective",
+            description="Test",
+            slug="new-obj"
+        )
+        milestone.add_child(new_objective)
+
+        # Trigger cascade
+        task_manager.cascade_status_to_in_progress(new_objective)
+
+        # Both milestone and phase should be in-progress
+        assert milestone.status == "in-progress"
+        assert phase.status == "in-progress"
+
+    def test_cascade_status_to_in_progress_deliverable(self, task_manager):
+        """Cascade changes deliverable to in-progress when action added to completed deliverable."""
+        phase = task_manager.project.phases[0]
+        milestone = phase.children[0]
+        objective = milestone.children[0]
+        deliverable = objective.children[0]
+
+        # Mark deliverable as completed
+        deliverable.status = "completed"
+
+        # Create a new action and add it to the deliverable
+        from prism.models.base import Action
+        new_action = Action(
+            name="New Action",
+            description="Test",
+            slug="new-action"
+        )
+        deliverable.add_child(new_action)
+
+        # Trigger cascade
+        task_manager.cascade_status_to_in_progress(new_action)
+
+        # Deliverable should be in-progress
+        assert deliverable.status == "in-progress"
+
+    def test_cascade_status_to_in_progress_objective(self, task_manager):
+        """Cascade changes objective to in-progress when deliverable added to completed objective."""
+        phase = task_manager.project.phases[0]
+        milestone = phase.children[0]
+        objective = milestone.children[0]
+
+        # Mark objective as completed
+        objective.status = "completed"
+
+        # Create a new deliverable and add it to the objective
+        from prism.models.base import Deliverable
+        new_deliverable = Deliverable(
+            name="New Deliverable",
+            description="Test",
+            slug="new-deliverable"
+        )
+        objective.add_child(new_deliverable)
+
+        # Trigger cascade
+        task_manager.cascade_status_to_in_progress(new_deliverable)
+
+        # Objective should be in-progress
+        assert objective.status == "in-progress"
 
 
 # =============================================================================
@@ -639,6 +744,66 @@ class TestAutoArchiveOnAdd:
         archived_uuids = [o.uuid for o in archived_file.objectives]
         assert "objective-1-uuid" not in archived_uuids
 
+    def test_add_child_to_completed_milestone_cascades_status(
+        self, crud_manager, mock_data
+    ):
+        """Adding child to completed milestone cascades status to in-progress."""
+        # Setup: completed milestone and phase
+        milestone = crud_manager.project.get_item("milestone-1-uuid")
+        phase = crud_manager.project.get_item("phase-1-uuid")
+        milestone.status = "completed"
+        phase.status = "completed"
+
+        # Add new objective to completed milestone
+        result = crud_manager.add_item(
+            item_type="objective",
+            name="New Objective",
+            description="Test objective",
+            parent_path="phase-1/milestone-1",
+        )
+
+        # Milestone and phase should cascade to in-progress
+        assert milestone.status == "in-progress"
+        assert phase.status == "in-progress"
+
+    def test_add_child_to_completed_deliverable_cascades_status(
+        self, crud_manager, mock_data
+    ):
+        """Adding action to completed deliverable cascades status to in-progress."""
+        # Setup: completed deliverable
+        deliverable = crud_manager.project.get_item("deliverable-1-uuid")
+        deliverable.status = "completed"
+
+        # Add new action to completed deliverable
+        result = crud_manager.add_item(
+            item_type="action",
+            name="New Action",
+            description="Test action",
+            parent_path="phase-1/milestone-1/objective-1/deliverable-1",
+        )
+
+        # Deliverable should cascade to in-progress
+        assert deliverable.status == "in-progress"
+
+    def test_add_child_to_completed_objective_cascades_status(
+        self, crud_manager, mock_data
+    ):
+        """Adding deliverable to completed objective cascades status to in-progress."""
+        # Setup: completed objective
+        objective = crud_manager.project.get_item("objective-1-uuid")
+        objective.status = "completed"
+
+        # Add new deliverable to completed objective
+        result = crud_manager.add_item(
+            item_type="deliverable",
+            name="New Deliverable",
+            description="Test deliverable",
+            parent_path="phase-1/milestone-1/objective-1",
+        )
+
+        # Objective should cascade to in-progress
+        assert objective.status == "in-progress"
+
 
 # =============================================================================
 # CRUD - Update Item Tests
@@ -686,17 +851,32 @@ class TestUpdateItem:
         assert result.due_date is not None
         assert result.due_date.year == 2025
 
-    def test_update_completed_item_raises(self, crud_manager):
-        """Update raises error for completed item."""
-        # First complete the item
+    def test_update_archived_item_raises(self, crud_manager):
+        """Update raises error for archived item."""
+        # Set item to archived
         phase = crud_manager.project.phases[0]
-        phase.status = "completed"
+        phase.status = "archived"
 
         with pytest.raises(InvalidOperationError):
             crud_manager.update_item(
                 path="phase-1",
                 name="Cannot Update",
             )
+
+    def test_update_completed_item_allowed(self, crud_manager):
+        """Update allows modifying completed items."""
+        # Set item to completed
+        phase = crud_manager.project.phases[0]
+        phase.status = "completed"
+
+        # Should be able to update completed item
+        result = crud_manager.update_item(
+            path="phase-1",
+            name="Updated Completed Phase",
+        )
+
+        assert result.name == "Updated Completed Phase"
+        assert result.status == "completed"
 
     def test_update_no_params_raises(self, crud_manager):
         """Update raises error when no params provided."""

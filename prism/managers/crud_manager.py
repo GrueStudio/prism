@@ -22,6 +22,7 @@ from prism.constants import (
 from prism.exceptions import InvalidOperationError, NotFoundError, ValidationError
 from prism.managers.archive_manager import ArchiveManager
 from prism.managers.navigation_manager import NavigationManager
+from prism.managers.task_manager import TaskManager
 from prism.models.base import (
     Action,
     BaseItem,
@@ -50,6 +51,7 @@ class CRUDManager:
         project: Project,
         navigator: NavigationManager,
         archive_manager: ArchiveManager,
+        task_manager: "TaskManager",
     ) -> None:
         """
         Initialize CRUDManager.
@@ -58,10 +60,12 @@ class CRUDManager:
             project: Project instance containing all items.
             navigator: NavigationManager instance for path resolution.
             archive_manager: ArchiveManager instance for archiving completed items.
+            task_manager: TaskManager instance for status cascade operations.
         """
         self.project = project
         self.navigator = navigator
         self.archive_manager = archive_manager
+        self.task_manager = task_manager
         self._slug_max_length = get_slug_max_length()
         self._slug_word_limit = get_slug_word_limit()
 
@@ -119,6 +123,10 @@ class CRUDManager:
 
             # Use add_child method which handles type validation
             parent_item.add_child(new_item)
+
+            # If parent was completed, cascade status change to in-progress
+            if parent_item.status == "completed":
+                self.task_manager.cascade_status_to_in_progress(new_item)
         elif item_type == "phase":
             self.project.add_child(new_item)
 
@@ -344,7 +352,7 @@ class CRUDManager:
 
         Raises:
             NotFoundError: If item not found.
-            InvalidOperationError: If item is completed/archived.
+            InvalidOperationError: If item is archived.
             ValidationError: If no update parameters or invalid date format.
         """
         item_to_update = self.navigator.get_item_by_path(path)
@@ -354,10 +362,10 @@ class CRUDManager:
                 f"Please verify the path is correct and the item exists."
             )
 
-        if item_to_update.status in ["completed", "archived"]:
+        if item_to_update.status == "archived":
             raise InvalidOperationError(
                 f"Cannot update item '{path}' because it is already in '{item_to_update.status}' status. "
-                f"Items in 'completed' or 'archived' status cannot be modified to maintain historical accuracy."
+                f"Items in 'archived' status cannot be modified to maintain historical accuracy."
             )
 
         updated = False
@@ -444,6 +452,11 @@ class CRUDManager:
                     item for item in target_list if item.slug != item_slug_to_delete
                 ]
 
+                # FIX: Also remove the item's UUID from the parent's child_uuids list
+                if item_to_delete.uuid in parent_item.child_uuids:
+                    parent_item.child_uuids.remove(item_to_delete.uuid)
+
+
                 if len(target_list) == original_len:
                     raise NotFoundError(
                         f"Item with slug '{item_slug_to_delete}' not found under parent '{parent_path}'."
@@ -458,6 +471,10 @@ class CRUDManager:
                 for phase in self.project.phases
                 if phase.slug != item_slug_to_delete
             ]
+            # FIX: Also remove the phase's UUID from the project's child_uuids list
+            if item_to_delete.uuid in self.project.child_uuids:
+                self.project.child_uuids.remove(item_to_delete.uuid)
+
             if len(self.project.phases) == original_len:
                 raise NotFoundError(
                     f"Phase with slug '{item_slug_to_delete}' not found."

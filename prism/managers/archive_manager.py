@@ -93,7 +93,8 @@ class ArchiveManager:
         archived = self.storage.load_archived_strategic()
 
         def append_item(am, item):
-            item.status = "archived"
+            if not isinstance(item, ArchivedItem):
+                item.status = "archived"
             if isinstance(item, Phase):
                 archived.phases.append(item)
                 for milestone in item.children:
