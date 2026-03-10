@@ -210,7 +210,7 @@ class CRUDManager:
             elif item_type == "action" and isinstance(parent_item, Deliverable):
                 return parent_item.children
             else:
-                raise InvalidOperationError(
+                raise ValueError(
                     f"Cannot add {item_type} to parent of type {type(parent_item).__name__}. "
                     f"Valid parent-child relationships are: phase->milestone, milestone->objective, "
                     f"objective->deliverable, deliverable->action."
@@ -444,6 +444,11 @@ class CRUDManager:
                     item for item in target_list if item.slug != item_slug_to_delete
                 ]
 
+                # FIX: Also remove the item's UUID from the parent's child_uuids list
+                if item_to_delete.uuid in parent_item.child_uuids:
+                    parent_item.child_uuids.remove(item_to_delete.uuid)
+
+
                 if len(target_list) == original_len:
                     raise NotFoundError(
                         f"Item with slug '{item_slug_to_delete}' not found under parent '{parent_path}'."
@@ -458,6 +463,10 @@ class CRUDManager:
                 for phase in self.project.phases
                 if phase.slug != item_slug_to_delete
             ]
+            # FIX: Also remove the phase's UUID from the project's phase_uuids list
+            if item_to_delete.uuid in self.project.phase_uuids:
+                self.project.phase_uuids.remove(item_to_delete.uuid)
+
             if len(self.project.phases) == original_len:
                 raise NotFoundError(
                     f"Phase with slug '{item_slug_to_delete}' not found."
