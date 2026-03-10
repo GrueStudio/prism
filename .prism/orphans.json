@@ -1,13 +1,6 @@
 {
   "orphans": [
     {
-      "id": 1,
-      "uuid": "8477409d-da34-4f50-92a2-a2fa30beb12b",
-      "name": "Implement prism bug command",
-      "description": "Define Bug Pydantic model and implement bug add/list/show/status commands for bug tracking",
-      "priority": 1
-    },
-    {
       "id": 2,
       "uuid": "f0cb294a-9adc-43c6-9b2b-9e4cd3d47f2d",
       "name": "Implement time tracking",
