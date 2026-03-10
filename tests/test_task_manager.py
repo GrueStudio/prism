@@ -47,7 +47,13 @@ def crud_manager(sample_project, empty_prism_dir):
     archive_mgr = ArchiveManager(storage)
 
     navigator = NavigationManager(sample_project)
-    manager = CRUDManager(sample_project, navigator, archive_mgr)
+    save_count = {"count": 0}
+
+    def save_callback():
+        save_count["count"] += 1
+
+    task_mgr = TaskManager(sample_project, navigator, save_callback)
+    manager = CRUDManager(sample_project, navigator, archive_mgr, task_mgr)
     return manager
 
 
@@ -258,6 +264,56 @@ class TestCascadeCompletion:
         # Milestone and phase should NOT be completed
         assert milestone.status != "completed"
         assert phase.status != "completed"
+
+    def test_cascade_status_to_in_progress_milestone(self, task_manager):
+        """Cascade changes milestone to in-progress when child added to completed milestone."""
+        phase = task_manager.project.phases[0]
+        milestone = phase.children[0]
+        
+        # Mark milestone as completed
+        milestone.status = "completed"
+        
+        # Create a new objective and add it to the milestone
+        from prism.models.base import Objective
+        new_objective = Objective(
+            name="New Objective",
+            description="Test",
+            slug="new-obj"
+        )
+        milestone.add_child(new_objective)
+        
+        # Trigger cascade
+        task_manager.cascade_status_to_in_progress(new_objective)
+        
+        # Milestone should be in-progress
+        assert milestone.status == "in-progress"
+        # Phase should remain unchanged (not completed)
+        assert phase.status == "pending"
+
+    def test_cascade_status_to_in_progress_cascades_to_phase(self, task_manager):
+        """Cascade propagates to phase when milestone was completed."""
+        phase = task_manager.project.phases[0]
+        milestone = phase.children[0]
+        
+        # Mark both milestone and phase as completed
+        milestone.status = "completed"
+        phase.status = "completed"
+        
+        # Create a new objective and add it to the milestone
+        from prism.models.base import Objective
+        new_objective = Objective(
+            name="New Objective",
+            description="Test",
+            slug="new-obj"
+        )
+        milestone.add_child(new_objective)
+        
+        # Trigger cascade
+        task_manager.cascade_status_to_in_progress(new_objective)
+        
+        # Both milestone and phase should be in-progress
+        assert milestone.status == "in-progress"
+        assert phase.status == "in-progress"
 
 
 # =============================================================================
@@ -638,6 +694,28 @@ class TestAutoArchiveOnAdd:
         archived_file = storage.load_archived_strategic()
         archived_uuids = [o.uuid for o in archived_file.objectives]
         assert "objective-1-uuid" not in archived_uuids
+
+    def test_add_child_to_completed_milestone_cascades_status(
+        self, crud_manager, mock_data
+    ):
+        """Adding child to completed milestone cascades status to in-progress."""
+        # Setup: completed milestone and phase
+        milestone = crud_manager.project.get_item("milestone-1-uuid")
+        phase = crud_manager.project.get_item("phase-1-uuid")
+        milestone.status = "completed"
+        phase.status = "completed"
+
+        # Add new objective to completed milestone
+        result = crud_manager.add_item(
+            item_type="objective",
+            name="New Objective",
+            description="Test objective",
+            parent_path="phase-1/milestone-1",
+        )
+
+        # Milestone and phase should cascade to in-progress
+        assert milestone.status == "in-progress"
+        assert phase.status == "in-progress"
 
 
 # =============================================================================

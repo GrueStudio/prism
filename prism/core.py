@@ -58,15 +58,16 @@ class PrismCore:
 
         # Initialize managers
         self.navigator = NavigationManager(self.project)
-        self.crud_manager = CRUDManager(
-            self.project,
-            self.navigator,
-            self.archive_manager,
-        )
         self.task_manager = TaskManager(
             self.project,
             self.navigator,
             self._save_project,
+        )
+        self.crud_manager = CRUDManager(
+            self.project,
+            self.navigator,
+            self.archive_manager,
+            self.task_manager,
         )
         self.orphan_manager = OrphanManager(self.storage)
 
