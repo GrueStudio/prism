@@ -10,9 +10,11 @@ Import models explicitly from their modules to avoid circular imports:
     from prism.models.archived import ArchivedItem
     from prism.models.project import Project
     from prism.models.files import StrategicFile, ExecutionFile, etc.
+    from prism.models.bug import BugItem, BugStatus, BugType, BugLog
 """
 
 from .base import Action, Deliverable, Milestone, Objective, Phase
+from .bug import BugItem, BugLog, BugStatus, BugType
 
 Phase.model_rebuild()
 Milestone.model_rebuild()
