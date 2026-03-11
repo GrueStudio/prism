@@ -85,9 +85,9 @@ class TestBugLog:
 
     def test_create_bug_log_minimal(self):
         """Create BugLog with required fields only."""
-        log = BugLog(content="Stack trace content")
+        log = BugLog(title="Stack Trace")
 
-        assert log.content == "Stack trace content"
+        assert log.title == "Stack Trace"
         assert log.log_type == "general"
         assert log.metadata is None
         assert log.id is not None
@@ -96,7 +96,7 @@ class TestBugLog:
     def test_create_bug_log_with_type(self):
         """Create BugLog with specific log type."""
         log = BugLog(
-            content="Error message",
+            title="Error Message",
             log_type="error_log"
         )
 
@@ -106,7 +106,7 @@ class TestBugLog:
         """Create BugLog with metadata."""
         metadata = {"file": "game.py", "line": 42}
         log = BugLog(
-            content="Error occurred",
+            title="Error occurred",
             log_type="stack_trace",
             metadata=metadata
         )
@@ -115,8 +115,8 @@ class TestBugLog:
 
     def test_bug_log_auto_generates_id(self):
         """BugLog auto-generates unique ID."""
-        log1 = BugLog(content="First log")
-        log2 = BugLog(content="Second log")
+        log1 = BugLog(title="First log")
+        log2 = BugLog(title="Second log")
 
         assert log1.id != log2.id
 
@@ -346,10 +346,10 @@ class TestBugLogManagement:
         bug_type = BugType(name="Physics Bug", prefix="PHYS")
         bug = BugItem(bug_type=bug_type, bug_id="PHYS100326_01", description="Test")
 
-        log = bug.add_log(content="Stack trace here")
+        log = bug.add_log(title="Stack Trace")
 
         assert len(bug.logs) == 1
-        assert bug.logs[0].content == "Stack trace here"
+        assert bug.logs[0].title == "Stack Trace"
         assert bug.logs[0].log_type == "general"
         assert log == bug.logs[0]
 
@@ -359,7 +359,7 @@ class TestBugLogManagement:
         bug = BugItem(bug_type=bug_type, bug_id="PHYS100326_01", description="Test")
 
         bug.add_log(
-            content="Traceback: ...",
+            title="Stack Trace",
             log_type="stack_trace"
         )
 
@@ -372,7 +372,7 @@ class TestBugLogManagement:
 
         metadata = {"file": "game.py", "line": 42}
         bug.add_log(
-            content="Error occurred",
+            title="Error Log",
             log_type="error_log",
             metadata=metadata
         )
@@ -384,9 +384,9 @@ class TestBugLogManagement:
         bug_type = BugType(name="Physics Bug", prefix="PHYS")
         bug = BugItem(bug_type=bug_type, bug_id="PHYS100326_01", description="Test")
 
-        bug.add_log(content="First log", log_type="note")
-        bug.add_log(content="Second log", log_type="stack_trace")
-        bug.add_log(content="Third log", log_type="error_log")
+        bug.add_log(title="First log", log_type="note")
+        bug.add_log(title="Second log", log_type="stack_trace")
+        bug.add_log(title="Third log", log_type="error_log")
 
         assert len(bug.logs) == 3
         assert bug.logs[0].log_type == "note"
@@ -400,7 +400,7 @@ class TestBugLogManagement:
 
         original_updated = bug.updated_at
 
-        bug.add_log(content="New log entry")
+        bug.add_log(title="New log entry")
 
         assert bug.updated_at >= original_updated
 

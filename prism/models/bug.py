@@ -46,15 +46,17 @@ class BugType(BaseModel):
 
 class BugLog(BaseModel):
     """
-    A log entry for a bug.
+    Metadata for a bug log entry.
 
-    Used to store stack traces, error messages, or any valuable information.
+    The actual log content is stored as a plain text file in .prism/buglogs/.
+    This model stores only metadata for listing and management.
     """
 
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     created_at: datetime = Field(default_factory=datetime.now)
-    content: str
+    title: str  # Descriptive name (e.g., "Crash Report", "Stack Trace")
     log_type: str = "general"  # e.g., "stack_trace", "error_log", "note", "attachment_ref"
+    file_name: Optional[str] = None  # Auto-generated: {id}.log
     metadata: Optional[dict] = None
 
 
@@ -85,7 +87,7 @@ class BugItem(BaseModel):
     steps_to_reproduce: Optional[str] = None
     root_cause: Optional[str] = None
     fix_description: Optional[str] = None
-    logs: List[BugLog] = Field(default_factory=list)
+    logs: List[BugLog] = Field(default_factory=list)  # Metadata references to log files
     counter: int = 0
     status: BugStatus = BugStatus.OPEN
     created_at: datetime = Field(default_factory=datetime.now)
@@ -110,22 +112,25 @@ class BugItem(BaseModel):
         return v
 
     def add_log(
-        self, content: str, log_type: str = "general", metadata: Optional[dict] = None
+        self, title: str, log_type: str = "general", metadata: Optional[dict] = None
     ) -> BugLog:
         """
-        Add a log entry to the bug.
+        Create a log entry metadata for the bug.
+
+        The actual log content is stored as a plain text file in .prism/buglogs/.
 
         Args:
-            content: The log content (e.g., stack trace)
+            title: Descriptive name for the log (e.g., "Crash Report", "Stack Trace")
             log_type: Type of log (stack_trace, error_log, note, attachment_ref)
             metadata: Optional metadata dictionary
 
         Returns:
-            The created BugLog entry
+            The created BugLog metadata (log file created separately via BugManager)
         """
         log = BugLog(
-            content=content, log_type=log_type, metadata=metadata or {}
+            title=title, log_type=log_type, metadata=metadata or {}
         )
+        log.file_name = f"{log.id}.log"
         self.logs.append(log)
         self.updated_at = datetime.now()
         return log

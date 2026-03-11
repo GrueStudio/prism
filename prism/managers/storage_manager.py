@@ -8,13 +8,15 @@ import json
 import os
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import ValidationError
 
 from prism.exceptions import StorageError
+from prism.models.bug import BugLog
 from prism.models.files import (
     ArchivedStrategicFile,
+    BugsFile,
     ConfigFile,
     CursorFile,
     ExecutionFile,
@@ -39,12 +41,14 @@ class StorageManager:
         """
         self.prism_dir = prism_dir if prism_dir else Path(".prism")
         self.archive_dir = self.prism_dir / "archive"
+        self.buglogs_dir = self.prism_dir / "buglogs"
         self._ensure_prism_dir()
 
     def _ensure_prism_dir(self) -> None:
         """Create the .prism/ directory and archive subdirectory if they don't exist."""
         self.prism_dir.mkdir(parents=True, exist_ok=True)
         self.archive_dir.mkdir(exist_ok=True)
+        self.buglogs_dir.mkdir(exist_ok=True)
 
     def _atomic_write(self, file_path: Path, data: Dict[str, Any]) -> None:
         """Write data to a JSON file atomically to prevent corruption.
@@ -240,3 +244,141 @@ class StorageManager:
         """Save CursorFile model to cursor.json."""
         file_path = self.prism_dir / "cursor.json"
         self._atomic_write(file_path, data.model_dump(mode="json"))
+
+    # =========================================================================
+    # Bugs File
+    # =========================================================================
+
+    def load_bugs(self) -> BugsFile:
+        """Load bugs.json and return as BugsFile model."""
+        file_path = self.prism_dir / "bugs.json"
+        if not file_path.exists():
+            return BugsFile()
+
+        try:
+            with open(file_path, "r") as f:
+                data = json.load(f)
+            return BugsFile.model_validate(data)
+        except (json.JSONDecodeError, ValidationError) as e:
+            raise StorageError(f"Failed to load bugs.json: {e}")
+
+    def save_bugs(self, data: BugsFile) -> None:
+        """Save BugsFile model to bugs.json."""
+        file_path = self.prism_dir / "bugs.json"
+        self._atomic_write(file_path, data.model_dump(mode="json"))
+
+    # =========================================================================
+    # Bug Log Files
+    # =========================================================================
+
+    def get_bug_log_dir(self, bug_id: str) -> Path:
+        """Get the log directory for a specific bug ID.
+
+        Args:
+            bug_id: The bug ID (e.g., PHYS100326_01)
+
+        Returns:
+            Path to the bug's log directory
+        """
+        return self.buglogs_dir / bug_id
+
+    def ensure_bug_log_dir(self, bug_id: str) -> Path:
+        """Ensure the log directory exists for a specific bug ID.
+
+        Args:
+            bug_id: The bug ID (e.g., PHYS100326_01)
+
+        Returns:
+            Path to the bug's log directory
+        """
+        log_dir = self.get_bug_log_dir(bug_id)
+        log_dir.mkdir(parents=True, exist_ok=True)
+        return log_dir
+
+    def load_buglog_content(self, bug_id: str, buglog: BugLog) -> Optional[str]:
+        """Load the content of a bug log file.
+
+        Args:
+            bug_id: The bug ID (e.g., PHYS100326_01)
+            buglog: BugLog model containing id and file_name
+
+        Returns:
+            Log content as string or None if not found
+
+        Raises:
+            StorageError: If the log file can't be read
+        """
+        file_name = buglog.file_name or f"{buglog.id}.log"
+        file_path = self.buglogs_dir / bug_id / file_name
+        if not file_path.exists():
+            return None
+
+        try:
+            with open(file_path, "r") as f:
+                return f.read()
+        except Exception as e:
+            raise StorageError(f"Failed to read bug log {file_path}: {e}")
+
+    def save_buglog(self, bug_id: str, buglog: BugLog, content: str) -> Path:
+        """Save content to a bug log file.
+
+        Args:
+            bug_id: The bug ID (e.g., PHYS100326_01)
+            buglog: BugLog model containing id and file_name
+            content: The log content to write
+
+        Returns:
+            Path to the written log file
+
+        Raises:
+            StorageError: If the log file can't be written
+        """
+        self.ensure_bug_log_dir(bug_id)
+        file_name = buglog.file_name or f"{buglog.id}.log"
+        file_path = self.buglogs_dir / bug_id / file_name
+
+        try:
+            with open(file_path, "w") as f:
+                f.write(content)
+            return file_path
+        except Exception as e:
+            raise StorageError(f"Failed to write bug log {file_path}: {e}")
+
+    def delete_buglog(self, bug_id: str, buglog: BugLog) -> bool:
+        """Delete a bug log file.
+
+        Args:
+            bug_id: The bug ID (e.g., PHYS100326_01)
+            buglog: BugLog model containing id and file_name
+
+        Returns:
+            True if deleted, False if not found
+
+        Raises:
+            StorageError: If the log file can't be deleted
+        """
+        file_name = buglog.file_name or f"{buglog.id}.log"
+        file_path = self.buglogs_dir / bug_id / file_name
+        if not file_path.exists():
+            return False
+
+        try:
+            file_path.unlink()
+            return True
+        except Exception as e:
+            raise StorageError(f"Failed to delete bug log {file_path}: {e}")
+
+    def list_buglogs(self, bug_id: str) -> List[Path]:
+        """List all log files for a bug.
+
+        Args:
+            bug_id: The bug ID (e.g., PHYS100326_01)
+
+        Returns:
+            List of paths to log files
+        """
+        log_dir = self.get_bug_log_dir(bug_id)
+        if not log_dir.exists():
+            return []
+
+        return sorted(log_dir.glob("*.log"))

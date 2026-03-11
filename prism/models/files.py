@@ -21,6 +21,7 @@ from prism.constants import (
 )
 
 from .base import Action, Deliverable, Milestone, Objective, Phase
+from .bug import BugItem
 from .orphan import Orphan
 
 
@@ -67,6 +68,15 @@ class OrphansFile(BaseModel):
     """
 
     orphans: List[Orphan] = Field(default_factory=list)
+
+
+class BugsFile(BaseModel):
+    """Model for bugs.json file.
+
+    List of bug items.
+    """
+
+    bugs: List[BugItem] = Field(default_factory=list)
 
 
 class ConfigFile(BaseModel):
