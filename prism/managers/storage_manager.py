@@ -364,18 +364,3 @@ class StorageManager:
             return True
         except Exception as e:
             raise StorageError(f"Failed to delete bug log {file_path}: {e}")
-
-    def list_buglogs(self, bug_id: str) -> List[Path]:
-        """List all log files for a bug.
-
-        Args:
-            bug_id: The bug ID (e.g., PHYS100326_01)
-
-        Returns:
-            List of paths to log files
-        """
-        log_dir = self.get_bug_log_dir(bug_id)
-        if not log_dir.exists():
-            return []
-
-        return sorted(log_dir.glob("*.log"))
