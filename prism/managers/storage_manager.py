@@ -295,7 +295,7 @@ class StorageManager:
         log_dir.mkdir(parents=True, exist_ok=True)
         return log_dir
 
-    def load_buglog_content(self, bug_id: str, buglog: BugLog) -> Optional[str]:
+    def load_buglog_content(self, bug_id: str, buglog: BugLog) -> str:
         """Load the content of a bug log file.
 
         Args:
@@ -303,15 +303,15 @@ class StorageManager:
             buglog: BugLog model containing id and file_name
 
         Returns:
-            Log content as string or None if not found
+            Log content as string
 
         Raises:
-            StorageError: If the log file can't be read
+            StorageError: If the log file doesn't exist or can't be read
         """
         file_name = buglog.file_name or f"{buglog.id}.log"
         file_path = self.buglogs_dir / bug_id / file_name
         if not file_path.exists():
-            return None
+            raise StorageError(f"Bug log file not found: {file_path}")
 
         try:
             with open(file_path, "r") as f:
