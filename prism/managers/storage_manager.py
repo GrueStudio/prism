@@ -300,7 +300,7 @@ class StorageManager:
 
         Args:
             bug_id: The bug ID (e.g., PHYS100326_01)
-            buglog: BugLog model containing id and file_name
+            buglog: BugLog model containing id
 
         Returns:
             Log content as string
@@ -308,8 +308,7 @@ class StorageManager:
         Raises:
             StorageError: If the log file doesn't exist or can't be read
         """
-        file_name = buglog.file_name or f"{buglog.id}.log"
-        file_path = self.buglogs_dir / bug_id / file_name
+        file_path = self.buglogs_dir / bug_id / f"{buglog.id}.log"
         if not file_path.exists():
             raise StorageError(f"Bug log file not found: {file_path}")
 
@@ -324,7 +323,7 @@ class StorageManager:
 
         Args:
             bug_id: The bug ID (e.g., PHYS100326_01)
-            buglog: BugLog model containing id and file_name
+            buglog: BugLog model containing id
             content: The log content to write
 
         Returns:
@@ -334,8 +333,7 @@ class StorageManager:
             StorageError: If the log file can't be written
         """
         self.ensure_bug_log_dir(bug_id)
-        file_name = buglog.file_name or f"{buglog.id}.log"
-        file_path = self.buglogs_dir / bug_id / file_name
+        file_path = self.buglogs_dir / bug_id / f"{buglog.id}.log"
 
         try:
             with open(file_path, "w") as f:
@@ -349,7 +347,7 @@ class StorageManager:
 
         Args:
             bug_id: The bug ID (e.g., PHYS100326_01)
-            buglog: BugLog model containing id and file_name
+            buglog: BugLog model containing id
 
         Returns:
             True if deleted, False if not found
@@ -357,8 +355,7 @@ class StorageManager:
         Raises:
             StorageError: If the log file can't be deleted
         """
-        file_name = buglog.file_name or f"{buglog.id}.log"
-        file_path = self.buglogs_dir / bug_id / file_name
+        file_path = self.buglogs_dir / bug_id / f"{buglog.id}.log"
         if not file_path.exists():
             return False
 

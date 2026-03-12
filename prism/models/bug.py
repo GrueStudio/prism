@@ -56,7 +56,6 @@ class BugLog(BaseModel):
     created_at: datetime = Field(default_factory=datetime.now)
     title: str  # Descriptive name (e.g., "Crash Report", "Stack Trace")
     log_type: str = "general"  # e.g., "stack_trace", "error_log", "note", "attachment_ref"
-    file_name: Optional[str] = None  # Auto-generated: {id}.log
     metadata: Optional[dict] = None
 
 
@@ -130,7 +129,6 @@ class BugItem(BaseModel):
         log = BugLog(
             title=title, log_type=log_type, metadata=metadata or {}
         )
-        log.file_name = f"{log.id}.log"
         self.logs.append(log)
         self.updated_at = datetime.now()
         return log
