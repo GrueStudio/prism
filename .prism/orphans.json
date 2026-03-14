@@ -20,6 +20,90 @@
       "name": "Status change notification",
       "description": "When cascading status changes a parent from completed to in-progress, print a notification message to inform the user.",
       "priority": -10
+    },
+    {
+      "id": 5,
+      "uuid": "06a6c70d-e1f1-4058-ac90-7722fda20d04",
+      "name": "Manager circular dependency risk",
+      "description": "Extract status cascade logic into a separate service or use events/signals to reduce tight coupling between CRUDManager and TaskManager",
+      "priority": 8
+    },
+    {
+      "id": 6,
+      "uuid": "86e7bfd7-2b81-4317-830e-dd744023e294",
+      "name": "Generic exception handling in storage manager",
+      "description": "Catch specific exceptions like OSError, IOError, PermissionError instead of generic Exception to avoid masking programming errors",
+      "priority": 6
+    },
+    {
+      "id": 7,
+      "uuid": "745a24bc-9902-4023-9759-8e74e849407f",
+      "name": "Bug lifecycle transition validation",
+      "description": "Add state transition validation to prevent invalid jumps (e.g., open \u2192 implemented) in BugItem.set_status()",
+      "priority": 7
+    },
+    {
+      "id": 8,
+      "uuid": "d3a44f13-11fe-4a62-b2c9-c54602a30c3f",
+      "name": "Bug log directory structure scalability",
+      "description": "Consider date-based subdirectories and orphan cleanup strategy for deleted bugs to prevent unwieldy directories",
+      "priority": 4
+    },
+    {
+      "id": 9,
+      "uuid": "369265d4-9c02-4f0a-8ee8-51ecfc02594a",
+      "name": "CLI command stub implementation backlog",
+      "description": "Implement bug and config CLI commands or hide from help text until ready to avoid user confusion",
+      "priority": 7
+    },
+    {
+      "id": 10,
+      "uuid": "a7166ef8-4897-455e-9576-e185f8a06cdd",
+      "name": "BugManager abstraction layer",
+      "description": "Create BugManager similar to OrphanManager for centralized bug CRUD operations to prevent logic duplication",
+      "priority": 8
+    },
+    {
+      "id": 11,
+      "uuid": "5f1be28b-4486-48c0-ac11-3b14d6b7cc21",
+      "name": "child_uuids cleanup consistency",
+      "description": "Audit all deletion paths and consider automatic child_uuids management via property setters",
+      "priority": 6
+    },
+    {
+      "id": 12,
+      "uuid": "569ec1a6-31c8-4e97-b706-a6d09973b2d9",
+      "name": "Status value magic strings",
+      "description": "Use Literal types or enums for status values to prevent typos and enable easier refactoring",
+      "priority": 5
+    },
+    {
+      "id": 13,
+      "uuid": "2e11fc4b-522c-43d2-8e32-eb8fefbb10f3",
+      "name": "TaskManager CLI coupling",
+      "description": "Replace click.echo() with events/callbacks/logging to improve testability and enable non-CLI reuse",
+      "priority": 6
+    },
+    {
+      "id": 14,
+      "uuid": "e7a61cd9-1fa9-4068-b28f-b2c46d599584",
+      "name": "ArchivedItem status field inconsistency",
+      "description": "Review ArchivedItem model and ensure status field uniformity across all item types",
+      "priority": 5
+    },
+    {
+      "id": 15,
+      "uuid": "2acbc253-0fc8-43d5-9acb-43c152e4af3a",
+      "name": "Integration test coverage gaps",
+      "description": "Add end-to-end tests for bug workflow, status cascade, and CLI-manager integration",
+      "priority": 7
+    },
+    {
+      "id": 16,
+      "uuid": "fbd347c5-ceb1-4fed-ac71-12202200f0f7",
+      "name": "Bug ID auto-generation mechanism",
+      "description": "Implement BugManager.generate_bug_id() with atomic counter persistence to prevent race conditions and duplicates",
+      "priority": 8
     }
   ]
 }
