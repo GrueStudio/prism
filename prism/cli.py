@@ -11,6 +11,7 @@ from prism.commands.task import task
 from prism.commands.status import status
 from prism.commands.config import config
 from prism.commands.orphan import orphan
+from prism.commands.bug import bug
 
 
 @click.group()
@@ -24,6 +25,7 @@ cli.add_command(task)
 cli.add_command(status)
 cli.add_command(config)
 cli.add_command(orphan)
+cli.add_command(bug)
 
 
 if __name__ == '__main__':
