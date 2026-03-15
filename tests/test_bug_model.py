@@ -281,9 +281,10 @@ class TestBugStatus:
         bug_type = BugType(name="Physics Bug", prefix="PHYS")
         bug = BugItem(bug_type=bug_type, bug_id="PHYS100326_01", description="Test")
 
-        bug.set_status("found")
+        # Must follow lifecycle: open -> reproduced
+        bug.set_status("reproduced")
 
-        assert bug.status == BugStatus.FOUND
+        assert bug.status == BugStatus.REPRODUCED
 
     def test_set_status_invalid_string_raises(self):
         """Set status with invalid string raises error."""
@@ -297,10 +298,21 @@ class TestBugStatus:
         """Test all BugStatus enum values."""
         bug_type = BugType(name="Physics Bug", prefix="PHYS")
 
-        for status in BugStatus:
-            bug = BugItem(bug_type=bug_type, bug_id="PHYS100326_01", description="Test")
-            bug.set_status(status)
-            assert bug.status == status
+        # Test each status by progressing through lifecycle
+        bug = BugItem(bug_type=bug_type, bug_id="PHYS100326_01", description="Test")
+        assert bug.status == BugStatus.OPEN
+
+        bug.set_status(BugStatus.REPRODUCED)
+        assert bug.status == BugStatus.REPRODUCED
+
+        bug.set_status(BugStatus.FOUND)
+        assert bug.status == BugStatus.FOUND
+
+        bug.set_status(BugStatus.FIXED)
+        assert bug.status == BugStatus.FIXED
+
+        bug.set_status(BugStatus.IMPLEMENTED)
+        assert bug.status == BugStatus.IMPLEMENTED
 
     def test_status_lifecycle_progression(self):
         """Test bug status progressing through lifecycle."""
@@ -403,4 +415,138 @@ class TestBugLogManagement:
         bug.add_log(title="New log entry")
 
         assert bug.updated_at >= original_updated
+
+
+class TestBugStatusTransitions:
+    """Test bug status transition validation."""
+
+    def test_valid_transition_open_to_reproduced(self):
+        """Valid transition: open → reproduced."""
+        bug_type = BugType(name="Physics Bug", prefix="PHYS")
+        bug = BugItem(bug_type=bug_type, bug_id="PHYS100326_01", description="Test")
+
+        bug.set_status(BugStatus.REPRODUCED)
+        assert bug.status == BugStatus.REPRODUCED
+
+    def test_valid_transition_reproduced_to_found(self):
+        """Valid transition: reproduced → found."""
+        bug_type = BugType(name="Physics Bug", prefix="PHYS")
+        bug = BugItem(bug_type=bug_type, bug_id="PHYS100326_01", description="Test")
+        bug.set_status(BugStatus.REPRODUCED)
+
+        bug.set_status(BugStatus.FOUND)
+        assert bug.status == BugStatus.FOUND
+
+    def test_valid_transition_found_to_fixed(self):
+        """Valid transition: found → fixed."""
+        bug_type = BugType(name="Physics Bug", prefix="PHYS")
+        bug = BugItem(bug_type=bug_type, bug_id="PHYS100326_01", description="Test")
+        bug.set_status(BugStatus.REPRODUCED)
+        bug.set_status(BugStatus.FOUND)
+
+        bug.set_status(BugStatus.FIXED)
+        assert bug.status == BugStatus.FIXED
+
+    def test_valid_transition_fixed_to_implemented(self):
+        """Valid transition: fixed → implemented."""
+        bug_type = BugType(name="Physics Bug", prefix="PHYS")
+        bug = BugItem(bug_type=bug_type, bug_id="PHYS100326_01", description="Test")
+        bug.set_status(BugStatus.REPRODUCED)
+        bug.set_status(BugStatus.FOUND)
+        bug.set_status(BugStatus.FIXED)
+
+        bug.set_status(BugStatus.IMPLEMENTED)
+        assert bug.status == BugStatus.IMPLEMENTED
+
+    def test_invalid_transition_open_to_found(self):
+        """Invalid transition: open → found (skip reproduced)."""
+        bug_type = BugType(name="Physics Bug", prefix="PHYS")
+        bug = BugItem(bug_type=bug_type, bug_id="PHYS100326_01", description="Test")
+
+        with pytest.raises(ValueError) as exc_info:
+            bug.set_status(BugStatus.FOUND)
+
+        assert "Invalid status transition" in str(exc_info.value)
+        assert "open" in str(exc_info.value).lower()
+        assert "found" in str(exc_info.value).lower()
+
+    def test_invalid_transition_open_to_fixed(self):
+        """Invalid transition: open → fixed (skip multiple stages)."""
+        bug_type = BugType(name="Physics Bug", prefix="PHYS")
+        bug = BugItem(bug_type=bug_type, bug_id="PHYS100326_01", description="Test")
+
+        with pytest.raises(ValueError) as exc_info:
+            bug.set_status(BugStatus.FIXED)
+
+        assert "Invalid status transition" in str(exc_info.value)
+
+    def test_invalid_transition_open_to_implemented(self):
+        """Invalid transition: open → implemented (skip all stages)."""
+        bug_type = BugType(name="Physics Bug", prefix="PHYS")
+        bug = BugItem(bug_type=bug_type, bug_id="PHYS100326_01", description="Test")
+
+        with pytest.raises(ValueError) as exc_info:
+            bug.set_status(BugStatus.IMPLEMENTED)
+
+        assert "Invalid status transition" in str(exc_info.value)
+
+    def test_invalid_transition_reproduced_to_fixed(self):
+        """Invalid transition: reproduced → fixed (skip found)."""
+        bug_type = BugType(name="Physics Bug", prefix="PHYS")
+        bug = BugItem(bug_type=bug_type, bug_id="PHYS100326_01", description="Test")
+        bug.set_status(BugStatus.REPRODUCED)
+
+        with pytest.raises(ValueError) as exc_info:
+            bug.set_status(BugStatus.FIXED)
+
+        assert "Invalid status transition" in str(exc_info.value)
+
+    def test_invalid_transition_found_to_implemented(self):
+        """Invalid transition: found → implemented (skip fixed)."""
+        bug_type = BugType(name="Physics Bug", prefix="PHYS")
+        bug = BugItem(bug_type=bug_type, bug_id="PHYS100326_01", description="Test")
+        bug.set_status(BugStatus.REPRODUCED)
+        bug.set_status(BugStatus.FOUND)
+
+        with pytest.raises(ValueError) as exc_info:
+            bug.set_status(BugStatus.IMPLEMENTED)
+
+        assert "Invalid status transition" in str(exc_info.value)
+
+    def test_implemented_is_terminal_state(self):
+        """Implemented status is terminal - no transitions allowed."""
+        bug_type = BugType(name="Physics Bug", prefix="PHYS")
+        bug = BugItem(bug_type=bug_type, bug_id="PHYS100326_01", description="Test")
+        bug.set_status(BugStatus.REPRODUCED)
+        bug.set_status(BugStatus.FOUND)
+        bug.set_status(BugStatus.FIXED)
+        bug.set_status(BugStatus.IMPLEMENTED)
+
+        # Cannot transition from implemented to any other state
+        with pytest.raises(ValueError) as exc_info:
+            bug.set_status(BugStatus.OPEN)
+
+        assert "Invalid status transition" in str(exc_info.value)
+        assert "terminal state" in str(exc_info.value).lower()
+
+    def test_same_status_allowed(self):
+        """Setting same status is allowed (no-op)."""
+        bug_type = BugType(name="Physics Bug", prefix="PHYS")
+        bug = BugItem(bug_type=bug_type, bug_id="PHYS100326_01", description="Test")
+
+        # Setting to same status should not raise
+        bug.set_status(BugStatus.OPEN)
+        assert bug.status == BugStatus.OPEN
+
+    def test_transition_error_message_includes_allowed_transitions(self):
+        """Error message includes allowed transitions."""
+        bug_type = BugType(name="Physics Bug", prefix="PHYS")
+        bug = BugItem(bug_type=bug_type, bug_id="PHYS100326_01", description="Test")
+
+        with pytest.raises(ValueError) as exc_info:
+            bug.set_status(BugStatus.FOUND)
+
+        error_msg = str(exc_info.value)
+        assert "Allowed transitions" in error_msg
+        assert "reproduced" in error_msg.lower()
 

@@ -24,6 +24,16 @@ class BugStatus(str, Enum):
     IMPLEMENTED = "implemented"  # Fix merged and deployed
 
 
+# Valid status transitions: current status -> allowed next statuses
+VALID_STATUS_TRANSITIONS = {
+    BugStatus.OPEN: {BugStatus.REPRODUCED},
+    BugStatus.REPRODUCED: {BugStatus.FOUND},
+    BugStatus.FOUND: {BugStatus.FIXED},
+    BugStatus.FIXED: {BugStatus.IMPLEMENTED},
+    BugStatus.IMPLEMENTED: set(),  # Terminal state
+}
+
+
 class BugType(BaseModel):
     """
     Configurable bug type with name and prefix.
@@ -136,9 +146,27 @@ class BugItem(BaseModel):
     def set_status(self, value: BugStatus | str) -> None:
         """
         Set bug status from string or BugStatus enum.
+        
+        Validates that the transition is allowed in the bug lifecycle.
+        Valid transitions: open → reproduced → found → fixed → implemented
+        
+        Args:
+            value: New status value (BugStatus enum or string)
+            
+        Raises:
+            ValueError: If the status transition is not allowed
         """
-        if isinstance(value, BugStatus):
-            self.status = value
-        elif isinstance(value, str):
-            self.status = BugStatus(value)
+        if isinstance(value, str):
+            value = BugStatus(value)
+        
+        # Validate transition
+        allowed_transitions = VALID_STATUS_TRANSITIONS.get(self.status, set())
+        if value != self.status and value not in allowed_transitions:
+            raise ValueError(
+                f"Invalid status transition from '{self.status.value}' to '{value.value}'. "
+                f"Allowed transitions from '{self.status.value}': "
+                f"{', '.join(t.value for t in allowed_transitions) or 'none (terminal state)'}"
+            )
+        
+        self.status = value
         self.updated_at = datetime.now()
