@@ -15,6 +15,8 @@ This file tracks bugs and issues for the Prism CLI.
 
 * **`prism crud delete` does not remove child UUIDs from parent:** When a deliverable is deleted using `prism crud delete`, its UUID is not removed from the parent's `child_uuids` list. This can lead to `NoneType` errors when loading the project, as the system tries to access a non-existent child. This has been remedied manually by removing the UUID from the `.prism` data, but the underlying bug remains.
 
+* **Orphan adopt parent path inconsistent:** The `prism orphan adopt -p` option requires an absolute path without the leading `/` (e.g., `alpha/bug-tracking/...`). It should accept both absolute paths (with or without leading `/`) and relative paths (from current context) like other commands such as `prism crud nav`.
+
 ## Fixed Bugs:
 
 * **Parent completion not cascading (Issue #1):** ✓ Fixed - Completing all actions in a deliverable now marks the deliverable complete, and completing all deliverables in an objective marks the objective complete.

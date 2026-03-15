@@ -1,4 +1,4 @@
 {
-  "task_cursor": "alpha/bug-tracking/bug-system-foun/cli-command-stubs/bug-command-stubs-crud",
-  "crud_context": "alpha/bug-tracking/1/3"
+  "task_cursor": "alpha/bug-tracking/basic-bug-functionality",
+  "crud_context": "alpha/bug-tracking/basic-bug-functionality"
 }

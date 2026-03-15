@@ -26,23 +26,24 @@
     "updated_at": "2026-03-09T15:01:31.576775",
     "time_spent": null,
     "child_uuids": [
-      "956084ae-9d7f-4197-bbf3-a3422551e851"
+      "956084ae-9d7f-4197-bbf3-a3422551e851",
+      "f37c5508-8130-4e79-abe3-44ea9d637a53"
     ]
   },
   "objective": {
-    "uuid": "956084ae-9d7f-4197-bbf3-a3422551e851",
-    "name": "Bug System Foundation",
-    "description": "Prepare foundational elements for the bug tracking system, including initial data models and CLI command stubs (e.g., prism bug ~). This objective will also include a fix for the auto-archive bug.",
-    "slug": "bug-system-foun",
-    "status": "completed",
+    "uuid": "f37c5508-8130-4e79-abe3-44ea9d637a53",
+    "name": "Basic Bug Functionality",
+    "description": "Implement basic bug CRUD commands and BugManager. Includes bug add, show, edit, delete, list commands with filtering and smart update capabilities.",
+    "slug": "basic-bug-functionality",
+    "status": "pending",
     "parent_uuid": "40a784bd-ef9d-45c2-ac55-586d676b8e80",
-    "created_at": "2026-03-09T15:47:36.188695",
-    "updated_at": "2026-03-12T02:41:45.510963",
+    "created_at": "2026-03-15T14:25:15.278544",
+    "updated_at": "2026-03-15T14:25:15.278549",
     "time_spent": null,
     "child_uuids": [
-      "6629326e-de01-4941-87e4-2456986fa3c7",
-      "5428057a-09e0-4da9-ab6a-670ddc6e9991",
-      "4167c405-6ef4-4fe5-88b7-7a080cbf2316"
+      "66b424c8-89ac-4e3d-a673-be333f36e452",
+      "19211984-7c26-41ae-a71c-f996098a8586",
+      "130274d3-a729-4388-8fbe-cd65696ad865"
     ]
   },
   "phase_uuids": [

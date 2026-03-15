@@ -36,13 +36,6 @@
       "priority": 6
     },
     {
-      "id": 7,
-      "uuid": "745a24bc-9902-4023-9759-8e74e849407f",
-      "name": "Bug lifecycle transition validation",
-      "description": "Add state transition validation to prevent invalid jumps (e.g., open \u2192 implemented) in BugItem.set_status()",
-      "priority": 7
-    },
-    {
       "id": 8,
       "uuid": "d3a44f13-11fe-4a62-b2c9-c54602a30c3f",
       "name": "Bug log directory structure scalability",
@@ -50,32 +43,11 @@
       "priority": 4
     },
     {
-      "id": 9,
-      "uuid": "369265d4-9c02-4f0a-8ee8-51ecfc02594a",
-      "name": "CLI command stub implementation backlog",
-      "description": "Implement bug and config CLI commands or hide from help text until ready to avoid user confusion",
-      "priority": 7
-    },
-    {
-      "id": 10,
-      "uuid": "a7166ef8-4897-455e-9576-e185f8a06cdd",
-      "name": "BugManager abstraction layer",
-      "description": "Create BugManager similar to OrphanManager for centralized bug CRUD operations to prevent logic duplication",
-      "priority": 8
-    },
-    {
       "id": 11,
       "uuid": "5f1be28b-4486-48c0-ac11-3b14d6b7cc21",
       "name": "child_uuids cleanup consistency",
       "description": "Audit all deletion paths and consider automatic child_uuids management via property setters",
       "priority": 6
-    },
-    {
-      "id": 12,
-      "uuid": "569ec1a6-31c8-4e97-b706-a6d09973b2d9",
-      "name": "Status value magic strings",
-      "description": "Use Literal types or enums for status values to prevent typos and enable easier refactoring",
-      "priority": 5
     },
     {
       "id": 13,
@@ -97,13 +69,6 @@
       "name": "Integration test coverage gaps",
       "description": "Add end-to-end tests for bug workflow, status cascade, and CLI-manager integration",
       "priority": 7
-    },
-    {
-      "id": 16,
-      "uuid": "fbd347c5-ceb1-4fed-ac71-12202200f0f7",
-      "name": "Bug ID auto-generation mechanism",
-      "description": "Implement BugManager.generate_bug_id() with atomic counter persistence to prevent race conditions and duplicates",
-      "priority": 8
     }
   ]
 }

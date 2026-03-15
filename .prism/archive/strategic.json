@@ -110,6 +110,22 @@
         "4dccf171-70a8-4aa0-a465-aa738a127332",
         "3efc42e2-a252-4aab-b762-5fa3e4ee450a"
       ]
+    },
+    {
+      "uuid": "956084ae-9d7f-4197-bbf3-a3422551e851",
+      "name": "Bug System Foundation",
+      "description": "Prepare foundational elements for the bug tracking system, including initial data models and CLI command stubs (e.g., prism bug ~). This objective will also include a fix for the auto-archive bug.",
+      "slug": "bug-system-foun",
+      "status": "archived",
+      "parent_uuid": "40a784bd-ef9d-45c2-ac55-586d676b8e80",
+      "created_at": "2026-03-09T15:47:36.188695",
+      "updated_at": "2026-03-12T02:41:45.510963",
+      "time_spent": null,
+      "child_uuids": [
+        "6629326e-de01-4941-87e4-2456986fa3c7",
+        "5428057a-09e0-4da9-ab6a-670ddc6e9991",
+        "4167c405-6ef4-4fe5-88b7-7a080cbf2316"
+      ]
     }
   ]
 }
