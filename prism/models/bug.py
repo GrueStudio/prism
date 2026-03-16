@@ -125,10 +125,6 @@ class BugItem(BaseModel):
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
 
-    @field_serializer("status")
-    def serialize_status(self, status: BugStatus) -> str:
-        return status.value
-
     @field_validator("description")
     @classmethod
     def validate_description(cls, v: str) -> str:

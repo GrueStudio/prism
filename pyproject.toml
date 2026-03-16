@@ -39,3 +39,6 @@ addopts = "--import-mode=importlib"
 testpaths = [
     "tests",
 ]
+filterwarnings = [
+    "ignore::UserWarning:pydantic._internal._model_construction",
+]
