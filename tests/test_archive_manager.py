@@ -13,6 +13,7 @@ from pathlib import Path
 from prism.managers.archive_manager import ArchiveManager
 from prism.managers.storage_manager import StorageManager
 from prism.models.archived import ArchivedItem
+from prism.models.base import ItemStatus
 
 
 class TestArchiveManagerInit:
@@ -339,7 +340,7 @@ class TestArchivedItemProperties:
         manager.archive_strategic_item(phase, "phase")
 
         archived = manager.get_archived_item("phase-uuid", "phase")
-        assert archived.status == "archived"
+        assert archived.status == ItemStatus.ARCHIVED
 
     def test_archived_item_children_property(self, empty_prism_dir: Path, mock_data):
         """ArchivedItem children property triggers lazy loading."""

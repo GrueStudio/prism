@@ -10,6 +10,7 @@ Tests cover:
 from pathlib import Path
 
 from prism.core import PrismCore
+from prism.models.base import ItemStatus
 
 # =============================================================================
 # PrismCore Initialization Tests
@@ -191,12 +192,12 @@ class TestPrismCoreTaskOperations:
         # Start
         started = core.start_next_action()
         assert started is not None
-        assert started.status == "in-progress"
+        assert started.status == ItemStatus.IN_PROGRESS
 
         # Complete
         completed = core.complete_current_action()
         assert completed is not None
-        assert completed.status == "completed"
+        assert completed.status == ItemStatus.COMPLETED
 
     def test_get_current_action(self, temp_dir: Path):
         """Get current action through PrismCore."""
@@ -229,7 +230,7 @@ class TestPrismCoreTaskOperations:
 
         current = core.get_current_action()
         assert current is not None
-        assert current.status == "in-progress"
+        assert current.status == ItemStatus.IN_PROGRESS
 
 
 # =============================================================================

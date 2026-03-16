@@ -35,6 +35,7 @@ from prism.models.base import (
     Action,
     BaseItem,
     Deliverable,
+    ItemStatus,
     Milestone,
     Objective,
     Phase,
@@ -104,7 +105,7 @@ class TaskManager:
             First pending action found, or None.
         """
         for action in deliverable.children:
-            if action.status == "pending":
+            if action.status == ItemStatus.PENDING:
                 return action
         return None
 
@@ -166,7 +167,7 @@ class TaskManager:
         """
         # Check if there's an action currently in progress
         current_action = self.get_current_action()
-        if current_action and current_action.status == "in-progress":
+        if current_action and current_action.status == ItemStatus.IN_PROGRESS:
             return current_action
 
         # If no action in progress, find the next pending one
@@ -187,10 +188,10 @@ class TaskManager:
             The completed action, or None if no action in progress.
         """
         current_action = self.get_current_action()
-        if not current_action or current_action.status != "in-progress":
+        if not current_action or current_action.status != ItemStatus.IN_PROGRESS:
             return None
 
-        current_action.status = "completed"
+        current_action.status = ItemStatus.COMPLETED
         current_action.updated_at = datetime.now()
 
         # Cascade completion up the tree
@@ -233,19 +234,19 @@ class TaskManager:
             # Check if all actions in deliverable are complete
             if parent.children:
                 all_children_complete = all(
-                    a.status == "completed" for a in parent.children
+                    a.status == ItemStatus.COMPLETED for a in parent.children
                 )
         elif isinstance(item, Deliverable) and isinstance(parent, Objective):
             # Check if all deliverables in objective are complete
             if parent.children:
                 all_children_complete = all(
-                    d.status == "completed" for d in parent.children
+                    d.status == ItemStatus.COMPLETED for d in parent.children
                 )
 
         # If all children are complete, mark parent as complete and continue cascading
         # Only cascade up to objective level (not milestones or phases)
-        if all_children_complete and parent.status != "completed":
-            parent.status = "completed"
+        if all_children_complete and parent.status != ItemStatus.COMPLETED:
+            parent.status = ItemStatus.COMPLETED
             parent.updated_at = datetime.now()
             click.echo(f"  ✓ {type(parent).__name__} '{parent.name}' marked complete")
 
@@ -277,8 +278,8 @@ class TaskManager:
             return
 
         # If parent is completed, change it to in-progress
-        if parent.status == "completed":
-            parent.status = "in-progress"
+        if parent.status == ItemStatus.COMPLETED:
+            parent.status = ItemStatus.IN_PROGRESS
             parent.updated_at = datetime.now()
             click.echo(f"  ✓ {type(parent).__name__} '{parent.name}' changed to in-progress")
 
@@ -319,7 +320,7 @@ class TaskManager:
                 return {"overall": 0.0, "by_type": {"deliverables": 0.0}}
 
             completed_deliverables = sum(
-                1 for d in item.children if d.status == "completed"
+                1 for d in item.children if d.status == ItemStatus.COMPLETED
             )
             total_deliverables = len(item.children)
 
@@ -330,7 +331,7 @@ class TaskManager:
             for deliverable in item.children:
                 for action in deliverable.children:
                     total_actions += 1
-                    if action.status == "completed":
+                    if action.status == ItemStatus.COMPLETED:
                         completed_actions += 1
 
             return {
@@ -360,7 +361,7 @@ class TaskManager:
             if len(item.children) == 0:
                 return {"overall": 0.0}
 
-            completed_actions = sum(1 for a in item.children if a.status == "completed")
+            completed_actions = sum(1 for a in item.children if a.status == ItemStatus.COMPLETED)
             total_actions = len(item.children)
 
             return {
@@ -389,10 +390,10 @@ class TaskManager:
             return True  # Empty tree is considered complete (ready for new items)
 
         for deliverable in objective.children:
-            if deliverable.status != "completed":
+            if deliverable.status != ItemStatus.COMPLETED:
                 return False
             for action in deliverable.children:
-                if action.status != "completed":
+                if action.status != ItemStatus.COMPLETED:
                     return False
 
         return True
@@ -408,10 +409,10 @@ class TaskManager:
         """
         if isinstance(item, Objective):
             total_del = len(item.children)
-            completed_del = sum(1 for d in item.children if d.status == "completed")
+            completed_del = sum(1 for d in item.children if d.status == ItemStatus.COMPLETED)
             total_act = sum(len(d.children) for d in item.children)
             completed_act = sum(
-                sum(1 for a in d.children if a.status == "completed")
+                sum(1 for a in d.children if a.status == ItemStatus.COMPLETED)
                 for d in item.children
             )
             return {
@@ -424,7 +425,7 @@ class TaskManager:
             }
         elif isinstance(item, Deliverable):
             total = len(item.children)
-            completed = sum(1 for a in item.children if a.status == "completed")
+            completed = sum(1 for a in item.children if a.status == ItemStatus.COMPLETED)
             return {
                 "actions_total": total,
                 "actions_completed": completed,

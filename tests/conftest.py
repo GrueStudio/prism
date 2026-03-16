@@ -21,6 +21,7 @@ from prism.models.base import (
     Milestone,
     Objective,
     Phase,
+    ItemStatus,
 )
 from prism.models.files import (
     ConfigFile,
@@ -81,7 +82,7 @@ class MockDataBuilder:
         name: str = "Test Phase",
         description: str = "Test description",
         slug: str = "test-phase",
-        status: str = "pending",
+        status: ItemStatus = ItemStatus.PENDING,
         uuid: Optional[str] = None,
     ) -> Phase:
         """Create a mock Phase for testing."""
@@ -96,7 +97,7 @@ class MockDataBuilder:
         name: str = "Test Milestone",
         description: str = "Test description",
         slug: str = "test-milestone",
-        status: str = "pending",
+        status: ItemStatus = ItemStatus.PENDING,
         parent_uuid: Optional[str] = None,
         uuid: Optional[str] = None,
     ) -> Milestone:
@@ -114,7 +115,7 @@ class MockDataBuilder:
         name: str = "Test Objective",
         description: str = "Test description",
         slug: str = "test-objective",
-        status: str = "pending",
+        status: ItemStatus = ItemStatus.PENDING,
         parent_uuid: Optional[str] = None,
         uuid: Optional[str] = None,
     ) -> Objective:
@@ -132,7 +133,7 @@ class MockDataBuilder:
         name: str = "Test Deliverable",
         description: str = "Test description",
         slug: str = "test-deliverable",
-        status: str = "pending",
+        status: ItemStatus = ItemStatus.PENDING,
         parent_uuid: Optional[str] = None,
         uuid: Optional[str] = None,
         due_date: Optional[datetime] = None,
@@ -153,7 +154,7 @@ class MockDataBuilder:
         name: str = "Test Action",
         description: str = "Test description",
         slug: str = "test-action",
-        status: str = "pending",
+        status: ItemStatus = ItemStatus.PENDING,
         parent_uuid: Optional[str] = None,
         uuid: Optional[str] = None,
         due_date: Optional[datetime] = None,

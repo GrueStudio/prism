@@ -11,7 +11,7 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, field_serializer
 
 
 class BugStatus(str, Enum):
@@ -99,8 +99,35 @@ class BugItem(BaseModel):
     logs: List[BugLog] = Field(default_factory=list)  # Metadata references to log files
     counter: int = 0
     status: BugStatus = BugStatus.OPEN
+
+    @field_serializer("status")
+    def serialize_status(self, status: str | BugStatus) -> str:
+        if isinstance(status, BugStatus):
+            return status.value
+        else:
+            return status
+
+    @field_validator("status", mode="before")
+    @classmethod
+    def validate_status(cls, v):
+        """Convert string status to BugStatus enum when loading."""
+        if isinstance(v, BugStatus):
+            return v
+        if isinstance(v, str):
+            try:
+                return BugStatus(v)
+            except ValueError:
+                valid_values = ", ".join(s.value for s in BugStatus)
+                raise ValueError(
+                    f"Invalid status: '{v}'. Valid statuses are: {valid_values}"
+                )
+        return v
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
+
+    @field_serializer("status")
+    def serialize_status(self, status: BugStatus) -> str:
+        return status.value
 
     @field_validator("description")
     @classmethod

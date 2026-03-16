@@ -22,6 +22,7 @@ from prism.managers.crud_manager import CRUDManager
 from prism.models.base import (
     Action,
     Deliverable,
+    ItemStatus,
     Milestone,
     Objective,
     Phase,
@@ -284,7 +285,7 @@ class PrismCore:
                 current_path = (
                     f"{parent_path}/{item.slug}" if parent_path else item.slug
                 )
-                is_completed = item.status == "completed"
+                is_completed = item.status == ItemStatus.COMPLETED
 
                 summary["item_counts"][item_type]["total"] += 1
                 if is_completed:

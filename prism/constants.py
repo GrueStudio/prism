@@ -57,6 +57,9 @@ VALID_STATUSES = ["pending", "in-progress", "completed", "cancelled", "archived"
 COMPLETED_STATUS = "completed"
 ARCHIVED_STATUS = "archived"
 IN_PROGRESS_STATUS = "in-progress"
+PENDING_STATUS = "pending"
+CANCELLED_STATUS = "cancelled"
+PAUSED_STATUS = "paused"
 
 # Date format defaults
 DEFAULT_DATE_FORMATS = [

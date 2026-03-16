@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, Field, PrivateAttr, field_validator
+from pydantic import BaseModel, Field, PrivateAttr, field_serializer, field_validator
 
 
 class ItemStatus(str, Enum):
@@ -33,12 +33,12 @@ class BaseItem(BaseModel):
     - name: Item name
     - description: Optional description
     - slug: URL-friendly identifier
-    - status: Current status (stored as string, property returns ItemStatus enum)
+    - status: Current status (ItemStatus enum)
     - parent_uuid: Reference to parent item
     - timestamps: created_at, updated_at
     - time_spent: Total time spent on this item (cascades from children)
     - child_uuids: List of child UUIDs in order (for preserving order)
-    
+
     Subclasses override _item_type to specify their type for validation.
     """
 
@@ -46,7 +46,31 @@ class BaseItem(BaseModel):
     name: str
     description: Optional[str] = None
     slug: str
-    status: str = "pending"
+    status: ItemStatus = ItemStatus.PENDING
+
+    @field_serializer("status")
+    def serialize_status(self, status: str | ItemStatus) -> str:
+        if isinstance(status, ItemStatus):
+            return status.value
+        else:
+            return status
+
+    @field_validator("status", mode="before")
+    @classmethod
+    def validate_status(cls, v):
+        """Convert string status to ItemStatus enum when loading."""
+        if isinstance(v, ItemStatus):
+            return v
+        if isinstance(v, str):
+            try:
+                return ItemStatus(v)
+            except ValueError:
+                valid_values = ", ".join(s.value for s in ItemStatus)
+                raise ValueError(
+                    f"Invalid status: '{v}'. Valid statuses are: {valid_values}"
+                )
+        return v
+
     parent_uuid: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
@@ -66,19 +90,30 @@ class BaseItem(BaseModel):
 
     def get_status(self) -> ItemStatus:
         """Get status as ItemStatus enum."""
-        try:
-            return ItemStatus(self.status)
-        except ValueError:
-            return ItemStatus.PENDING
+        return self.status
 
     def set_status(self, value: ItemStatus | str | None = None) -> None:
-        """Set status from string or ItemStatus enum."""
+        """Set status from string or ItemStatus enum.
+
+        Args:
+            value: New status value (ItemStatus enum or string)
+
+        Raises:
+            ValueError: If status string is not a valid ItemStatus value
+        """
         if isinstance(value, ItemStatus):
-            self.status = value.value
-        elif isinstance(value, str):
             self.status = value
+        elif isinstance(value, str):
+            # Validate the string is a valid status value
+            try:
+                self.status = ItemStatus(value)
+            except ValueError:
+                valid_values = ", ".join(s.value for s in ItemStatus)
+                raise ValueError(
+                    f"Invalid status: '{value}'. Valid statuses are: {valid_values}"
+                )
         else:
-            self.status = ItemStatus.PENDING.value
+            self.status = ItemStatus.PENDING
 
     @field_validator("slug")
     @classmethod
