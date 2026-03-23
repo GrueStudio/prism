@@ -21,7 +21,7 @@ from prism.constants import (
 )
 
 from .base import Action, Deliverable, Milestone, Objective, Phase
-from .bug import BugItem
+from .bug import BugItem, BugType
 from .orphan import Orphan
 
 
@@ -117,6 +117,10 @@ class ConfigFile(BaseModel):
             "critical": 50,
         }
     )
+
+    # Bug settings
+    bug_types: List[BugType] = Field(default_factory=list)
+
 
 
 class CursorFile(BaseModel):

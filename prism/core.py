@@ -19,6 +19,7 @@ from prism.managers import (
     TaskManager,
 )
 from prism.managers.crud_manager import CRUDManager
+from prism.models.files import ConfigFile
 from prism.models.base import (
     Action,
     Deliverable,
