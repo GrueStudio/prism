@@ -24,6 +24,17 @@ class ItemStatus(str, Enum):
     PAUSED = "paused"
 
 
+# Valid status transitions: current status -> allowed next statuses
+VALID_STATUS_TRANSITIONS = {
+    ItemStatus.PENDING: {ItemStatus.IN_PROGRESS, ItemStatus.CANCELLED},
+    ItemStatus.IN_PROGRESS: {ItemStatus.COMPLETED, ItemStatus.PAUSED, ItemStatus.CANCELLED},
+    ItemStatus.PAUSED: {ItemStatus.IN_PROGRESS, ItemStatus.CANCELLED},
+    ItemStatus.COMPLETED: {ItemStatus.ARCHIVED, ItemStatus.CANCELLED},
+    ItemStatus.ARCHIVED: set(),  # Terminal state
+    ItemStatus.CANCELLED: set(),  # Terminal state
+}
+
+
 class BaseItem(BaseModel):
     """
     Base model for all Prism items (strategic and execution).
@@ -95,25 +106,45 @@ class BaseItem(BaseModel):
     def set_status(self, value: ItemStatus | str | None = None) -> None:
         """Set status from string or ItemStatus enum.
 
+        Validates that the transition is allowed in the item lifecycle.
+        Valid transitions:
+          - pending → in-progress, cancelled
+          - in-progress → completed, paused, cancelled
+          - paused → in-progress, cancelled
+          - completed → archived, cancelled
+          - archived → (none, terminal)
+          - cancelled → (none, terminal)
+
         Args:
             value: New status value (ItemStatus enum or string)
 
         Raises:
             ValueError: If status string is not a valid ItemStatus value
+            ValueError: If the status transition is not allowed
         """
         if isinstance(value, ItemStatus):
-            self.status = value
+            new_status = value
         elif isinstance(value, str):
-            # Validate the string is a valid status value
             try:
-                self.status = ItemStatus(value)
+                new_status = ItemStatus(value)
             except ValueError:
                 valid_values = ", ".join(s.value for s in ItemStatus)
                 raise ValueError(
                     f"Invalid status: '{value}'. Valid statuses are: {valid_values}"
                 )
         else:
-            self.status = ItemStatus.PENDING
+            new_status = ItemStatus.PENDING
+
+        # Validate transition
+        allowed_transitions = VALID_STATUS_TRANSITIONS.get(self.status, set())
+        if new_status != self.status and new_status not in allowed_transitions:
+            raise ValueError(
+                f"Invalid status transition from '{self.status.value}' to '{new_status.value}'. "
+                f"Allowed transitions from '{self.status.value}': "
+                f"{', '.join(t.value for t in allowed_transitions) or 'none (terminal state)'}"
+            )
+
+        self.status = new_status
 
     @field_validator("slug")
     @classmethod
