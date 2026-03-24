@@ -177,6 +177,45 @@ class BugManager:
 
         return bug
 
+    def progress_bug_status(self, bug_id: str, description: str) -> BugItem:
+        """
+        Progress a bug to its next status in the lifecycle and update the relevant description field.
+
+        Args:
+            bug_id: The ID of the bug to update.
+            description: The description for the update, which is assigned to the correct field
+                         (e.g., steps_to_reproduce, root_cause) based on the transition.
+
+        Returns:
+            The updated BugItem.
+
+        Raises:
+            ValueError: If bug not found, is in a terminal state, or has no next state.
+        """
+        from prism.models.bug import VALID_STATUS_TRANSITIONS
+        bug = self.get_bug(bug_id)
+        if not bug:
+            raise ValueError(f"Bug not found: '{bug_id}'")
+
+        # Determine the next status
+        allowed_transitions = VALID_STATUS_TRANSITIONS.get(bug.status, set())
+        if not allowed_transitions:
+            raise ValueError(f"Bug '{bug_id}' is in a terminal state '{bug.status.value}' and cannot be updated.")
+
+        next_status = list(allowed_transitions)[0]
+
+        # Determine which field to update based on the current status
+        update_payload = {"status": next_status}
+        if bug.status == BugStatus.OPEN:
+            update_payload["steps_to_reproduce"] = description
+        elif bug.status == BugStatus.REPRODUCED:
+            update_payload["root_cause"] = description
+        elif bug.status == BugStatus.FOUND:
+            update_payload["fix_description"] = description
+        # No description needed for fixed -> implemented, but we still want to progress the status.
+
+        return self.update_bug(bug_id, **update_payload)
+
     def update_bug(self, bug_id: str, **kwargs) -> BugItem:
         """
         Update bug fields.

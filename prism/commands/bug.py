@@ -156,11 +156,39 @@ def add_bug(bug_type_name: str, description: str):
 
 @bug.command(name="update")
 @click.argument("bug_id")
-@click.option("--to", "to_status", required=True, help="Target status.")
-@click.option("--description", required=True, help="Description of the transition.")
-def update_bug(bug_id: str, to_status: str, description: str):
-    """Update bug status (progress through lifecycle)."""
-    click.echo(f"Bug update command - coming soon (bug: {bug_id}, to: {to_status})")
+@click.argument("description", required=False)
+@click.option("-f", "--file", "filepath", type=click.Path(exists=True, dir_okay=False), help="File containing the description.")
+def update_bug(bug_id: str, description: Optional[str], filepath: Optional[str]):
+    """Progress a bug to its next status in the lifecycle.
+
+    Automatically advances the bug's status (e.g., open -> reproduced).
+    The provided description is intelligently assigned to the correct field:
+    - open->reproduced: sets 'steps_to_reproduce'
+    - reproduced->found: sets 'root_cause'
+    - found->fixed: sets 'fix_description'
+    """
+    if not description and not filepath:
+        # For the fixed -> implemented transition, no description is needed.
+        # We'll pass an empty string and let the manager handle it.
+        desc_content = ""
+    elif description and filepath:
+        raise click.ClickException("Cannot provide both a description argument and a --file option.")
+    elif filepath:
+        try:
+            with open(filepath, "r") as f:
+                desc_content = f.read()
+        except Exception as e:
+            raise click.ClickException(f"Error reading file '{filepath}': {e}")
+    else:
+        desc_content = description if description else ""
+
+
+    manager = BugManager()
+    try:
+        updated_bug = manager.progress_bug_status(bug_id, desc_content)
+        click.secho(f"Successfully updated bug '{bug_id}' to status '{updated_bug.status.value}'.", fg="green")
+    except ValueError as e:
+        click.secho(f"Error: {e}", fg="red")
 
 
 @bug.command(name="edit")
