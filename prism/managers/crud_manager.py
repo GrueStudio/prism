@@ -16,9 +16,8 @@ from prism.constants import (
     DATE_FORMAT_ERROR,
     DEFAULT_STATUS,
     VALID_STATUSES,
-    get_slug_max_length,
-    get_slug_word_limit,
 )
+from prism.managers.config_manager import get_config_manager
 from prism.exceptions import InvalidOperationError, NotFoundError, ValidationError
 from prism.managers.archive_manager import ArchiveManager
 from prism.managers.navigation_manager import NavigationManager
@@ -67,8 +66,10 @@ class CRUDManager:
         self.navigator = navigator
         self.archive_manager = archive_manager
         self.task_manager = task_manager
-        self._slug_max_length = get_slug_max_length()
-        self._slug_word_limit = get_slug_word_limit()
+        
+        config = get_config_manager()
+        self._slug_max_length = config.SLUG_MAX_LENGTH
+        self._slug_word_limit = config.SLUG_WORD_LIMIT
 
     def add_item(
         self,

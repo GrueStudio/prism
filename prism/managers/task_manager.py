@@ -19,12 +19,9 @@ from prism.constants import (
     ARCHIVED_STATUS,
     COMPLETED_STATUS,
     DEFAULT_STATUS,
-    PERCENTAGE_ROUND_PRECISION,
     VALID_STATUSES,
-    get_slug_filler_words,
-    get_slug_max_length,
-    get_slug_word_limit,
 )
+from prism.managers.config_manager import get_config_manager
 from prism.exceptions import (
     InvalidOperationError,
     NotFoundError,
@@ -74,7 +71,9 @@ class TaskManager:
         self.project = project
         self.navigator = navigator
         self._save_callback = save_callback
-        self._round_precision = PERCENTAGE_ROUND_PRECISION
+        
+        config = get_config_manager()
+        self._round_precision = config.PERCENTAGE_ROUND_PRECISION
 
     # =========================================================================
     # Task Operations
@@ -451,9 +450,10 @@ class TaskManager:
         Returns:
             Unique slug string.
         """
-        max_length = get_slug_max_length()
-        word_limit = get_slug_word_limit()
-        filler_words = set(get_slug_filler_words())
+        config = get_config_manager()
+        max_length = config.SLUG_MAX_LENGTH
+        word_limit = config.SLUG_WORD_LIMIT
+        filler_words = set(config.SLUG_FILLER_WORDS)
 
         # Split name into words, convert to lowercase
         words = base_name.lower().split()

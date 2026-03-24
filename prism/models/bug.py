@@ -13,6 +13,8 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field, field_validator, field_serializer
 
+from prism.models.config import BugType
+
 
 class BugStatus(str, Enum):
     """Valid status values for bugs representing the lifecycle."""
@@ -32,26 +34,6 @@ VALID_STATUS_TRANSITIONS = {
     BugStatus.FIXED: {BugStatus.IMPLEMENTED},
     BugStatus.IMPLEMENTED: set(),  # Terminal state
 }
-
-
-class BugType(BaseModel):
-    """
-    Configurable bug type with name and prefix.
-
-    The prefix is used to generate bug IDs (e.g., PHYS for physics bugs).
-    """
-
-    name: str
-    prefix: str = Field(..., min_length=2, max_length=4)
-    description: Optional[str] = None
-
-    @field_validator("prefix")
-    @classmethod
-    def validate_prefix(cls, v: str) -> str:
-        """Validate prefix is 2-4 uppercase letters."""
-        if not re.match(r"^[A-Z]{2,4}$", v):
-            raise ValueError("Prefix must be 2-4 uppercase letters")
-        return v
 
 
 class BugLog(BaseModel):
