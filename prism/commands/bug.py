@@ -5,6 +5,7 @@ Commands for managing bug tracking including creation, lifecycle
 management, and log attachment.
 """
 import click
+from typing import Optional
 from prism.managers.bug_manager import BugManager
 
 
@@ -22,9 +23,74 @@ def bug():
 
 
 @bug.command(name="list")
-def list_bugs():
-    """List all bugs."""
-    click.echo("Bug list command - coming soon")
+@click.argument("search", required=False)
+@click.option(
+    "-s",
+    "--status",
+    "status_filter",
+    help="Status filter (+/- shorthand: o=open, r=reproduced, f=found, x=fixed, i=implemented). e.g. -xor, +f",
+)
+@click.option(
+    "--sort",
+    "sort_by",
+    default="id",
+    type=click.Choice(["id", "status", "created_at", "updated_at"]),
+    help="Field to sort by (default: id).",
+)
+@click.option(
+    "--order",
+    type=click.Choice(["asc", "desc"]),
+    default="asc",
+    help="Sort order (default: asc).",
+)
+def list_bugs(search: Optional[str], status_filter: Optional[str], sort_by: str, order: str):
+    """List bugs with filtering and sorting.
+
+    SEARCH is an optional string to filter bugs by ID, description, or root cause.
+    Use -s/--status with shorthand to filter by status:
+      -xor  -> exclude fixed, open, reproduced (leaves found, implemented)
+      +f    -> include only found
+    """
+    manager = BugManager()
+    bugs = manager.list_bugs(
+        status_filter=status_filter,
+        search=search,
+        sort_by=sort_by,
+        order=order
+    )
+
+    if not bugs:
+        click.echo("No bugs found.")
+        return
+
+    # Table header
+    header = f"{'ID':<15} {'Status':<12} {'Updated':<20} {'Description'}"
+    click.secho(header, bold=True, underline=True)
+
+    status_colors = {
+        "open": "red",
+        "reproduced": "yellow",
+        "found": "magenta",
+        "fixed": "blue",
+        "implemented": "green"
+    }
+
+    for bug in bugs:
+        # Format updated time
+        updated_str = bug.updated_at.strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Format description (truncate if too long)
+        desc = bug.description.replace("\n", " ")
+        if len(desc) > 50:
+            desc = desc[:47] + "..."
+            
+        # Color status
+        status_color = status_colors.get(bug.status.value, "white")
+        
+        # Build line
+        click.echo(f"{bug.bug_id:<15} ", nl=False)
+        click.secho(f"{bug.status.value:<12} ", fg=status_color, nl=False)
+        click.echo(f"{updated_str:<20} {desc}")
 
 
 @bug.command(name="show")

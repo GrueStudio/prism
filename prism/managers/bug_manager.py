@@ -43,9 +43,88 @@ class BugManager:
         from prism.models.files import BugsFile
         self.storage.save_bugs(BugsFile(bugs=bugs))
 
-    def list_bugs(self) -> List[BugItem]:
-        """List all tracked bugs."""
-        return self._load_bugs()
+    def list_bugs(
+        self,
+        status_filter: Optional[str] = None,
+        search: Optional[str] = None,
+        sort_by: str = "id",
+        order: str = "asc",
+    ) -> List[BugItem]:
+        """
+        List bugs with filtering and sorting.
+
+        Args:
+            status_filter: Status shorthand filter (+/- o, r, f, x, i).
+            search: Search string (matches ID, description, or root cause).
+            sort_by: Field to sort by (id, status, created_at, updated_at).
+            order: Sort order (asc, desc).
+
+        Returns:
+            List of matching bugs.
+        """
+        bugs = self._load_bugs()
+
+        # 1. Filter by status
+        if status_filter:
+            bugs = self._filter_by_status(bugs, status_filter)
+
+        # 2. Filter by search string
+        if search:
+            search_lower = search.lower()
+            bugs = [
+                bug for bug in bugs
+                if search_lower in bug.bug_id.lower() or
+                   search_lower in bug.description.lower() or
+                   (bug.root_cause and search_lower in bug.root_cause.lower())
+            ]
+
+        # 3. Sort results
+        reverse = (order.lower() == "desc")
+        
+        def _get_sort_key(bug: BugItem):
+            if sort_by == "id":
+                return bug.bug_id.lower()
+            elif sort_by == "status":
+                return bug.status.value.lower()
+            elif sort_by == "created_at":
+                return bug.created_at
+            elif sort_by == "updated_at":
+                return bug.updated_at
+            return bug.bug_id.lower()
+
+        bugs.sort(key=_get_sort_key, reverse=reverse)
+
+        return bugs
+
+    def _filter_by_status(self, bugs: List[BugItem], status_filter: str) -> List[BugItem]:
+        """Apply shorthand status filter (+/- shorthand)."""
+        shorthand_map = {
+            "o": BugStatus.OPEN,
+            "r": BugStatus.REPRODUCED,
+            "f": BugStatus.FOUND,
+            "x": BugStatus.FIXED,
+            "i": BugStatus.IMPLEMENTED,
+        }
+
+        if not status_filter:
+            return bugs
+
+        # Determine mode (+ adds to empty, - removes from all)
+        mode = status_filter[0] if status_filter[0] in ("+", "-") else "+"
+        chars = status_filter[1:] if status_filter[0] in ("+", "-") else status_filter
+
+        # Map chars to BugStatus values
+        target_statuses = set()
+        for char in chars.lower():
+            if char in shorthand_map:
+                target_statuses.add(shorthand_map[char])
+
+        if mode == "+":
+            # Include only these statuses
+            return [bug for bug in bugs if bug.status in target_statuses]
+        else:
+            # Exclude these statuses (start with all)
+            return [bug for bug in bugs if bug.status not in target_statuses]
 
     def get_bug(self, bug_id: str) -> Optional[BugItem]:
         """
