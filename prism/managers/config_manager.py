@@ -208,6 +208,23 @@ class ConfigManager:
         self._config = self.storage.load_config()
         self._reflect_to_models()
 
+    def get_bug_types(self) -> List[BugType]:
+        """Get all configured bug types."""
+        return self._config.bug_types
+
+    def get_bug_type(self, name: str) -> Optional[BugType]:
+        """
+        Get a bug type by its name.
+
+        Args:
+            name: The name of the bug type (case-insensitive).
+        """
+        name_lower = name.lower()
+        for bt in self._config.bug_types:
+            if bt.name.lower() == name_lower:
+                return bt
+        return None
+
 
 def get_config_manager(prism_dir: Optional[Path] = None, reset: bool = False) -> ConfigManager:
     """
