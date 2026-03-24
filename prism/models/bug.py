@@ -11,7 +11,9 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, field_serializer
+
+from prism.models.config import BugType
 
 
 class BugStatus(str, Enum):
@@ -24,24 +26,14 @@ class BugStatus(str, Enum):
     IMPLEMENTED = "implemented"  # Fix merged and deployed
 
 
-class BugType(BaseModel):
-    """
-    Configurable bug type with name and prefix.
-
-    The prefix is used to generate bug IDs (e.g., PHYS for physics bugs).
-    """
-
-    name: str
-    prefix: str = Field(..., min_length=2, max_length=4)
-    description: Optional[str] = None
-
-    @field_validator("prefix")
-    @classmethod
-    def validate_prefix(cls, v: str) -> str:
-        """Validate prefix is 2-4 uppercase letters."""
-        if not re.match(r"^[A-Z]{2,4}$", v):
-            raise ValueError("Prefix must be 2-4 uppercase letters")
-        return v
+# Valid status transitions: current status -> allowed next statuses
+VALID_STATUS_TRANSITIONS = {
+    BugStatus.OPEN: {BugStatus.REPRODUCED},
+    BugStatus.REPRODUCED: {BugStatus.FOUND},
+    BugStatus.FOUND: {BugStatus.FIXED},
+    BugStatus.FIXED: {BugStatus.IMPLEMENTED},
+    BugStatus.IMPLEMENTED: set(),  # Terminal state
+}
 
 
 class BugLog(BaseModel):
@@ -89,6 +81,29 @@ class BugItem(BaseModel):
     logs: List[BugLog] = Field(default_factory=list)  # Metadata references to log files
     counter: int = 0
     status: BugStatus = BugStatus.OPEN
+
+    @field_serializer("status")
+    def serialize_status(self, status: str | BugStatus) -> str:
+        if isinstance(status, BugStatus):
+            return status.value
+        else:
+            return status
+
+    @field_validator("status", mode="before")
+    @classmethod
+    def validate_status(cls, v):
+        """Convert string status to BugStatus enum when loading."""
+        if isinstance(v, BugStatus):
+            return v
+        if isinstance(v, str):
+            try:
+                return BugStatus(v)
+            except ValueError:
+                valid_values = ", ".join(s.value for s in BugStatus)
+                raise ValueError(
+                    f"Invalid status: '{v}'. Valid statuses are: {valid_values}"
+                )
+        return v
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
 
@@ -136,9 +151,27 @@ class BugItem(BaseModel):
     def set_status(self, value: BugStatus | str) -> None:
         """
         Set bug status from string or BugStatus enum.
+        
+        Validates that the transition is allowed in the bug lifecycle.
+        Valid transitions: open → reproduced → found → fixed → implemented
+        
+        Args:
+            value: New status value (BugStatus enum or string)
+            
+        Raises:
+            ValueError: If the status transition is not allowed
         """
-        if isinstance(value, BugStatus):
-            self.status = value
-        elif isinstance(value, str):
-            self.status = BugStatus(value)
+        if isinstance(value, str):
+            value = BugStatus(value)
+        
+        # Validate transition
+        allowed_transitions = VALID_STATUS_TRANSITIONS.get(self.status, set())
+        if value != self.status and value not in allowed_transitions:
+            raise ValueError(
+                f"Invalid status transition from '{self.status.value}' to '{value.value}'. "
+                f"Allowed transitions from '{self.status.value}': "
+                f"{', '.join(t.value for t in allowed_transitions) or 'none (terminal state)'}"
+            )
+        
+        self.status = value
         self.updated_at = datetime.now()

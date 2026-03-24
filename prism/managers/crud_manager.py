@@ -16,9 +16,8 @@ from prism.constants import (
     DATE_FORMAT_ERROR,
     DEFAULT_STATUS,
     VALID_STATUSES,
-    get_slug_max_length,
-    get_slug_word_limit,
 )
+from prism.managers.config_manager import get_config_manager
 from prism.exceptions import InvalidOperationError, NotFoundError, ValidationError
 from prism.managers.archive_manager import ArchiveManager
 from prism.managers.navigation_manager import NavigationManager
@@ -27,6 +26,7 @@ from prism.models.base import (
     Action,
     BaseItem,
     Deliverable,
+    ItemStatus,
     Milestone,
     Objective,
     Phase,
@@ -66,8 +66,10 @@ class CRUDManager:
         self.navigator = navigator
         self.archive_manager = archive_manager
         self.task_manager = task_manager
-        self._slug_max_length = get_slug_max_length()
-        self._slug_word_limit = get_slug_word_limit()
+        
+        config = get_config_manager()
+        self._slug_max_length = config.SLUG_MAX_LENGTH
+        self._slug_word_limit = config.SLUG_WORD_LIMIT
 
     def add_item(
         self,
@@ -125,7 +127,7 @@ class CRUDManager:
             parent_item.add_child(new_item)
 
             # If parent was completed, cascade status change to in-progress
-            if parent_item.status == "completed":
+            if parent_item.status == ItemStatus.COMPLETED:
                 self.task_manager.cascade_status_to_in_progress(new_item)
         elif item_type == "phase":
             self.project.add_child(new_item)
@@ -149,7 +151,7 @@ class CRUDManager:
             return
 
         for child in list(parent_item.children):
-            if child.item_type == item_type and child.status == "completed":
+            if child.item_type == item_type and child.status == ItemStatus.COMPLETED:
                 # For objectives, verify execution tree is complete
                 if item_type == "objective":
                     if isinstance(
@@ -362,9 +364,9 @@ class CRUDManager:
                 f"Please verify the path is correct and the item exists."
             )
 
-        if item_to_update.status == "archived":
+        if item_to_update.status == ItemStatus.ARCHIVED:
             raise InvalidOperationError(
-                f"Cannot update item '{path}' because it is already in '{item_to_update.status}' status. "
+                f"Cannot update item '{path}' because it is already in '{item_to_update.status.value}' status. "
                 f"Items in 'archived' status cannot be modified to maintain historical accuracy."
             )
 

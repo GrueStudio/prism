@@ -1,67 +1,91 @@
 """
 Config command group for new Prism CLI.
 
-Commands for viewing and editing project configuration including bug types.
+Commands for viewing and editing project configuration.
 """
+import json
 import click
 
+from prism.core import PrismCore
 
 @click.group()
-def config():
+@click.pass_context
+def config(ctx):
     """View and edit project configuration.
 
     Configuration is stored in .prism/config.json.
     """
-    pass
+    ctx.obj = PrismCore()
 
 
 @config.command(name="show")
-def show_config():
+@click.pass_obj
+def show_config(core: PrismCore):
     """Show current configuration."""
-    click.echo("Config show - TODO: Implement")
-    click.echo("Configuration is stored in .prism/config.json")
+    # Use the underlying model for JSON output
+    config_data = core.config.get_model()
+    click.echo(json.dumps(config_data.model_dump(mode="json"), indent=2))
 
 
 @config.command(name="set")
 @click.argument("key")
 @click.argument("value")
-def set_config(key, value):
-    """Set a configuration value."""
-    click.echo(f"Config set - TODO: Implement ({key} = {value})")
+@click.option("--add", is_flag=True, help="Add the value to a list.")
+@click.option("--remove", is_flag=True, help="Remove the value from a list or dict.")
+@click.pass_obj
+def set_config(core: PrismCore, key: str, value: str, add: bool, remove: bool):
+    """Set, add to, or remove from a configuration value.
 
+    List/dict fields that support --add/--remove:
+      - slug_filler_words (string values)
+      - date_formats (string values)
+      - bug_types (JSON object with name/prefix/description)
+      - orphan_priority_labels (key-value via --add or key via --remove)
 
-@config.command(name="get")
-@click.argument("key")
-def get_config(key):
-    """Get a configuration value."""
-    click.echo(f"Config get - TODO: Implement ({key})")
+    Examples:
+      prism config set slug_max_length 50
+      prism config set slug_filler_words new-word --add
+      prism config set slug_filler_words old-word --remove
+      prism config set bug_types '{"name":"UI","prefix":"UI"}' --add
+      prism config set bug_types UI --remove
+      prism config set orphan_priority_labels '{"label":"urgent","value":25}' --add
+      prism config set orphan_priority_labels urgent --remove
+    """
+    if add and remove:
+        raise click.UsageError("Cannot use --add and --remove at the same time.")
 
+    try:
+        if add:
+            if key == "orphan_priority_labels":
+                # Special handling for dict-based labels in the CLI
+                try:
+                    data = json.loads(value)
+                    if not isinstance(data, dict) or "label" not in data or "value" not in data:
+                        raise click.BadParameter("JSON must contain 'label' and 'value' keys.")
+                    core.config.update_dict(key, data["label"], data["value"])
+                except json.JSONDecodeError:
+                    raise click.BadParameter("Invalid JSON format for priority label.")
+            else:
+                core.config.add(key, value)
+            click.echo(f"Added value to '{key}'.")
 
-# Bug type configuration commands
-@config.group(name="bug-types")
-def bug_types():
-    """Manage bug type configurations."""
-    pass
+        elif remove:
+            if key == "orphan_priority_labels":
+                core.config.remove_from_dict(key, value)
+            else:
+                core.config.remove(key, value)
+            click.echo(f"Removed value from '{key}'.")
 
+        else:
+            # Simple set
+            core.config.set(key, value)
+            click.echo(f"Set '{key}' to '{value}'.")
 
-@bug_types.command(name="list")
-def list_bug_types():
-    """List configured bug types."""
-    click.echo("Bug types list - TODO: Implement")
+        click.echo("Configuration saved.")
 
-
-@bug_types.command(name="add")
-@click.option("--name", required=True, help="Bug type name.")
-@click.option("--prefix", required=True, help="Bug type prefix (2-4 uppercase letters).")
-@click.option("--description", help="Bug type description.")
-def add_bug_type(name: str, prefix: str, description: str):
-    """Add a bug type configuration."""
-    click.echo(f"Bug type add - TODO: Implement ({name}: {prefix})")
-
-
-@bug_types.command(name="remove")
-@click.argument("prefix")
-@click.option("-y", "--yes", is_flag=True, help="Skip confirmation.")
-def remove_bug_type(prefix: str, yes: bool):
-    """Remove a bug type configuration."""
-    click.echo(f"Bug type remove - TODO: Implement ({prefix})")
+    except (AttributeError, KeyError) as e:
+        raise click.BadParameter(str(e))
+    except ValueError as e:
+        raise click.ClickException(str(e))
+    except Exception as e:
+        raise click.ClickException(f"Error updating configuration: {e}")

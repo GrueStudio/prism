@@ -69,6 +69,41 @@
       "name": "Integration test coverage gaps",
       "description": "Add end-to-end tests for bug workflow, status cascade, and CLI-manager integration",
       "priority": 7
+    },
+    {
+      "id": 16,
+      "uuid": "5bb47c3c-1eb0-4e1d-8f73-7ab7819538b7",
+      "name": "Config list-types command",
+      "description": "Add prism config list-types command to display bug types without dumping full config. Should show prefix, name, and description in a formatted table.",
+      "priority": 3
+    },
+    {
+      "id": 17,
+      "uuid": "72ee927b-27fd-48c5-bf37-358a79deb9b2",
+      "name": "Config bug-types edit capability",
+      "description": "Add ability to edit existing bug types (e.g., fix typos in name/description) without remove+re-add. Could use prism config set bug-types PREFIX --edit flag.",
+      "priority": 2
+    },
+    {
+      "id": 18,
+      "uuid": "03a4dd62-1ff4-4ae9-9e79-bdd71c4fb281",
+      "name": "ItemStatus transition validation",
+      "description": "Add status transition validation for BaseItem (Phase, Milestone, Objective, Deliverable, Action) similar to BugItem. Enforce: pending->in-progress, in-progress->completed/paused, paused->in-progress, completed->archived.",
+      "priority": 4
+    },
+    {
+      "id": 19,
+      "uuid": "037e0b9e-e656-43f2-9eb1-b4930483243a",
+      "name": "Deprecate redundant status constants",
+      "description": "Remove or deprecate VALID_STATUSES, COMPLETED_STATUS, IN_PROGRESS_STATUS, etc. in constants.py in favor of ItemStatus enum values.",
+      "priority": 1
+    },
+    {
+      "id": 20,
+      "uuid": "23416857-b6d8-4530-b07c-046d362dec5b",
+      "name": "Config set test coverage",
+      "description": "Add tests for config set --add/--remove operations covering: duplicate detection for bug_types, orphan_priority_labels JSON parsing, string list operations, and error cases.",
+      "priority": 5
     }
   ]
 }

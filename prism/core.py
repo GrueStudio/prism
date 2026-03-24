@@ -9,9 +9,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from prism.managers.config_manager import get_config_manager
 from prism.exceptions import ValidationError
 from prism.managers import (
     ArchiveManager,
+    ConfigManager,
     NavigationManager,
     OrphanManager,
     ProjectManager,
@@ -19,9 +21,11 @@ from prism.managers import (
     TaskManager,
 )
 from prism.managers.crud_manager import CRUDManager
+from prism.models.files import ConfigFile
 from prism.models.base import (
     Action,
     Deliverable,
+    ItemStatus,
     Milestone,
     Objective,
     Phase,
@@ -50,6 +54,8 @@ class PrismCore:
             prism_dir: Path to .prism/ directory. Defaults to .prism/ in current directory.
         """
         self.storage = StorageManager(prism_dir)
+        # Initialize/Reset the singleton ConfigManager with our dir
+        self.config = get_config_manager(prism_dir=self.storage.prism_dir, reset=True)
         self.archive_manager = ArchiveManager(self.storage)
         self.project_manager = ProjectManager(self.storage, self.archive_manager)
 
@@ -284,7 +290,7 @@ class PrismCore:
                 current_path = (
                     f"{parent_path}/{item.slug}" if parent_path else item.slug
                 )
-                is_completed = item.status == "completed"
+                is_completed = item.status == ItemStatus.COMPLETED
 
                 summary["item_counts"][item_type]["total"] += 1
                 if is_completed:

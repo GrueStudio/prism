@@ -8,10 +8,12 @@ This package contains focused manager classes that handle specific aspects of Pr
 - StorageManager: Persistence to .prism/ folder structure
 - ProjectManager: Build hierarchical structure from flat storage
 - ArchiveManager: Archive operations with lazy-loading via signals
+- ConfigManager: Project configuration and dynamic settings
 """
 
 from prism.exceptions import NavigationError
 from prism.managers.archive_manager import ArchiveManager
+from prism.managers.config_manager import ConfigManager
 from prism.managers.crud_manager import CRUDManager
 from prism.managers.navigation_manager import NavigationManager
 from prism.managers.orphan_manager import OrphanManager
@@ -29,4 +31,5 @@ __all__ = [
     "ProjectManager",
     "ArchiveManager",
     "OrphanManager",
+    "ConfigManager",
 ]
