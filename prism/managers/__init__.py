@@ -13,6 +13,7 @@ This package contains focused manager classes that handle specific aspects of Pr
 
 from prism.exceptions import NavigationError
 from prism.managers.archive_manager import ArchiveManager
+from prism.managers.bug_manager import BugManager
 from prism.managers.config_manager import ConfigManager
 from prism.managers.crud_manager import CRUDManager
 from prism.managers.navigation_manager import NavigationManager
@@ -32,4 +33,5 @@ __all__ = [
     "ArchiveManager",
     "OrphanManager",
     "ConfigManager",
+    "BugManager",
 ]

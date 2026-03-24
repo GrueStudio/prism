@@ -5,6 +5,8 @@ Commands for managing bug tracking including creation, lifecycle
 management, and log attachment.
 """
 import click
+from typing import Optional
+from prism.managers.bug_manager import BugManager
 
 
 @click.group()
@@ -21,9 +23,74 @@ def bug():
 
 
 @bug.command(name="list")
-def list_bugs():
-    """List all bugs."""
-    click.echo("Bug list command - coming soon")
+@click.argument("search", required=False)
+@click.option(
+    "-s",
+    "--status",
+    "status_filter",
+    help="Status filter (+/- shorthand: o=open, r=reproduced, f=found, x=fixed, i=implemented). e.g. -xor, +f",
+)
+@click.option(
+    "--sort",
+    "sort_by",
+    default="id",
+    type=click.Choice(["id", "status", "created_at", "updated_at"]),
+    help="Field to sort by (default: id).",
+)
+@click.option(
+    "--order",
+    type=click.Choice(["asc", "desc"]),
+    default="asc",
+    help="Sort order (default: asc).",
+)
+def list_bugs(search: Optional[str], status_filter: Optional[str], sort_by: str, order: str):
+    """List bugs with filtering and sorting.
+
+    SEARCH is an optional string to filter bugs by ID, description, or root cause.
+    Use -s/--status with shorthand to filter by status:
+      -xor  -> exclude fixed, open, reproduced (leaves found, implemented)
+      +f    -> include only found
+    """
+    manager = BugManager()
+    bugs = manager.list_bugs(
+        status_filter=status_filter,
+        search=search,
+        sort_by=sort_by,
+        order=order
+    )
+
+    if not bugs:
+        click.echo("No bugs found.")
+        return
+
+    # Table header
+    header = f"{'ID':<15} {'Status':<12} {'Updated':<20} {'Description'}"
+    click.secho(header, bold=True, underline=True)
+
+    status_colors = {
+        "open": "red",
+        "reproduced": "yellow",
+        "found": "magenta",
+        "fixed": "blue",
+        "implemented": "green"
+    }
+
+    for bug in bugs:
+        # Format updated time
+        updated_str = bug.updated_at.strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Format description (truncate if too long)
+        desc = bug.description.replace("\n", " ")
+        if len(desc) > 50:
+            desc = desc[:47] + "..."
+            
+        # Color status
+        status_color = status_colors.get(bug.status.value, "white")
+        
+        # Build line
+        click.echo(f"{bug.bug_id:<15} ", nl=False)
+        click.secho(f"{bug.status.value:<12} ", fg=status_color, nl=False)
+        click.echo(f"{updated_str:<20} {desc}")
 
 
 @bug.command(name="show")
@@ -33,7 +100,45 @@ def show_bug(bug_id: str):
 
     BUG_ID is the bug identifier (e.g., PHYS100326_01).
     """
-    click.echo(f"Bug show command - coming soon (bug: {bug_id})")
+    manager = BugManager()
+    bug_item = manager.get_bug(bug_id)
+    
+    if not bug_item:
+        click.secho(f"Error: Bug '{bug_id}' not found.", fg="red")
+        return
+
+    click.secho(f"Bug: {bug_item.bug_id}", fg="cyan", bold=True)
+    click.echo("-" * (len(bug_item.bug_id) + 5))
+    click.echo(f"Type:        {bug_item.bug_type.name} ({bug_item.bug_type.prefix})")
+    
+    status_colors = {
+        "open": "red",
+        "reproduced": "yellow",
+        "found": "magenta",
+        "fixed": "blue",
+        "implemented": "green"
+    }
+    status_color = status_colors.get(bug_item.status.value, "white")
+    click.echo("Status:      ", nl=False)
+    click.secho(bug_item.status.value, fg=status_color, bold=True)
+    
+    click.echo(f"Created:     {bug_item.created_at.strftime('%Y-%m-%d %H:%M:%S')}")
+    click.echo(f"Updated:     {bug_item.updated_at.strftime('%Y-%m-%d %H:%M:%S')}")
+    click.echo(f"\nDescription: {bug_item.description}")
+    
+    if bug_item.steps_to_reproduce:
+        click.echo(f"\nSteps to Reproduce:\n{bug_item.steps_to_reproduce}")
+    
+    if bug_item.root_cause:
+        click.echo(f"\nRoot Cause:\n{bug_item.root_cause}")
+        
+    if bug_item.fix_description:
+        click.echo(f"\nFix Description:\n{bug_item.fix_description}")
+
+    if bug_item.logs:
+        click.echo(f"\nLogs ({len(bug_item.logs)}):")
+        for log in bug_item.logs:
+            click.echo(f"  - {log.title} ({log.log_type}) [{log.id[:8]}]")
 
 
 @bug.command(name="add")
@@ -41,23 +146,73 @@ def show_bug(bug_id: str):
 @click.option("-d", "--description", required=True, help="Bug description.")
 def add_bug(bug_type_name: str, description: str):
     """Add a new bug."""
-    click.echo(f"Bug add command - coming soon (type: {bug_type_name})")
+    manager = BugManager()
+    try:
+        bug_item = manager.add_bug(bug_type_name, description)
+        click.secho(f"Successfully added bug: {bug_item.bug_id}", fg="green")
+    except ValueError as e:
+        click.secho(f"Error: {e}", fg="red")
 
 
 @bug.command(name="update")
 @click.argument("bug_id")
-@click.option("--to", "to_status", required=True, help="Target status.")
-@click.option("--description", required=True, help="Description of the transition.")
-def update_bug(bug_id: str, to_status: str, description: str):
-    """Update bug status (progress through lifecycle)."""
-    click.echo(f"Bug update command - coming soon (bug: {bug_id}, to: {to_status})")
+@click.argument("description", required=False)
+@click.option("-f", "--file", "filepath", type=click.Path(exists=True, dir_okay=False), help="File containing the description.")
+def update_bug(bug_id: str, description: Optional[str], filepath: Optional[str]):
+    """Progress a bug to its next status in the lifecycle.
+
+    Automatically advances the bug's status (e.g., open -> reproduced).
+    The provided description is intelligently assigned to the correct field:
+    - open->reproduced: sets 'steps_to_reproduce'
+    - reproduced->found: sets 'root_cause'
+    - found->fixed: sets 'fix_description'
+    """
+    if not description and not filepath:
+        # For the fixed -> implemented transition, no description is needed.
+        # We'll pass an empty string and let the manager handle it.
+        desc_content = ""
+    elif description and filepath:
+        raise click.ClickException("Cannot provide both a description argument and a --file option.")
+    elif filepath:
+        try:
+            with open(filepath, "r") as f:
+                desc_content = f.read()
+        except Exception as e:
+            raise click.ClickException(f"Error reading file '{filepath}': {e}")
+    else:
+        desc_content = description if description else ""
+
+
+    manager = BugManager()
+    try:
+        updated_bug = manager.progress_bug_status(bug_id, desc_content)
+        click.secho(f"Successfully updated bug '{bug_id}' to status '{updated_bug.status.value}'.", fg="green")
+    except ValueError as e:
+        click.secho(f"Error: {e}", fg="red")
 
 
 @bug.command(name="edit")
 @click.argument("bug_id")
-def edit_bug(bug_id: str):
+@click.option("-d", "--description", help="New description.")
+@click.option("-s", "--steps", "steps_to_reproduce", help="Steps to reproduce.")
+@click.option("-r", "--root-cause", "root_cause", help="Root cause.")
+@click.option("-f", "--fix", "fix_description", help="Fix description.")
+def edit_bug(bug_id: str, **kwargs):
     """Edit bug fields (not status, not ID, not type)."""
-    click.echo(f"Bug edit command - coming soon (bug: {bug_id})")
+    manager = BugManager()
+    
+    # Filter out None values
+    updates = {k: v for k, v in kwargs.items() if v is not None}
+    
+    if not updates:
+        click.echo("No fields to update.")
+        return
+        
+    try:
+        bug_item = manager.update_bug(bug_id, **updates)
+        click.secho(f"Successfully updated bug: {bug_item.bug_id}", fg="green")
+    except ValueError as e:
+        click.secho(f"Error: {e}", fg="red")
 
 
 @bug.command(name="delete")
@@ -65,7 +220,15 @@ def edit_bug(bug_id: str):
 @click.option("-y", "--yes", is_flag=True, help="Skip confirmation.")
 def delete_bug(bug_id: str, yes: bool):
     """Delete a bug."""
-    click.echo(f"Bug delete command - coming soon (bug: {bug_id})")
+    if not yes:
+        if not click.confirm(f"Are you sure you want to delete bug '{bug_id}'?"):
+            return
+
+    manager = BugManager()
+    if manager.delete_bug(bug_id):
+        click.secho(f"Successfully deleted bug: {bug_id}", fg="green")
+    else:
+        click.secho(f"Error: Bug '{bug_id}' not found.", fg="red")
 
 
 # Log subcommand group
