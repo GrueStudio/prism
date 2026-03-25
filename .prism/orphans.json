@@ -104,6 +104,20 @@
       "name": "Config set test coverage",
       "description": "Add tests for config set --add/--remove operations covering: duplicate detection for bug_types, orphan_priority_labels JSON parsing, string list operations, and error cases.",
       "priority": 5
+    },
+    {
+      "id": 21,
+      "uuid": "b7f6df34-82a8-4367-b637-1c80920ee533",
+      "name": "StorageManager concurrency protection",
+      "description": "Implement file locking (e.g., via fcntl or a cross-platform lockfile) in StorageManager to prevent data corruption during simultaneous read/write operations.",
+      "priority": 7
+    },
+    {
+      "id": 22,
+      "uuid": "38253c3e-3800-4b78-85d0-ca90dce9415a",
+      "name": "Timezone awareness",
+      "description": "Update all datetime operations to use timezone-aware timestamps (e.g., UTC) to prevent issues with due date comparisons across different locales or DST changes.",
+      "priority": 5
     }
   ]
 }
