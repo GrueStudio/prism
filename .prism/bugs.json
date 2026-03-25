@@ -1,0 +1,94 @@
+{
+  "bugs": [
+    {
+      "uuid": "ae6d9ec0-be34-4597-9632-bf021db937eb",
+      "bug_type": {
+        "name": "CLI & UX",
+        "prefix": "CLI",
+        "description": "Command line interface, argument parsing, and display issues"
+      },
+      "bug_id": "CLI240326_01",
+      "description": "Cursor points to completed action: After completing a task with `prism task done`, the cursor still points to the completed action until `prism task start` is called.",
+      "steps_to_reproduce": "1. Start task. 2. Finish task with 'prism task done'. 3. Observe cursor with 'prism status'.",
+      "root_cause": "The cursor is simply not cleared in the TaskManager.complete_current_action() method. The proposed fix is a 'Sticky but Labeled' approach: keep the cursor but clarify status in the UI.",
+      "fix_description": null,
+      "logs": [],
+      "counter": 1,
+      "status": "found",
+      "created_at": "2026-03-24T16:00:53.591079",
+      "updated_at": "2026-03-24T16:09:13.613841"
+    },
+    {
+      "uuid": "10132839-4d11-4f57-aea5-1451e15c678c",
+      "bug_type": {
+        "name": "CLI & UX",
+        "prefix": "CLI",
+        "description": "Command line interface, argument parsing, and display issues"
+      },
+      "bug_id": "CLI240326_02",
+      "description": "Bug type lookup inconsistent: BugManager.add_bug only accepts the bug type Name, not its Prefix. Should allow both for better UX.",
+      "steps_to_reproduce": "1. Try adding a bug using its prefix (e.g. -t CLI). 2. Observe error saying bug type doesn't exist.",
+      "root_cause": "ConfigManager.get_bug_type only checks the 'name' field. The fix is to check both 'name' and 'prefix' fields in the ConfigFile.bug_types list.",
+      "fix_description": null,
+      "logs": [],
+      "counter": 2,
+      "status": "found",
+      "created_at": "2026-03-24T16:06:17.717129",
+      "updated_at": "2026-03-24T16:09:14.369408"
+    },
+    {
+      "uuid": "1f0ea132-4b46-4cbb-8907-2ea101c7b54b",
+      "bug_type": {
+        "name": "CLI & UX",
+        "prefix": "CLI",
+        "description": "Command line interface, argument parsing, and display issues"
+      },
+      "bug_id": "CLI240326_03",
+      "description": "Orphan adopt parent path inconsistent: The `prism orphan adopt -p` option requires an absolute path without the leading `/` and should accept relative paths like other commands.",
+      "steps_to_reproduce": "1. Go to a child level. 2. Try 'prism orphan adopt -p objective-slug'. 3. Observe failure.",
+      "root_cause": "NavigationManager.get_item_by_path only supports absolute paths. The fix is to use resolve_path() within the core.add_item/adopt_orphan flow to allow relative paths.",
+      "fix_description": null,
+      "logs": [],
+      "counter": 3,
+      "status": "found",
+      "created_at": "2026-03-24T16:06:18.099016",
+      "updated_at": "2026-03-24T16:09:15.118764"
+    },
+    {
+      "uuid": "722cdf40-7be8-4a0b-b8eb-1a49ad0759a5",
+      "bug_type": {
+        "name": "Core Logic",
+        "prefix": "CORE",
+        "description": "Foundational business rules and task progression"
+      },
+      "bug_id": "CORE240326_01",
+      "description": "Task progression crosses deliverable boundaries (Issue #4): `prism task next` does not respect deliverable boundaries when finding the next task. Finishing the last action in a deliverable immediately starts an action from the next deliverable context.",
+      "steps_to_reproduce": "1. Complete all actions in deliverable A. 2. Run 'prism task next'. 3. Observe that it starts action in deliverable B.",
+      "root_cause": "TaskManager._find_next_pending_action_in_objective iterates over all deliverables and returns the first pending action from ANY non-completed deliverable. It should instead signal that the deliverable is complete and wait for user input or the next start command.",
+      "fix_description": null,
+      "logs": [],
+      "counter": 1,
+      "status": "found",
+      "created_at": "2026-03-24T16:23:11.536975",
+      "updated_at": "2026-03-24T16:23:12.275232"
+    },
+    {
+      "uuid": "bc9d1500-b586-47c9-8168-dea8071f90b2",
+      "bug_type": {
+        "name": "CLI & UX",
+        "prefix": "CLI",
+        "description": "Command line interface, argument parsing, and display issues"
+      },
+      "bug_id": "CLI240326_04",
+      "description": "CRUD status display enum representation: prism crud show displays the full ItemStatus enum repr (e.g., ItemStatus.PENDING) instead of just the value string (e.g., pending).",
+      "steps_to_reproduce": "1. Run 'prism crud show alpha'. 2. Observe the Status line.",
+      "root_cause": "The _display_item function in prism/commands/crud.py doesn't access the .value property of the status enum. Fix is to use .value if it exists.",
+      "fix_description": null,
+      "logs": [],
+      "counter": 4,
+      "status": "found",
+      "created_at": "2026-03-24T20:29:12.589625",
+      "updated_at": "2026-03-24T20:29:13.228273"
+    }
+  ]
+}

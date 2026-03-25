@@ -8,20 +8,9 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
-from prism.constants import (
-    DEFAULT_DATE_FORMATS,
-    DEFAULT_DATE_MAX_YEARS_FUTURE,
-    DEFAULT_DATE_MAX_YEARS_PAST,
-    DEFAULT_PERCENTAGE_ROUND_PRECISION,
-    DEFAULT_SLUG_FILLER_WORDS,
-    DEFAULT_SLUG_MAX_LENGTH,
-    DEFAULT_SLUG_REGEX_PATTERN,
-    DEFAULT_SLUG_WORD_LIMIT,
-    DEFAULT_STATUS_HEADER_WIDTH,
-)
-
 from .base import Action, Deliverable, Milestone, Objective, Phase
 from .bug import BugItem
+from .config import BugType, ConfigFile
 from .orphan import Orphan
 
 
@@ -77,46 +66,6 @@ class BugsFile(BaseModel):
     """
 
     bugs: List[BugItem] = Field(default_factory=list)
-
-
-class ConfigFile(BaseModel):
-    """Model for config.json file.
-
-    Project settings and configuration.
-    """
-
-    schema_version: str = "0.2.0"
-
-    # Slug settings
-    slug_max_length: int = DEFAULT_SLUG_MAX_LENGTH
-    slug_regex_pattern: str = DEFAULT_SLUG_REGEX_PATTERN
-    slug_word_limit: int = DEFAULT_SLUG_WORD_LIMIT
-    slug_filler_words: List[str] = Field(
-        default_factory=lambda: list(DEFAULT_SLUG_FILLER_WORDS)
-    )
-
-    # Date settings
-    date_formats: List[str] = Field(default_factory=lambda: list(DEFAULT_DATE_FORMATS))
-    date_max_years_future: int = DEFAULT_DATE_MAX_YEARS_FUTURE
-    date_max_years_past: int = DEFAULT_DATE_MAX_YEARS_PAST
-
-    # Display settings
-    status_header_width: int = DEFAULT_STATUS_HEADER_WIDTH
-    percentage_round_precision: int = DEFAULT_PERCENTAGE_ROUND_PRECISION
-
-    # Orphan settings
-    orphan_name_regex: str = r"^[a-zA-Z0-9\s\-_'\"]+$"
-    orphan_default_priority: int = 0
-    orphan_priority_min: int = -100
-    orphan_priority_max: int = 100
-    orphan_priority_labels: dict[str, int] = Field(
-        default_factory=lambda: {
-            "low": -10,
-            "medium": 0,
-            "high": 10,
-            "critical": 50,
-        }
-    )
 
 
 class CursorFile(BaseModel):

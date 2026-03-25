@@ -38,5 +38,42 @@
   "date_max_years_future": 10,
   "date_max_years_past": 1,
   "status_header_width": 25,
-  "percentage_round_precision": 1
+  "percentage_round_precision": 1,
+  "orphan_name_regex": "^[a-zA-Z0-9\\s\\-_'\\\"]+$",
+  "orphan_default_priority": 0,
+  "orphan_priority_min": -100,
+  "orphan_priority_max": 100,
+  "orphan_priority_labels": {
+    "low": -10,
+    "medium": 0,
+    "high": 10,
+    "critical": 50
+  },
+  "bug_types": [
+    {
+      "name": "Core Logic",
+      "prefix": "CORE",
+      "description": "Foundational business rules and task progression"
+    },
+    {
+      "name": "CLI & UX",
+      "prefix": "CLI",
+      "description": "Command line interface, argument parsing, and display issues"
+    },
+    {
+      "name": "Data & Persistence",
+      "prefix": "DATA",
+      "description": "Storage, integrity, and Pydantic model consistency"
+    },
+    {
+      "name": "Sync & Concurrency",
+      "prefix": "SYNC",
+      "description": "Simultaneous access, file locking, and timezone issues"
+    },
+    {
+      "name": "Performance",
+      "prefix": "PERF",
+      "description": "Bottlenecks, search efficiency, and resource usage"
+    }
+  ]
 }

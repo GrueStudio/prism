@@ -16,6 +16,7 @@ from pathlib import Path
 import pytest
 
 from prism.cli import cli
+from prism.models.base import ItemStatus
 from prism.core import PrismCore
 from prism.managers.archive_manager import ArchiveManager
 from prism.managers.project_manager import ProjectManager
@@ -216,7 +217,7 @@ class TestCrudEditCommand:
         """Edit item status."""
         result = runner.invoke(
             cli,
-            ["crud", "edit", "phase-1", "-s", "in-progress"],
+            ["crud", "edit", "phase-1", "-s", ItemStatus.IN_PROGRESS.value],
             catch_exceptions=False,
         )
 

@@ -10,6 +10,7 @@ import click
 
 from prism.constants import STATUS_HEADER_WIDTH
 from prism.core import PrismCore
+from prism.models.base import ItemStatus
 
 
 def display_exec_tree(
@@ -33,7 +34,7 @@ def display_exec_tree(
         # Calculate completion percentage for this deliverable
         total_actions = len(deliverable.children)
         completed_actions = sum(
-            1 for a in deliverable.children if a.status == "completed"
+            1 for a in deliverable.children if a.status == ItemStatus.COMPLETED
         )
         deliv_completion = (
             (completed_actions / total_actions * 100) if total_actions > 0 else 0
@@ -49,9 +50,9 @@ def display_exec_tree(
 
         # Determine status indicator
         status_indicator = ""
-        if deliverable.status == "completed":
+        if deliverable.status == ItemStatus.COMPLETED:
             status_indicator = " ✓"
-        elif deliverable.status == "in-progress":
+        elif deliverable.status == ItemStatus.IN_PROGRESS:
             status_indicator = " ⏳"
 
         click.echo(f"- {deliverable.name}{completion_text}{status_indicator}")
@@ -62,9 +63,9 @@ def display_exec_tree(
                 " →" if current_action and action.uuid == current_action.uuid else ""
             )
             action_status_indicator = ""
-            if action.status == "completed":
+            if action.status == ItemStatus.COMPLETED:
                 action_status_indicator = " ✓"
-            elif action.status == "in-progress":
+            elif action.status == ItemStatus.IN_PROGRESS:
                 action_status_indicator = " ⏳"
 
             click.echo(f"  - {action.name}{action_status_indicator}{action_indicator}")
@@ -89,7 +90,7 @@ def get_exec_tree_data(
     for deliverable in deliverables_to_include:
         total_actions = len(deliverable.children)
         completed_actions = sum(
-            1 for a in deliverable.children if a.status == "completed"
+            1 for a in deliverable.children if a.status == ItemStatus.COMPLETED
         )
         deliv_completion = (
             (completed_actions / total_actions * 100) if total_actions > 0 else 0
@@ -98,7 +99,7 @@ def get_exec_tree_data(
         deliverable_data = {
             "name": deliverable.name,
             "slug": deliverable.slug,
-            "status": deliverable.status,
+            "status": deliverable.status.value,
             "completion_percentage": round(deliv_completion, 1),
             "actions": [],
         }
@@ -107,7 +108,7 @@ def get_exec_tree_data(
             action_data = {
                 "name": action.name,
                 "slug": action.slug,
-                "status": action.status,
+                "status": action.status.value,
                 "is_current": current_action and action.uuid == current_action.uuid,
             }
             deliverable_data["actions"].append(action_data)
@@ -158,7 +159,7 @@ def status(current_deliverable_only, json_output):
             # Calculate objective completion
             total_delivs = len(current_objective.children)
             completed_delivs = sum(
-                1 for d in current_objective.children if d.status == "completed"
+                1 for d in current_objective.children if d.status == ItemStatus.COMPLETED
             )
             obj_completion = (
                 (completed_delivs / total_delivs * 100) if total_delivs > 0 else 0
@@ -167,19 +168,19 @@ def status(current_deliverable_only, json_output):
             result["current_strategic_focus"] = {
                 "phase": {
                     "name": current_phase.name if current_phase else None,
-                    "status": current_phase.status if current_phase else None,
+                    "status": current_phase.status.value if current_phase else None,
                 }
                 if current_phase
                 else None,
                 "milestone": {
                     "name": current_milestone.name if current_milestone else None,
-                    "status": current_milestone.status if current_milestone else None,
+                    "status": current_milestone.status.value if current_milestone else None,
                 }
                 if current_milestone
                 else None,
                 "objective": {
                     "name": current_objective.name,
-                    "status": current_objective.status,
+                    "status": current_objective.status.value,
                     "completion_percentage": round(obj_completion, 1),
                 }
                 if current_objective
@@ -219,7 +220,7 @@ def status(current_deliverable_only, json_output):
         # Calculate objective completion
         total_delivs = len(current_objective.children)
         completed_delivs = sum(
-            1 for d in current_objective.children if d and d.status == "completed"
+            1 for d in current_objective.children if d and d.status == ItemStatus.COMPLETED
         )
         obj_completion = (
             (completed_delivs / total_delivs * 100) if total_delivs > 0 else 0

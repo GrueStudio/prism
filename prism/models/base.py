@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, Field, PrivateAttr, field_validator
+from pydantic import BaseModel, Field, PrivateAttr, field_serializer, field_validator
 
 
 class ItemStatus(str, Enum):
@@ -24,6 +24,17 @@ class ItemStatus(str, Enum):
     PAUSED = "paused"
 
 
+# Valid status transitions: current status -> allowed next statuses
+VALID_STATUS_TRANSITIONS = {
+    ItemStatus.PENDING: {ItemStatus.IN_PROGRESS, ItemStatus.CANCELLED},
+    ItemStatus.IN_PROGRESS: {ItemStatus.COMPLETED, ItemStatus.PAUSED, ItemStatus.CANCELLED},
+    ItemStatus.PAUSED: {ItemStatus.IN_PROGRESS, ItemStatus.CANCELLED},
+    ItemStatus.COMPLETED: {ItemStatus.ARCHIVED, ItemStatus.CANCELLED},
+    ItemStatus.ARCHIVED: set(),  # Terminal state
+    ItemStatus.CANCELLED: set(),  # Terminal state
+}
+
+
 class BaseItem(BaseModel):
     """
     Base model for all Prism items (strategic and execution).
@@ -33,12 +44,12 @@ class BaseItem(BaseModel):
     - name: Item name
     - description: Optional description
     - slug: URL-friendly identifier
-    - status: Current status (stored as string, property returns ItemStatus enum)
+    - status: Current status (ItemStatus enum)
     - parent_uuid: Reference to parent item
     - timestamps: created_at, updated_at
     - time_spent: Total time spent on this item (cascades from children)
     - child_uuids: List of child UUIDs in order (for preserving order)
-    
+
     Subclasses override _item_type to specify their type for validation.
     """
 
@@ -46,7 +57,31 @@ class BaseItem(BaseModel):
     name: str
     description: Optional[str] = None
     slug: str
-    status: str = "pending"
+    status: ItemStatus = ItemStatus.PENDING
+
+    @field_serializer("status")
+    def serialize_status(self, status: str | ItemStatus) -> str:
+        if isinstance(status, ItemStatus):
+            return status.value
+        else:
+            return status
+
+    @field_validator("status", mode="before")
+    @classmethod
+    def validate_status(cls, v):
+        """Convert string status to ItemStatus enum when loading."""
+        if isinstance(v, ItemStatus):
+            return v
+        if isinstance(v, str):
+            try:
+                return ItemStatus(v)
+            except ValueError:
+                valid_values = ", ".join(s.value for s in ItemStatus)
+                raise ValueError(
+                    f"Invalid status: '{v}'. Valid statuses are: {valid_values}"
+                )
+        return v
+
     parent_uuid: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
@@ -66,19 +101,50 @@ class BaseItem(BaseModel):
 
     def get_status(self) -> ItemStatus:
         """Get status as ItemStatus enum."""
-        try:
-            return ItemStatus(self.status)
-        except ValueError:
-            return ItemStatus.PENDING
+        return self.status
 
     def set_status(self, value: ItemStatus | str | None = None) -> None:
-        """Set status from string or ItemStatus enum."""
+        """Set status from string or ItemStatus enum.
+
+        Validates that the transition is allowed in the item lifecycle.
+        Valid transitions:
+          - pending → in-progress, cancelled
+          - in-progress → completed, paused, cancelled
+          - paused → in-progress, cancelled
+          - completed → archived, cancelled
+          - archived → (none, terminal)
+          - cancelled → (none, terminal)
+
+        Args:
+            value: New status value (ItemStatus enum or string)
+
+        Raises:
+            ValueError: If status string is not a valid ItemStatus value
+            ValueError: If the status transition is not allowed
+        """
         if isinstance(value, ItemStatus):
-            self.status = value.value
+            new_status = value
         elif isinstance(value, str):
-            self.status = value
+            try:
+                new_status = ItemStatus(value)
+            except ValueError:
+                valid_values = ", ".join(s.value for s in ItemStatus)
+                raise ValueError(
+                    f"Invalid status: '{value}'. Valid statuses are: {valid_values}"
+                )
         else:
-            self.status = ItemStatus.PENDING.value
+            new_status = ItemStatus.PENDING
+
+        # Validate transition
+        allowed_transitions = VALID_STATUS_TRANSITIONS.get(self.status, set())
+        if new_status != self.status and new_status not in allowed_transitions:
+            raise ValueError(
+                f"Invalid status transition from '{self.status.value}' to '{new_status.value}'. "
+                f"Allowed transitions from '{self.status.value}': "
+                f"{', '.join(t.value for t in allowed_transitions) or 'none (terminal state)'}"
+            )
+
+        self.status = new_status
 
     @field_validator("slug")
     @classmethod

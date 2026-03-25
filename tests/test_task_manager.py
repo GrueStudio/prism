@@ -16,6 +16,7 @@ import pytest
 from prism.exceptions import InvalidOperationError, NotFoundError, ValidationError
 from prism.managers.navigation_manager import NavigationManager
 from prism.managers.task_manager import TaskManager
+from prism.models.base import ItemStatus
 
 # =============================================================================
 # Fixtures
@@ -98,7 +99,7 @@ class TestStartNextAction:
         result = task_manager.start_next_action()
 
         assert result is not None
-        assert result.status == "in-progress"
+        assert result.status == ItemStatus.IN_PROGRESS
         assert task_manager.project.task_cursor is not None
 
     def test_start_next_action_returns_in_progress(self, task_manager):
@@ -120,7 +121,7 @@ class TestStartNextAction:
         objective = milestone.children[0]
         for deliverable in objective.children:
             for action in deliverable.children:
-                action.status = "completed"
+                action.status = ItemStatus.COMPLETED
 
         result = task_manager.start_next_action()
 
@@ -145,13 +146,15 @@ class TestCompleteCurrentAction:
 
     def test_complete_current_action_success(self, task_manager):
         """Complete current action marks action completed."""
+        from prism.models.base import ItemStatus
+        
         # Start action first
         task_manager.start_next_action()
 
         result = task_manager.complete_current_action()
 
         assert result is not None
-        assert result.status == "completed"
+        assert result.status == ItemStatus.COMPLETED
 
     def test_complete_current_action_updates_timestamp(self, task_manager):
         """Complete current action updates updated_at."""
@@ -183,7 +186,7 @@ class TestCompleteCurrentAndStartNext:
         completed, next_action = task_manager.complete_current_and_start_next()
 
         assert completed is not None
-        assert completed.status == "completed"
+        assert completed.status == ItemStatus.COMPLETED
         # Next action might be None if all complete or might be another action
 
     def test_complete_and_start_next_none_when_not_started(self, task_manager):
@@ -225,7 +228,7 @@ class TestCascadeCompletion:
         objective = milestone.children[0]
         deliverable = objective.children[0]
 
-        assert deliverable.status == "completed"
+        assert deliverable.status == ItemStatus.COMPLETED
 
     def test_cascade_completes_objective_when_all_deliverables_done(self, task_manager):
         """Cascade marks objective complete when all deliverables complete."""
@@ -236,14 +239,14 @@ class TestCascadeCompletion:
 
         for deliverable in objective.children:
             for action in deliverable.children:
-                action.status = "completed"
+                action.status = ItemStatus.COMPLETED
                 action.updated_at = datetime.now()
-            deliverable.status = "completed"
+            deliverable.status = ItemStatus.COMPLETED
 
         # Manually trigger cascade on last deliverable
         task_manager._cascade_completion(deliverable)
 
-        assert objective.status == "completed"
+        assert objective.status == ItemStatus.COMPLETED
 
     def test_cascade_stops_at_objective(self, task_manager):
         """Cascade does not propagate to milestone or phase."""
@@ -254,25 +257,25 @@ class TestCascadeCompletion:
 
         for deliverable in objective.children:
             for action in deliverable.children:
-                action.status = "completed"
-            deliverable.status = "completed"
-        objective.status = "completed"
+                action.status = ItemStatus.COMPLETED
+            deliverable.status = ItemStatus.COMPLETED
+        objective.status = ItemStatus.COMPLETED
 
         # Trigger cascade
         task_manager._cascade_completion(objective)
 
         # Milestone and phase should NOT be completed
-        assert milestone.status != "completed"
-        assert phase.status != "completed"
+        assert milestone.status != ItemStatus.COMPLETED
+        assert phase.status != ItemStatus.COMPLETED
 
     def test_cascade_status_to_in_progress_milestone(self, task_manager):
         """Cascade changes milestone to in-progress when child added to completed milestone."""
         phase = task_manager.project.phases[0]
         milestone = phase.children[0]
-        
+
         # Mark milestone as completed
-        milestone.status = "completed"
-        
+        milestone.status = ItemStatus.COMPLETED
+
         # Create a new objective and add it to the milestone
         from prism.models.base import Objective
         new_objective = Objective(
@@ -281,14 +284,14 @@ class TestCascadeCompletion:
             slug="new-obj"
         )
         milestone.add_child(new_objective)
-        
+
         # Trigger cascade
         task_manager.cascade_status_to_in_progress(new_objective)
-        
+
         # Milestone should be in-progress
-        assert milestone.status == "in-progress"
+        assert milestone.status == ItemStatus.IN_PROGRESS
         # Phase should remain unchanged (not completed)
-        assert phase.status == "pending"
+        assert phase.status == ItemStatus.PENDING
 
     def test_cascade_status_to_in_progress_cascades_to_phase(self, task_manager):
         """Cascade propagates to phase when milestone was completed."""
@@ -296,8 +299,8 @@ class TestCascadeCompletion:
         milestone = phase.children[0]
 
         # Mark both milestone and phase as completed
-        milestone.status = "completed"
-        phase.status = "completed"
+        milestone.status = ItemStatus.COMPLETED
+        phase.status = ItemStatus.COMPLETED
 
         # Create a new objective and add it to the milestone
         from prism.models.base import Objective
@@ -312,8 +315,8 @@ class TestCascadeCompletion:
         task_manager.cascade_status_to_in_progress(new_objective)
 
         # Both milestone and phase should be in-progress
-        assert milestone.status == "in-progress"
-        assert phase.status == "in-progress"
+        assert milestone.status == ItemStatus.IN_PROGRESS
+        assert phase.status == ItemStatus.IN_PROGRESS
 
     def test_cascade_status_to_in_progress_deliverable(self, task_manager):
         """Cascade changes deliverable to in-progress when action added to completed deliverable."""
@@ -323,7 +326,7 @@ class TestCascadeCompletion:
         deliverable = objective.children[0]
 
         # Mark deliverable as completed
-        deliverable.status = "completed"
+        deliverable.status = ItemStatus.COMPLETED
 
         # Create a new action and add it to the deliverable
         from prism.models.base import Action
@@ -338,7 +341,7 @@ class TestCascadeCompletion:
         task_manager.cascade_status_to_in_progress(new_action)
 
         # Deliverable should be in-progress
-        assert deliverable.status == "in-progress"
+        assert deliverable.status == ItemStatus.IN_PROGRESS
 
     def test_cascade_status_to_in_progress_objective(self, task_manager):
         """Cascade changes objective to in-progress when deliverable added to completed objective."""
@@ -347,7 +350,7 @@ class TestCascadeCompletion:
         objective = milestone.children[0]
 
         # Mark objective as completed
-        objective.status = "completed"
+        objective.status = ItemStatus.COMPLETED
 
         # Create a new deliverable and add it to the objective
         from prism.models.base import Deliverable
@@ -362,7 +365,7 @@ class TestCascadeCompletion:
         task_manager.cascade_status_to_in_progress(new_deliverable)
 
         # Objective should be in-progress
-        assert objective.status == "in-progress"
+        assert objective.status == ItemStatus.IN_PROGRESS
 
 
 # =============================================================================
@@ -381,7 +384,7 @@ class TestCalculateCompletionPercentage:
         deliverable = objective.children[0]
 
         # 1 of 2 actions complete
-        deliverable.children[0].status = "completed"
+        deliverable.children[0].status = ItemStatus.COMPLETED
 
         result = task_manager.calculate_completion_percentage(deliverable)
 
@@ -395,7 +398,7 @@ class TestCalculateCompletionPercentage:
         deliverable = objective.children[0]
 
         for action in deliverable.children:
-            action.status = "completed"
+            action.status = ItemStatus.COMPLETED
 
         result = task_manager.calculate_completion_percentage(deliverable)
 
@@ -409,8 +412,8 @@ class TestCalculateCompletionPercentage:
 
         # Complete first deliverable
         for action in objective.children[0].children:
-            action.status = "completed"
-        objective.children[0].status = "completed"
+            action.status = ItemStatus.COMPLETED
+        objective.children[0].status = ItemStatus.COMPLETED
 
         result = task_manager.calculate_completion_percentage(objective)
 
@@ -437,8 +440,8 @@ class TestIsExecTreeComplete:
 
         for deliverable in objective.children:
             for action in deliverable.children:
-                action.status = "completed"
-            deliverable.status = "completed"
+                action.status = ItemStatus.COMPLETED
+            deliverable.status = ItemStatus.COMPLETED
 
         result = task_manager.is_exec_tree_complete(objective)
 
@@ -536,7 +539,7 @@ class TestAutoArchiveOnAdd:
         objective1 = mock_data.create_objective(
             name="Objective 1",
             slug="objective-completed",
-            status="completed",
+            status=ItemStatus.COMPLETED,
             parent_uuid="milestone-1-uuid",
             uuid="objective-1-uuid",
         )
@@ -567,7 +570,7 @@ class TestAutoArchiveOnAdd:
         objective1 = mock_data.create_objective(
             name="Objective 1",
             slug="objective-pending",
-            status="pending",
+            status=ItemStatus.PENDING,
             parent_uuid="milestone-1-uuid",
             uuid="objective-1-uuid",
         )
@@ -584,7 +587,7 @@ class TestAutoArchiveOnAdd:
         )
 
         # Old objective should still be active (not archived)
-        assert objective1.status == "pending"
+        assert objective1.status == ItemStatus.PENDING
         assert objective1 in milestone.children
 
     def test_archive_cascades_to_execution_tree(
@@ -597,21 +600,21 @@ class TestAutoArchiveOnAdd:
         objective1 = mock_data.create_objective(
             name="Objective 1",
             slug="objective-with-tree",
-            status="completed",
+            status=ItemStatus.COMPLETED,
             parent_uuid="milestone-1-uuid",
             uuid="objective-1-uuid",
         )
         deliverable = mock_data.create_deliverable(
             name="Deliverable",
             slug="deliverable",
-            status="completed",
+            status=ItemStatus.COMPLETED,
             parent_uuid=objective1.uuid,
             uuid="deliverable-uuid",
         )
         action = mock_data.create_action(
             name="Action",
             slug="action",
-            status="completed",
+            status=ItemStatus.COMPLETED,
             parent_uuid=deliverable.uuid,
             uuid="action-uuid",
         )
@@ -648,7 +651,7 @@ class TestAutoArchiveOnAdd:
         milestone1 = mock_data.create_milestone(
             name="Milestone 1",
             slug="milestone-completed",
-            status="completed",
+            status=ItemStatus.COMPLETED,
             parent_uuid="phase-1-uuid",
             uuid="milestone-1-uuid-new",
         )
@@ -681,7 +684,7 @@ class TestAutoArchiveOnAdd:
         objective1 = mock_data.create_objective(
             name="Objective 1",
             slug="objective-completed",
-            status="completed",
+            status=ItemStatus.COMPLETED,
             parent_uuid="milestone-1-uuid",
             uuid="objective-1-uuid",
         )
@@ -710,14 +713,14 @@ class TestAutoArchiveOnAdd:
         objective1 = mock_data.create_objective(
             name="Objective 1",
             slug="objective-incomplete",
-            status="completed",  # Marked complete but has pending work
+            status=ItemStatus.COMPLETED,  # Marked complete but has pending work
             parent_uuid="milestone-1-uuid",
             uuid="objective-1-uuid",
         )
         deliverable = mock_data.create_deliverable(
             name="Deliverable",
             slug="deliverable",
-            status="pending",  # Pending deliverable
+            status=ItemStatus.PENDING,  # Pending deliverable
             parent_uuid=objective1.uuid,
             uuid="deliverable-uuid",
         )
@@ -751,8 +754,8 @@ class TestAutoArchiveOnAdd:
         # Setup: completed milestone and phase
         milestone = crud_manager.project.get_item("milestone-1-uuid")
         phase = crud_manager.project.get_item("phase-1-uuid")
-        milestone.status = "completed"
-        phase.status = "completed"
+        milestone.status = ItemStatus.COMPLETED
+        phase.status = ItemStatus.COMPLETED
 
         # Add new objective to completed milestone
         result = crud_manager.add_item(
@@ -763,8 +766,8 @@ class TestAutoArchiveOnAdd:
         )
 
         # Milestone and phase should cascade to in-progress
-        assert milestone.status == "in-progress"
-        assert phase.status == "in-progress"
+        assert milestone.status == ItemStatus.IN_PROGRESS
+        assert phase.status == ItemStatus.IN_PROGRESS
 
     def test_add_child_to_completed_deliverable_cascades_status(
         self, crud_manager, mock_data
@@ -772,7 +775,7 @@ class TestAutoArchiveOnAdd:
         """Adding action to completed deliverable cascades status to in-progress."""
         # Setup: completed deliverable
         deliverable = crud_manager.project.get_item("deliverable-1-uuid")
-        deliverable.status = "completed"
+        deliverable.status = ItemStatus.COMPLETED
 
         # Add new action to completed deliverable
         result = crud_manager.add_item(
@@ -783,7 +786,7 @@ class TestAutoArchiveOnAdd:
         )
 
         # Deliverable should cascade to in-progress
-        assert deliverable.status == "in-progress"
+        assert deliverable.status == ItemStatus.IN_PROGRESS
 
     def test_add_child_to_completed_objective_cascades_status(
         self, crud_manager, mock_data
@@ -791,7 +794,7 @@ class TestAutoArchiveOnAdd:
         """Adding deliverable to completed objective cascades status to in-progress."""
         # Setup: completed objective
         objective = crud_manager.project.get_item("objective-1-uuid")
-        objective.status = "completed"
+        objective.status = ItemStatus.COMPLETED
 
         # Add new deliverable to completed objective
         result = crud_manager.add_item(
@@ -802,7 +805,7 @@ class TestAutoArchiveOnAdd:
         )
 
         # Objective should cascade to in-progress
-        assert objective.status == "in-progress"
+        assert objective.status == ItemStatus.IN_PROGRESS
 
 
 # =============================================================================
@@ -836,10 +839,10 @@ class TestUpdateItem:
         """Update item status."""
         result = crud_manager.update_item(
             path="phase-1",
-            status="in-progress",
+            status=ItemStatus.IN_PROGRESS,
         )
 
-        assert result.status == "in-progress"
+        assert result.status == ItemStatus.IN_PROGRESS
 
     def test_update_due_date(self, crud_manager):
         """Update action due date."""
@@ -855,7 +858,8 @@ class TestUpdateItem:
         """Update raises error for archived item."""
         # Set item to archived
         phase = crud_manager.project.phases[0]
-        phase.status = "archived"
+        from prism.models.base import ItemStatus
+        phase.status = ItemStatus.ARCHIVED
 
         with pytest.raises(InvalidOperationError):
             crud_manager.update_item(
@@ -867,7 +871,7 @@ class TestUpdateItem:
         """Update allows modifying completed items."""
         # Set item to completed
         phase = crud_manager.project.phases[0]
-        phase.status = "completed"
+        phase.status = ItemStatus.COMPLETED
 
         # Should be able to update completed item
         result = crud_manager.update_item(
@@ -876,7 +880,7 @@ class TestUpdateItem:
         )
 
         assert result.name == "Updated Completed Phase"
-        assert result.status == "completed"
+        assert result.status == ItemStatus.COMPLETED
 
     def test_update_no_params_raises(self, crud_manager):
         """Update raises error when no params provided."""
@@ -922,7 +926,7 @@ class TestDeleteItem:
     def test_delete_completed_item_raises(self, crud_manager):
         """Delete raises error for completed item."""
         phase = crud_manager.project.phases[0]
-        phase.status = "completed"
+        phase.status = ItemStatus.COMPLETED
 
         with pytest.raises(InvalidOperationError):
             crud_manager.delete_item(path="phase-1")
@@ -996,11 +1000,11 @@ class TestTaskManagerIntegration:
             "phase-1/milestone-1/objective-1/deliverable-1/" + action.slug
         )
         started = task_manager.start_next_action()
-        assert started.status == "in-progress"
+        assert started.status == ItemStatus.IN_PROGRESS
 
         # Complete action
         completed = task_manager.complete_current_action()
-        assert completed.status == "completed"
+        assert completed.status == ItemStatus.COMPLETED
 
     def test_slug_uniqueness_across_operations(self, crud_manager):
         """Test slugs remain unique across add/update operations."""
