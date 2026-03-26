@@ -89,6 +89,42 @@
       "status": "found",
       "created_at": "2026-03-24T20:29:12.589625",
       "updated_at": "2026-03-24T20:29:13.228273"
+    },
+    {
+      "uuid": "fb84d5f3-8991-4448-9c19-59ffa5c70205",
+      "bug_type": {
+        "name": "Data & Persistence",
+        "prefix": "DATA",
+        "description": "Storage, integrity, and Pydantic model consistency"
+      },
+      "bug_id": "DATA250326_01",
+      "description": "Newly created strategic items are incorrectly treated as archived if they are not the 'first' active child, causing loading failures because they aren't actually in the archive.",
+      "steps_to_reproduce": "Added a new strategic item (milestone) when the current focus milestone was incomplete. This caused the new item to be partially added to the parent's child_uuids but not persisted as active in strategic.json.",
+      "root_cause": "CRUDManager.add_item was mutating the parent's child_uuids list (via parent.add_child) before all focus constraints were validated. If a later validation failed, the item was not saved to its type-specific file, but the parent's child-indexing was already updated.",
+      "fix_description": "Implemented focus validation in CRUDManager.add_item before any tree mutation occurs. Simplified the CLI 'add' command by removing duplicate validation logic.",
+      "logs": [],
+      "counter": 1,
+      "status": "implemented",
+      "created_at": "2026-03-25T17:37:06.359970",
+      "updated_at": "2026-03-26T01:45:29.974223"
+    },
+    {
+      "uuid": "2785ee2c-3db9-48b3-b2d3-638dff8a36dd",
+      "bug_type": {
+        "name": "Core Logic",
+        "prefix": "CORE",
+        "description": "Foundational business rules and task progression"
+      },
+      "bug_id": "CORE250326_01",
+      "description": "Completeness does not cascade from Objectives to Milestones or from Milestones to Phases, requiring manual status updates for strategic containers even when all children are done.",
+      "steps_to_reproduce": null,
+      "root_cause": null,
+      "fix_description": null,
+      "logs": [],
+      "counter": 1,
+      "status": "open",
+      "created_at": "2026-03-25T17:41:08.329524",
+      "updated_at": "2026-03-25T17:41:08.329526"
     }
   ]
 }

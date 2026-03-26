@@ -1,0 +1,185 @@
+{
+  "deliverables": [
+    {
+      "uuid": "66b424c8-89ac-4e3d-a673-be333f36e452",
+      "name": "Data Tweaks",
+      "description": "Prepare data models and validation for bug system",
+      "slug": "data-tweaks",
+      "status": "archived",
+      "parent_uuid": "f37c5508-8130-4e79-abe3-44ea9d637a53",
+      "created_at": "2026-03-15T14:25:48.692639",
+      "updated_at": "2026-03-24T00:14:53.396696",
+      "time_spent": null,
+      "child_uuids": [
+        "882a336f-d607-43c2-9a20-320470522e00",
+        "a2c191f1-3f66-40ad-be63-5e562099e949",
+        "d615722a-7d1e-4f96-8823-fd629a276d78"
+      ]
+    },
+    {
+      "uuid": "19211984-7c26-41ae-a71c-f996098a8586",
+      "name": "CLI command stub implementation backlog",
+      "description": "Implement bug and config CLI commands or hide from help text until ready to avoid user confusion",
+      "slug": "cli-command-stub-implementatio",
+      "status": "archived",
+      "parent_uuid": "f37c5508-8130-4e79-abe3-44ea9d637a53",
+      "created_at": "2026-03-15T14:42:33.828296",
+      "updated_at": "2026-03-24T15:09:25.337845",
+      "time_spent": null,
+      "child_uuids": [
+        "fae30cbf-0f43-46a6-8fab-42aa0f72f25a",
+        "95e589ee-ff78-4fa8-9a3b-8aca6226c011",
+        "51b2fd8e-8a31-4ed6-87a7-3ec24a03d9c6",
+        "330595af-7791-47dc-acba-0f3b57f88b0a",
+        "5688bb6d-e091-48cf-a359-3fda6139eae7"
+      ]
+    },
+    {
+      "uuid": "130274d3-a729-4388-8fbe-cd65696ad865",
+      "name": "Migration from BUGS.md",
+      "description": "Migrate existing bugs from BUGS.md to the new bug tracking system",
+      "slug": "migration-from-bugs-md",
+      "status": "archived",
+      "parent_uuid": "f37c5508-8130-4e79-abe3-44ea9d637a53",
+      "created_at": "2026-03-15T14:47:39.103056",
+      "updated_at": "2026-03-24T16:56:08.689772",
+      "time_spent": null,
+      "child_uuids": [
+        "ecb6793a-0b1e-4480-8277-d876bcc52db9",
+        "fb929a92-c17c-4cfa-a900-e8cfe2f34987"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "uuid": "882a336f-d607-43c2-9a20-320470522e00",
+      "name": "Bug lifecycle transition validation",
+      "description": "Add state transition validation to prevent invalid jumps (e.g., open \u2192 implemented) in BugItem.set_status()",
+      "slug": "bug-lifecycle-transition-valid",
+      "status": "archived",
+      "parent_uuid": "66b424c8-89ac-4e3d-a673-be333f36e452",
+      "created_at": "2026-03-15T14:34:50.616883",
+      "updated_at": "2026-03-15T18:00:34.147308",
+      "time_spent": null,
+      "child_uuids": [],
+      "due_date": null
+    },
+    {
+      "uuid": "a2c191f1-3f66-40ad-be63-5e562099e949",
+      "name": "Status value magic strings",
+      "description": "Use Literal types or enums for status values to prevent typos and enable easier refactoring",
+      "slug": "status-value-magic-strings",
+      "status": "archived",
+      "parent_uuid": "66b424c8-89ac-4e3d-a673-be333f36e452",
+      "created_at": "2026-03-15T14:40:53.781132",
+      "updated_at": "2026-03-16T15:55:46.214773",
+      "time_spent": null,
+      "child_uuids": [],
+      "due_date": null
+    },
+    {
+      "uuid": "d615722a-7d1e-4f96-8823-fd629a276d78",
+      "name": "Bug type management",
+      "description": "Implement bug type storage and management (add, list, delete bug types)",
+      "slug": "bug-type-management",
+      "status": "archived",
+      "parent_uuid": "66b424c8-89ac-4e3d-a673-be333f36e452",
+      "created_at": "2026-03-15T14:41:31.391553",
+      "updated_at": "2026-03-24T00:14:53.322459",
+      "time_spent": null,
+      "child_uuids": [],
+      "due_date": null
+    },
+    {
+      "uuid": "fae30cbf-0f43-46a6-8fab-42aa0f72f25a",
+      "name": "CRUD commands",
+      "description": "Implement bug add, show, edit, delete commands",
+      "slug": "crud-commands",
+      "status": "archived",
+      "parent_uuid": "19211984-7c26-41ae-a71c-f996098a8586",
+      "created_at": "2026-03-15T14:46:27.063694",
+      "updated_at": "2026-03-24T01:12:47.498322",
+      "time_spent": null,
+      "child_uuids": [],
+      "due_date": null
+    },
+    {
+      "uuid": "95e589ee-ff78-4fa8-9a3b-8aca6226c011",
+      "name": "Filterable list",
+      "description": "Implement bug list with filtering options (status, type, date)",
+      "slug": "filterable-list",
+      "status": "archived",
+      "parent_uuid": "19211984-7c26-41ae-a71c-f996098a8586",
+      "created_at": "2026-03-15T14:47:01.314459",
+      "updated_at": "2026-03-24T14:34:13.219835",
+      "time_spent": null,
+      "child_uuids": [],
+      "due_date": null
+    },
+    {
+      "uuid": "51b2fd8e-8a31-4ed6-87a7-3ec24a03d9c6",
+      "name": "Smart update",
+      "description": "Implement bug update with smart defaults and validation",
+      "slug": "smart-update",
+      "status": "archived",
+      "parent_uuid": "19211984-7c26-41ae-a71c-f996098a8586",
+      "created_at": "2026-03-15T14:47:01.728756",
+      "updated_at": "2026-03-24T15:06:49.176860",
+      "time_spent": null,
+      "child_uuids": [],
+      "due_date": null
+    },
+    {
+      "uuid": "330595af-7791-47dc-acba-0f3b57f88b0a",
+      "name": "BugManager abstraction layer",
+      "description": "Create BugManager similar to OrphanManager for centralized bug CRUD operations to prevent logic duplication",
+      "slug": "bugmanager-abstraction-layer",
+      "status": "archived",
+      "parent_uuid": "19211984-7c26-41ae-a71c-f996098a8586",
+      "created_at": "2026-03-15T14:58:25.189317",
+      "updated_at": "2026-03-24T15:07:12.383347",
+      "time_spent": null,
+      "child_uuids": [],
+      "due_date": null
+    },
+    {
+      "uuid": "5688bb6d-e091-48cf-a359-3fda6139eae7",
+      "name": "Bug ID auto-generation mechanism",
+      "description": "Implement BugManager.generate_bug_id() with atomic counter persistence to prevent race conditions and duplicates",
+      "slug": "bug-id-auto-generation-mechani",
+      "status": "archived",
+      "parent_uuid": "19211984-7c26-41ae-a71c-f996098a8586",
+      "created_at": "2026-03-15T14:58:25.614239",
+      "updated_at": "2026-03-24T15:09:25.331277",
+      "time_spent": null,
+      "child_uuids": [],
+      "due_date": null
+    },
+    {
+      "uuid": "ecb6793a-0b1e-4480-8277-d876bcc52db9",
+      "name": "Project bug types",
+      "description": "Define and add project-specific bug types to storage",
+      "slug": "project-bug-types",
+      "status": "archived",
+      "parent_uuid": "130274d3-a729-4388-8fbe-cd65696ad865",
+      "created_at": "2026-03-15T14:52:18.105366",
+      "updated_at": "2026-03-24T16:55:07.204822",
+      "time_spent": null,
+      "child_uuids": [],
+      "due_date": null
+    },
+    {
+      "uuid": "fb929a92-c17c-4cfa-a900-e8cfe2f34987",
+      "name": "Add unfixed bugs",
+      "description": "Add unfixed bugs from BUGS.md to the bug tracking system",
+      "slug": "add-unfixed-bugs",
+      "status": "archived",
+      "parent_uuid": "130274d3-a729-4388-8fbe-cd65696ad865",
+      "created_at": "2026-03-15T14:54:24.441707",
+      "updated_at": "2026-03-24T16:56:08.683091",
+      "time_spent": null,
+      "child_uuids": [],
+      "due_date": null
+    }
+  ]
+}

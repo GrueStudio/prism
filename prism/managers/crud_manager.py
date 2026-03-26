@@ -114,6 +114,17 @@ class CRUDManager:
                     f"Please verify the path is correct and the parent item exists."
                 )
 
+            # Focus Validation: Ensure no incomplete siblings exist for strategic items
+            if item_type in ["milestone", "objective"]:
+                TERMINAL_STATUSES = [ItemStatus.COMPLETED, ItemStatus.ARCHIVED, ItemStatus.CANCELLED]
+                for child in parent_item.children:
+                    if child and child.status not in TERMINAL_STATUSES:
+                        # Use internal name for clarity in error message
+                        current_type = type(child).__name__
+                        raise InvalidOperationError(
+                            f"Cannot add {item_type}. Current {current_type} '{child.name}' is not complete."
+                        )
+
             # Set parent_uuid on the new item
             new_item.parent_uuid = parent_item.uuid
 
@@ -130,6 +141,13 @@ class CRUDManager:
             if parent_item.status == ItemStatus.COMPLETED:
                 self.task_manager.cascade_status_to_in_progress(new_item)
         elif item_type == "phase":
+            # Phase Focus Validation: Ensure no incomplete phases exist
+            TERMINAL_STATUSES = [ItemStatus.COMPLETED, ItemStatus.ARCHIVED, ItemStatus.CANCELLED]
+            for phase in self.project.phases:
+                if phase and phase.status not in TERMINAL_STATUSES:
+                    raise InvalidOperationError(
+                        f"Cannot add phase. Current Phase '{phase.name}' is not complete."
+                    )
             self.project.add_child(new_item)
 
         return new_item

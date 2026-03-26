@@ -9,6 +9,7 @@ from typing import Optional
 import click
 
 from prism.core import PrismCore
+from prism.commands.crud import _get_parent_path_for_add
 
 
 @click.group()
@@ -129,12 +130,15 @@ def adopt_orphan(orphan_id: str, type: str, parent_path: Optional[str], yes: boo
             abort=True
         )
 
+    # Resolve parent path if not provided
+    resolved_parent = _get_parent_path_for_add(core, type, parent_path)
+
     # Add the item to the project tree
     new_item = core.add_item(
         item_type=type,
         name=orphan.name,
         description=orphan.description,
-        parent_path=parent_path,
+        parent_path=resolved_parent,
     )
 
     # Remove the orphan after successful adoption
