@@ -94,12 +94,3 @@ def test_bug_delete_command(runner, isolated_prism):
     # Verify it's gone
     bugs_after = isolated_prism.load_bugs().bugs
     assert len(bugs_after) == 0
-
-
-def test_bug_stubs(runner, isolated_prism):
-    """Test that list and update still show coming soon."""
-    result = runner.invoke(cli, ["bug", "list"])
-    assert "Bug list command - coming soon" in result.output
-    
-    result = runner.invoke(cli, ["bug", "update", "SOME_ID", "--to", "reproduced", "--description", "desc"])
-    assert "Bug update command - coming soon" in result.output

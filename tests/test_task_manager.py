@@ -468,6 +468,9 @@ class TestAddItem:
 
     def test_add_phase(self, crud_manager, mock_data):
         """Add phase to project."""
+        # Must complete existing phase first
+        crud_manager.project.phases[0].status = ItemStatus.COMPLETED
+
         result = crud_manager.add_item(
             item_type="phase",
             name="New Phase",
@@ -478,10 +481,15 @@ class TestAddItem:
         assert result is not None
         assert result.name == "New Phase"
         assert result.slug == "new-phase"
+        # Old phase is NOT auto-archived (phases don't have auto-archive yet)
+        # So we expect 2
         assert len(crud_manager.project.phases) == 2
 
     def test_add_milestone(self, crud_manager):
         """Add milestone to phase."""
+        # Must complete existing milestone in Phase 1 first
+        crud_manager.project.phases[0].children[0].status = ItemStatus.COMPLETED
+
         result = crud_manager.add_item(
             item_type="milestone",
             name="New Milestone",
@@ -491,7 +499,8 @@ class TestAddItem:
 
         assert result is not None
         assert result.name == "New Milestone"
-        assert len(crud_manager.project.phases[0].children) == 2
+        # Old milestone IS auto-archived and removed from Phase 1
+        assert len(crud_manager.project.phases[0].children) == 1
 
     def test_add_action(self, crud_manager):
         """Add action to deliverable."""
@@ -564,8 +573,8 @@ class TestAutoArchiveOnAdd:
         archived_uuids = [o.uuid for o in archived_file.objectives]
         assert "objective-1-uuid" in archived_uuids
 
-    def test_does_not_archive_pending_objective(self, crud_manager, mock_data):
-        """Adding new objective does not archive pending sibling."""
+    def test_cannot_add_objective_when_sibling_pending(self, crud_manager, mock_data):
+        """Cannot add new objective if a pending sibling already exists."""
         # Setup: add pending objective to existing milestone
         objective1 = mock_data.create_objective(
             name="Objective 1",
@@ -574,21 +583,23 @@ class TestAutoArchiveOnAdd:
             parent_uuid="milestone-1-uuid",
             uuid="objective-1-uuid",
         )
-        crud_manager.project.place_item(objective1)
+        # Clear existing children of Milestone 1 to avoid conflicts
         milestone = crud_manager.project.get_item("milestone-1-uuid")
+        milestone.child_uuids = []
+        milestone._children = []
+        
         milestone.add_child(objective1)
+        crud_manager.project.place_item(objective1)
 
-        # Add new objective
-        result = crud_manager.add_item(
-            item_type="objective",
-            name="Objective 2",
-            description="New objective",
-            parent_path="phase-1/milestone-1",
-        )
-
-        # Old objective should still be active (not archived)
-        assert objective1.status == ItemStatus.PENDING
-        assert objective1 in milestone.children
+        # Adding new objective should fail
+        with pytest.raises(InvalidOperationError) as excinfo:
+            crud_manager.add_item(
+                item_type="objective",
+                name="Objective 2",
+                description="New objective",
+                parent_path="phase-1/milestone-1",
+            )
+        assert "is not complete" in str(excinfo.value)
 
     def test_archive_cascades_to_execution_tree(
         self, crud_manager, mock_data, empty_prism_dir
@@ -648,6 +659,11 @@ class TestAutoArchiveOnAdd:
         from prism.managers.storage_manager import StorageManager
 
         # Setup: add completed milestone to existing phase
+        # Clear existing milestones in Phase 1 first
+        phase = crud_manager.project.get_item("phase-1-uuid")
+        phase.child_uuids = []
+        phase._children = []
+
         milestone1 = mock_data.create_milestone(
             name="Milestone 1",
             slug="milestone-completed",
@@ -656,7 +672,6 @@ class TestAutoArchiveOnAdd:
             uuid="milestone-1-uuid-new",
         )
         crud_manager.project.place_item(milestone1)
-        phase = crud_manager.project.get_item("phase-1-uuid")
         phase.add_child(milestone1)
 
         # Add new milestone to same phase
@@ -756,6 +771,10 @@ class TestAutoArchiveOnAdd:
         phase = crud_manager.project.get_item("phase-1-uuid")
         milestone.status = ItemStatus.COMPLETED
         phase.status = ItemStatus.COMPLETED
+        
+        # Clear existing children of milestone to avoid focus validation errors
+        milestone.child_uuids = []
+        milestone._children = []
 
         # Add new objective to completed milestone
         result = crud_manager.add_item(
@@ -911,6 +930,9 @@ class TestDeleteItem:
 
     def test_delete_phase(self, crud_manager):
         """Delete phase from project."""
+        # Must complete existing Phase 1 first
+        crud_manager.project.phases[0].status = ItemStatus.COMPLETED
+
         # Add a second phase first
         crud_manager.add_item(
             item_type="phase",

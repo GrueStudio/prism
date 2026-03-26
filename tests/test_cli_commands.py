@@ -28,17 +28,17 @@ from prism.managers.storage_manager import StorageManager
 
 
 @pytest.fixture
-def temp_prism_dir(temp_dir: Path, sample_project):
-    """Create a temporary .prism/ directory with sample project data."""
+def temp_prism_dir(temp_dir: Path, completed_sample_project):
+    """Create a temporary .prism/ directory with completed sample project data."""
     prism_dir = temp_dir / ".prism"
     prism_dir.mkdir()
     (prism_dir / "archive").mkdir()
 
-    # Save sample project using ProjectManager
+    # Save completed sample project using ProjectManager
     storage = StorageManager(prism_dir)
     archive_mgr = ArchiveManager(storage)
     project_mgr = ProjectManager(storage, archive_mgr)
-    project_mgr.save(sample_project)
+    project_mgr.save(completed_sample_project)
 
     return prism_dir
 
