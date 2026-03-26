@@ -400,18 +400,6 @@ def add(
             parent_item = core.navigator.get_item_by_path(resolved_parent)
             if not parent_item:
                 raise NotFoundError(f"Parent not found at '{resolved_parent}'.")
-
-            # When adding an objective to a milestone, check if current objective is complete
-            if item_type == "objective" and isinstance(parent_item, Milestone):
-                # Find any existing active objective under this milestone
-                for existing_obj in parent_item.children:
-                    if (
-                        isinstance(existing_obj, Objective)
-                        and existing_obj.status != "completed"
-                    ):
-                        raise InvalidOperationError(
-                            f"Cannot add objective. Current objective '{existing_obj.name}' is not complete."
-                        )
         else:
             resolved_parent = None
 

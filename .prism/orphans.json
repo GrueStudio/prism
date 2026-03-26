@@ -83,6 +83,13 @@
       "name": "StorageManager concurrency protection",
       "description": "Implement file locking (e.g., via fcntl or a cross-platform lockfile) in StorageManager to prevent data corruption during simultaneous read/write operations.",
       "priority": 7
+    },
+    {
+      "id": 22,
+      "uuid": "280cc28c-b937-4e5b-87ce-da0aaeafc544",
+      "name": "Strategic Data Integrity and Self-Healing",
+      "description": "Robust handling and self-fixing for strategic data inconsistencies (e.g., ghost UUIDs from failed adds).",
+      "priority": 7
     }
   ]
 }
