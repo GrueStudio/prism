@@ -226,32 +226,24 @@ class TaskManager:
         if not parent:
             return
 
-        # Check if all children are complete and update parent status
-        all_children_complete = False
+        # Check if all children are terminal (completed, archived, or cancelled)
+        all_children_terminal = False
+        if parent.children:
+            all_children_terminal = all(
+                a.status in {ItemStatus.COMPLETED, ItemStatus.ARCHIVED, ItemStatus.CANCELLED}
+                for a in parent.children
+            )
+        else:
+            all_children_terminal = True # No children means it's effectively terminal
 
-        if isinstance(item, Action) and isinstance(parent, Deliverable):
-            # Check if all actions in deliverable are complete
-            if parent.children:
-                all_children_complete = all(
-                    a.status == ItemStatus.COMPLETED for a in parent.children
-                )
-        elif isinstance(item, Deliverable) and isinstance(parent, Objective):
-            # Check if all deliverables in objective are complete
-            if parent.children:
-                all_children_complete = all(
-                    d.status == ItemStatus.COMPLETED for d in parent.children
-                )
-
-        # If all children are complete, mark parent as complete and continue cascading
-        # Only cascade up to objective level (not milestones or phases)
-        if all_children_complete and parent.status != ItemStatus.COMPLETED:
+        # If all children are terminal, mark parent as complete and continue cascading
+        if all_children_terminal and parent.status != ItemStatus.COMPLETED:
             parent.status = ItemStatus.COMPLETED
             parent.updated_at = datetime.now()
             click.echo(f"  ✓ {type(parent).__name__} '{parent.name}' marked complete")
 
-            # Continue cascading only if parent is a deliverable (cascade to objective)
-            if isinstance(parent, Deliverable):
-                self._cascade_completion(parent)
+            # Continue cascading up the tree recursively
+            self._cascade_completion(parent)
 
     def cascade_status_to_in_progress(self, item: BaseItem) -> None:
         """Cascade status change to 'in-progress' up the tree when child added to completed parent.

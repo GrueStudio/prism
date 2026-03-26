@@ -248,25 +248,32 @@ class TestCascadeCompletion:
 
         assert objective.status == ItemStatus.COMPLETED
 
-    def test_cascade_stops_at_objective(self, task_manager):
-        """Cascade does not propagate to milestone or phase."""
+    def test_cascade_completes_up_to_phase(self, task_manager):
+        """Cascade completes up to phase level when all children are terminal."""
         # Complete everything
         phase = task_manager.project.phases[0]
         milestone = phase.children[0]
         objective = milestone.children[0]
 
+        # Complete all deliverables and actions
         for deliverable in objective.children:
             for action in deliverable.children:
                 action.status = ItemStatus.COMPLETED
+            # Manually mark deliverable complete if all actions are complete
+            # In a real scenario, this would be handled by task_manager._cascade_completion
+            # For testing purposes, we ensure deliverable is complete before cascading to objective
             deliverable.status = ItemStatus.COMPLETED
+
+        # Complete the objective manually to trigger cascade
         objective.status = ItemStatus.COMPLETED
 
-        # Trigger cascade
+        # Trigger cascade from objective to milestone
         task_manager._cascade_completion(objective)
 
-        # Milestone and phase should NOT be completed
-        assert milestone.status != ItemStatus.COMPLETED
-        assert phase.status != ItemStatus.COMPLETED
+        # Milestone and phase should NOW be completed
+        assert milestone.status == ItemStatus.COMPLETED, "Milestone should be completed after objective cascades"
+        assert phase.status == ItemStatus.COMPLETED, "Phase should be completed after milestone cascades"
+
 
     def test_cascade_status_to_in_progress_milestone(self, task_manager):
         """Cascade changes milestone to in-progress when child added to completed milestone."""
