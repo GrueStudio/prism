@@ -283,12 +283,30 @@ class TaskManager:
     ) -> Tuple[Optional[Action], Optional[Action]]:
         """Complete the current action and start the next pending one.
 
+        Does NOT start the next action if the current deliverable was completed.
+        This enforces deliverable boundaries for 'prism task next'.
+
         Returns:
             Tuple of (completed_action, next_action)
         """
         completed_action = self.complete_current_action()
         if not completed_action:
             return (None, None)
+
+        # Check if deliverable boundary was reached
+        parent_path = self.navigator.get_item_path(completed_action)
+        if parent_path:
+            # path is like phase/milestone/objective/deliverable/action
+            segments = parent_path.split("/")
+            if len(segments) >= 2:
+                deliv_path = "/".join(segments[:-1])
+                deliverable = self.navigator.get_item_by_path(deliv_path)
+                if deliverable and deliverable.status == ItemStatus.COMPLETED:
+                    # Deliverable boundary reached, do not auto-start next action
+                    # Also clear the cursor since we're not starting a new task
+                    self.project.task_cursor = None
+                    self._save_callback()
+                    return (completed_action, None)
 
         next_action = self.start_next_action()
         return (completed_action, next_action)
