@@ -333,7 +333,10 @@ class CRUDManager:
 
         # Enforce business rule: new items cannot be created as "completed" or "archived"
         if status in [ItemStatus.COMPLETED, ItemStatus.ARCHIVED]:
-            new_item.set_status(ItemStatus.PENDING)
+            raise ValidationError(
+                f"Cannot create new item with status '{status.value}'. "
+                f"New items must start in 'pending' status."
+            )
         elif status is not None:
             # set_status handles enum conversion and value validation
             new_item.set_status(status)

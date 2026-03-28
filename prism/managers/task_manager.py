@@ -583,8 +583,11 @@ class TaskManager:
             raise ValidationError("Unsupported item type during instantiation.")
 
         # Enforce business rule: new items cannot be created as "completed" or "archived"
-        if status in [ItemStatus.COMPLETED.value, ItemStatus.ARCHIVED.value]:
-            raise ValidationError(f"Cannot create new item with status '{status}'. Status must be one of: {', '.join(valid_values)}.")
+        if status in [ItemStatus.COMPLETED, ItemStatus.ARCHIVED]:
+            raise ValidationError(
+                f"Cannot create new item with status '{status.value if isinstance(status, ItemStatus) else status}'. "
+                f"New items must start in 'pending' status."
+            )
         elif status is not None:
             # Validate status against allowed values
             valid_values = [s.value for s in ItemStatus]
