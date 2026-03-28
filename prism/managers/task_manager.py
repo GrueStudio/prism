@@ -149,7 +149,7 @@ class TaskManager:
         Args:
             action: Action to start.
         """
-        action.status = "in-progress"
+        action.set_status(ItemStatus.IN_PROGRESS)
         action_path = self.navigator.get_item_path(action)
         self.project.task_cursor = action_path
         self._save_callback()
@@ -190,8 +190,7 @@ class TaskManager:
         if not current_action or current_action.status != ItemStatus.IN_PROGRESS:
             return None
 
-        current_action.status = ItemStatus.COMPLETED
-        current_action.updated_at = datetime.now()
+        current_action.set_status(ItemStatus.COMPLETED)
 
         # Cascade completion up the tree
         self._cascade_completion(current_action)
@@ -238,8 +237,7 @@ class TaskManager:
 
         # If all children are terminal, mark parent as complete and continue cascading
         if all_children_terminal and parent.status != ItemStatus.COMPLETED:
-            parent.status = ItemStatus.COMPLETED
-            parent.updated_at = datetime.now()
+            parent.set_status(ItemStatus.COMPLETED)
             click.echo(f"  ✓ {type(parent).__name__} '{parent.name}' marked complete")
 
             # Continue cascading up the tree recursively
@@ -270,8 +268,7 @@ class TaskManager:
 
         # If parent is completed, change it to in-progress
         if parent.status == ItemStatus.COMPLETED:
-            parent.status = ItemStatus.IN_PROGRESS
-            parent.updated_at = datetime.now()
+            parent.set_status(ItemStatus.IN_PROGRESS)
             click.echo(f"  ✓ {type(parent).__name__} '{parent.name}' changed to in-progress")
 
             # Continue cascading up to phase level

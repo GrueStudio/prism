@@ -43,6 +43,22 @@ class Project:
             self.phases[index] = item
         self._map_item(item)
 
+    def remove_child(self, item: Phase | ArchivedItem):
+        """Remove a phase or archived phase from the project.
+
+        Updates both phases list and child_uuids list to maintain consistency.
+
+        Args:
+            item: The phase or archived item to remove.
+        """
+        if item.uuid in self.child_uuids:
+            index = self.child_uuids.index(item.uuid)
+            self.child_uuids.pop(index)
+            self.phases.pop(index)
+            # Remove from ID map if present
+            if item.uuid in self._id_map:
+                del self._id_map[item.uuid]
+
     def _map_item(self, item: BaseItem | ArchivedItem):
         if isinstance(item, BaseItem) and item.uuid not in self._id_map:
             self._id_map[item.uuid] = item

@@ -238,7 +238,7 @@
       "name": "child_uuids cleanup consistency",
       "description": "Audit all deletion paths and consider automatic child_uuids management via property setters",
       "slug": "child-uuids-cleanup-consistenc",
-      "status": "pending",
+      "status": "in-progress",
       "parent_uuid": "86ef92a0-fef7-4073-bfeb-0a17a661e528",
       "created_at": "2026-03-26T00:30:40.278090",
       "updated_at": "2026-03-26T00:30:40.278094",

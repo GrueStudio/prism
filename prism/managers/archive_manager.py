@@ -11,7 +11,7 @@ from typing import Dict, Optional
 
 from prism.managers.storage_manager import StorageManager
 from prism.models.archived import ArchivedItem, LoadState
-from prism.models.base import BaseItem, Milestone, Objective, Phase
+from prism.models.base import BaseItem, ItemStatus, Milestone, Objective, Phase
 from prism.models.files import ArchivedStrategicFile, ExecutionFile
 
 
@@ -94,7 +94,7 @@ class ArchiveManager:
 
         def append_item(am, item):
             if not isinstance(item, ArchivedItem):
-                item.status = "archived"
+                item.status = ItemStatus.ARCHIVED
             if isinstance(item, Phase):
                 archived.phases.append(item)
                 for milestone in item.children:
@@ -125,10 +125,10 @@ class ArchiveManager:
         deliverables = []
         actions = []
         for deliverable in objective.children:
-            deliverable.status = "archived"
+            deliverable.status = ItemStatus.ARCHIVED
             deliverables.append(deliverable)
             for action in deliverable.children:
-                action.status = "archived"
+                action.status = ItemStatus.ARCHIVED
                 actions.append(action)
 
         execution = ExecutionFile(

@@ -47,9 +47,9 @@ VALIDATION_INVALID_STATUS = (
 )
 VALIDATION_DUPLICATE_SLUG = "An item with this slug already exists in the same parent. Please use a unique name."
 
-# Status constants (not configurable)
+# Status constants (deprecated - use ItemStatus enum from prism.models.base)
 DEFAULT_STATUS = "pending"
-VALID_STATUSES = ["pending", "in-progress", "completed", "cancelled", "archived"]
+VALID_STATUSES = ["pending", "in-progress", "completed", "cancelled", "archived", "paused"]
 COMPLETED_STATUS = "completed"
 ARCHIVED_STATUS = "archived"
 IN_PROGRESS_STATUS = "in-progress"

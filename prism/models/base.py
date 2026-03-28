@@ -26,10 +26,10 @@ class ItemStatus(str, Enum):
 
 # Valid status transitions: current status -> allowed next statuses
 VALID_STATUS_TRANSITIONS = {
-    ItemStatus.PENDING: {ItemStatus.IN_PROGRESS, ItemStatus.CANCELLED},
+    ItemStatus.PENDING: {ItemStatus.IN_PROGRESS, ItemStatus.COMPLETED, ItemStatus.CANCELLED},
     ItemStatus.IN_PROGRESS: {ItemStatus.COMPLETED, ItemStatus.PAUSED, ItemStatus.CANCELLED},
     ItemStatus.PAUSED: {ItemStatus.IN_PROGRESS, ItemStatus.CANCELLED},
-    ItemStatus.COMPLETED: {ItemStatus.ARCHIVED, ItemStatus.CANCELLED},
+    ItemStatus.COMPLETED: {ItemStatus.IN_PROGRESS, ItemStatus.ARCHIVED, ItemStatus.CANCELLED},
     ItemStatus.ARCHIVED: set(),  # Terminal state
     ItemStatus.CANCELLED: set(),  # Terminal state
 }
@@ -144,7 +144,9 @@ class BaseItem(BaseModel):
                 f"{', '.join(t.value for t in allowed_transitions) or 'none (terminal state)'}"
             )
 
-        self.status = new_status
+        if self.status != new_status:
+            self.status = new_status
+            self.updated_at = datetime.now()
 
     @field_validator("slug")
     @classmethod
@@ -185,6 +187,19 @@ class BaseItem(BaseModel):
         else:
             index = self.child_uuids.index(child.uuid)
             self._children[index] = child
+
+    def remove_child(self, child) -> None:
+        """Remove a child item from this item.
+
+        Updates both the _children list and child_uuids list.
+
+        Args:
+            child: Child item to remove.
+        """
+        if child.uuid in self.child_uuids:
+            index = self.child_uuids.index(child.uuid)
+            self.child_uuids.pop(index)
+            self._children.pop(index)
 
 
 # =============================================================================

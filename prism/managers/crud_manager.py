@@ -11,11 +11,7 @@ from typing import List, Optional
 import click
 
 from prism.constants import (
-    ARCHIVED_STATUS,
-    COMPLETED_STATUS,
     DATE_FORMAT_ERROR,
-    DEFAULT_STATUS,
-    VALID_STATUSES,
 )
 from prism.managers.config_manager import get_config_manager
 from prism.exceptions import InvalidOperationError, NotFoundError, ValidationError
@@ -179,8 +175,8 @@ class CRUDManager:
 
                 # Archive this item
                 self.archive_manager.archive_strategic_item(child, item_type)
-                # Remove from parent's active children
-                parent_item.children.remove(child)
+                # Remove from parent's active children (and sync child_uuids)
+                parent_item.remove_child(child)
                 click.echo(f"  ✓ Archived completed {item_type} '{child.name}'")
 
     def _is_objective_exec_tree_complete(self, objective: Objective) -> bool:
@@ -336,17 +332,13 @@ class CRUDManager:
             raise ValidationError("Unsupported item type during instantiation.")
 
         # Enforce business rule: new items cannot be created as "completed" or "archived"
-        if status in [COMPLETED_STATUS, ARCHIVED_STATUS]:
-            new_item.status = DEFAULT_STATUS
+        if status in [ItemStatus.COMPLETED, ItemStatus.ARCHIVED]:
+            new_item.set_status(ItemStatus.PENDING)
         elif status is not None:
-            # Validate status against allowed values
-            if status not in VALID_STATUSES:
-                raise ValidationError(
-                    f"Invalid status: '{status}'. Status must be one of: {', '.join(VALID_STATUSES)}."
-                )
-            new_item.status = status
+            # set_status handles enum conversion and value validation
+            new_item.set_status(status)
         else:
-            new_item.status = DEFAULT_STATUS
+            new_item.set_status(ItemStatus.PENDING)
 
         return new_item
 
@@ -410,11 +402,8 @@ class CRUDManager:
             item_to_update.due_date = parsed_date
             updated = True
         if status is not None:
-            if status not in VALID_STATUSES:
-                raise ValidationError(
-                    f"Invalid status: '{status}'. Status must be one of: {', '.join(VALID_STATUSES)}."
-                )
-            item_to_update.status = status
+            # set_status handles enum conversion and transition validation
+            item_to_update.set_status(status)
             updated = True
 
         if updated:
@@ -463,42 +452,11 @@ class CRUDManager:
                     f"Please verify the path is correct and the parent item exists."
                 )
 
-            # Remove from parent's children list
-            target_list: Optional[List[BaseItem]] = parent_item.children
-
-            if target_list is not None:
-                original_len = len(target_list)
-                target_list[:] = [
-                    item for item in target_list if item.slug != item_slug_to_delete
-                ]
-
-                # FIX: Also remove the item's UUID from the parent's child_uuids list
-                if item_to_delete.uuid in parent_item.child_uuids:
-                    parent_item.child_uuids.remove(item_to_delete.uuid)
-
-
-                if len(target_list) == original_len:
-                    raise NotFoundError(
-                        f"Item with slug '{item_slug_to_delete}' not found under parent '{parent_path}'."
-                    )
-            else:
-                raise NotFoundError(f"Parent '{parent_path}' has no children list.")
+            # Use remove_child which handles both children list and child_uuids
+            parent_item.remove_child(item_to_delete)
         else:
-            # Deleting a phase
-            original_len = len(self.project.phases)
-            self.project.phases[:] = [
-                phase
-                for phase in self.project.phases
-                if phase.slug != item_slug_to_delete
-            ]
-            # FIX: Also remove the phase's UUID from the project's child_uuids list
-            if item_to_delete.uuid in self.project.child_uuids:
-                self.project.child_uuids.remove(item_to_delete.uuid)
-
-            if len(self.project.phases) == original_len:
-                raise NotFoundError(
-                    f"Phase with slug '{item_slug_to_delete}' not found."
-                )
+            # Use remove_child which handles both phases list and child_uuids
+            self.project.remove_child(item_to_delete)
 
     def _get_parent_items_for_slug_check(self, path: str) -> List[BaseItem]:
         """Helper to get the list of siblings for slug uniqueness check.

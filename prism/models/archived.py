@@ -17,7 +17,7 @@ Signals:
 from enum import Enum, auto
 from typing import Any, List, Optional
 
-from prism.models.base import BaseItem
+from prism.models.base import BaseItem, ItemStatus
 from prism.signals import signal
 
 
@@ -145,9 +145,9 @@ class ArchivedItem:
         return self._wrapped_item.slug
 
     @property
-    def status(self) -> str:
-        """Item status - always returns 'archived' for ArchivedItem."""
-        return "archived"
+    def status(self) -> ItemStatus:
+        """Item status - always returns ItemStatus.ARCHIVED for ArchivedItem."""
+        return ItemStatus.ARCHIVED
 
     @property
     def parent_uuid(self) -> Optional[str]:
