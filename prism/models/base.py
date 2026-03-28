@@ -69,7 +69,11 @@ class BaseItem(BaseModel):
     slug: str
     status: ItemStatus = ItemStatus.PENDING
 
-    _last_status: ItemStatus = PrivateAttr()
+    _last_status: ItemStatus = PrivateAttr(default=ItemStatus.PENDING)
+
+    def model_post_init(self, __context) -> None:
+        """Initialize _last_status after model construction."""
+        self._last_status = self.status
 
     @field_serializer("status")
     def serialize_status(self, status: str | ItemStatus) -> str:
@@ -96,24 +100,26 @@ class BaseItem(BaseModel):
 
     @model_validator(mode="after")
     def validate_status_transition_rule(self) -> "BaseItem":
-        """Validate status transition."""
-        if not hasattr(self, "_last_status"):
-            # Should be handled in model_post_init but for safety...
-            self._last_status = self.status
-            return self
-
-        if self.status == self._last_status:
-            return self
-
-        allowed = VALID_STATUS_TRANSITIONS.get(self._last_status, set())
-        if self.status not in allowed:
-            raise ValueError(
-                f"Invalid status transition from '{self._last_status.value}' to '{self.status.value}'. "
-                f"Allowed transitions from '{self._last_status.value}': "
-                f"{', '.join(t.value for t in allowed) or 'none (terminal state)'}"
-            )
-
-        self._last_status = self.status
+        """Validate status transition only when status field changes."""
+        # Get the new status value
+        new_status = self.status
+        
+        # Check if _last_status exists (not first initialization)
+        if hasattr(self, '_last_status') and self._last_status is not None:
+            last_status = self._last_status
+            
+            # Only validate if status actually changed
+            if new_status != last_status:
+                allowed = VALID_STATUS_TRANSITIONS.get(last_status, set())
+                if new_status not in allowed:
+                    raise ValueError(
+                        f"Invalid status transition from '{last_status.value}' to '{new_status.value}'. "
+                        f"Allowed transitions from '{last_status.value}': "
+                        f"{', '.join(t.value for t in allowed) or 'none (terminal state)'}"
+                    )
+        
+        # Always update _last_status to current value
+        self._last_status = new_status
         return self
 
     parent_uuid: Optional[str] = None
