@@ -10,7 +10,15 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, Field, PrivateAttr, field_serializer, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    field_serializer,
+    field_validator,
+    model_validator,
+)
 
 
 class ItemStatus(str, Enum):
@@ -30,8 +38,8 @@ VALID_STATUS_TRANSITIONS = {
     ItemStatus.IN_PROGRESS: {ItemStatus.COMPLETED, ItemStatus.PAUSED, ItemStatus.CANCELLED},
     ItemStatus.PAUSED: {ItemStatus.IN_PROGRESS, ItemStatus.CANCELLED},
     ItemStatus.COMPLETED: {ItemStatus.IN_PROGRESS, ItemStatus.ARCHIVED, ItemStatus.CANCELLED},
-    ItemStatus.ARCHIVED: set(),  # Terminal state
-    ItemStatus.CANCELLED: set(),  # Terminal state
+    ItemStatus.ARCHIVED: set(),  # Truly terminal state
+    ItemStatus.CANCELLED: {ItemStatus.IN_PROGRESS, ItemStatus.ARCHIVED},
 }
 
 
@@ -53,11 +61,15 @@ class BaseItem(BaseModel):
     Subclasses override _item_type to specify their type for validation.
     """
 
+    model_config = ConfigDict(validate_assignment=True)
+
     uuid: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
     description: Optional[str] = None
     slug: str
     status: ItemStatus = ItemStatus.PENDING
+
+    _last_status: ItemStatus = PrivateAttr()
 
     @field_serializer("status")
     def serialize_status(self, status: str | ItemStatus) -> str:
@@ -68,7 +80,7 @@ class BaseItem(BaseModel):
 
     @field_validator("status", mode="before")
     @classmethod
-    def validate_status(cls, v):
+    def validate_status_type(cls, v):
         """Convert string status to ItemStatus enum when loading."""
         if isinstance(v, ItemStatus):
             return v
@@ -82,6 +94,28 @@ class BaseItem(BaseModel):
                 )
         return v
 
+    @model_validator(mode="after")
+    def validate_status_transition_rule(self) -> "BaseItem":
+        """Validate status transition."""
+        if not hasattr(self, "_last_status"):
+            # Should be handled in model_post_init but for safety...
+            self._last_status = self.status
+            return self
+
+        if self.status == self._last_status:
+            return self
+
+        allowed = VALID_STATUS_TRANSITIONS.get(self._last_status, set())
+        if self.status not in allowed:
+            raise ValueError(
+                f"Invalid status transition from '{self._last_status.value}' to '{self.status.value}'. "
+                f"Allowed transitions from '{self._last_status.value}': "
+                f"{', '.join(t.value for t in allowed) or 'none (terminal state)'}"
+            )
+
+        self._last_status = self.status
+        return self
+
     parent_uuid: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
@@ -93,6 +127,7 @@ class BaseItem(BaseModel):
     def model_post_init(self, __context) -> None:
         """Initialize _children after model construction."""
         self._children = [None] * len(self.child_uuids)
+        self._last_status = self.status
 
     @property
     def item_type(self) -> str:
@@ -135,16 +170,9 @@ class BaseItem(BaseModel):
         else:
             new_status = ItemStatus.PENDING
 
-        # Validate transition
-        allowed_transitions = VALID_STATUS_TRANSITIONS.get(self.status, set())
-        if new_status != self.status and new_status not in allowed_transitions:
-            raise ValueError(
-                f"Invalid status transition from '{self.status.value}' to '{new_status.value}'. "
-                f"Allowed transitions from '{self.status.value}': "
-                f"{', '.join(t.value for t in allowed_transitions) or 'none (terminal state)'}"
-            )
-
         if self.status != new_status:
+            # Pydantic's assignment validation will handle transition checking.
+            # We just assign it here.
             self.status = new_status
             self.updated_at = datetime.now()
 

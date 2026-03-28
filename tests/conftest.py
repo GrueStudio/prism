@@ -266,11 +266,16 @@ def sample_project(mock_data: MockDataBuilder) -> Project:
 def completed_sample_project(sample_project: Project) -> Project:
     """Create a sample project with completed strategic items for testing."""
     for phase in sample_project.phases:
-        phase.status = ItemStatus.COMPLETED
         for milestone in phase.children:
-            milestone.status = ItemStatus.COMPLETED
             for objective in milestone.children:
+                # Complete execution tree first
+                for deliv in objective.children:
+                    for action in deliv.children:
+                        action.status = ItemStatus.COMPLETED
+                    deliv.status = ItemStatus.COMPLETED
                 objective.status = ItemStatus.COMPLETED
+            milestone.status = ItemStatus.COMPLETED
+        phase.status = ItemStatus.COMPLETED
     return sample_project
 
 

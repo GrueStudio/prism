@@ -1,0 +1,7 @@
+refactor(models): enforce strict lifecycle rules for project items
+
+Ensuring strict status transition validation prevents invalid state movements
+and maintains data integrity across the project tree. This also enforces
+that items can only be archived once they have reached a terminal state.
+
+Completes Action: "ItemStatus transition validation"

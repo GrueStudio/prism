@@ -495,7 +495,15 @@ class TestAddItem:
     def test_add_milestone(self, crud_manager):
         """Add milestone to phase."""
         # Must complete existing milestone in Phase 1 first
-        crud_manager.project.phases[0].children[0].status = ItemStatus.COMPLETED
+        milestone = crud_manager.project.phases[0].children[0]
+        # Recursively complete all children of the milestone (Objectives, Deliverables, Actions)
+        for objective in milestone.children:
+            for deliv in objective.children:
+                for action in deliv.children:
+                    action.status = ItemStatus.COMPLETED
+                deliv.status = ItemStatus.COMPLETED
+            objective.status = ItemStatus.COMPLETED
+        milestone.status = ItemStatus.COMPLETED
 
         result = crud_manager.add_item(
             item_type="milestone",
@@ -885,6 +893,7 @@ class TestUpdateItem:
         # Set item to archived
         phase = crud_manager.project.phases[0]
         from prism.models.base import ItemStatus
+        phase.status = ItemStatus.COMPLETED
         phase.status = ItemStatus.ARCHIVED
 
         with pytest.raises(InvalidOperationError):

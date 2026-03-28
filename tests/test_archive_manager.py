@@ -45,6 +45,10 @@ class TestArchiveStrategicItem:
         )
         phase.add_child(milestone)
 
+        # Set terminal status before archiving
+        milestone.status = ItemStatus.COMPLETED
+        phase.status = ItemStatus.COMPLETED
+
         # Archive
         manager.archive_strategic_item(phase, "phase")
 
@@ -70,6 +74,10 @@ class TestArchiveStrategicItem:
         )
         milestone.add_child(objective)
 
+        # Set terminal status before archiving
+        objective.status = ItemStatus.COMPLETED
+        milestone.status = ItemStatus.COMPLETED
+
         # Archive
         manager.archive_strategic_item(milestone, "milestone")
 
@@ -87,6 +95,13 @@ class TestArchiveStrategicItem:
         phase = sample_project.phases[0]
         milestone = phase.children[0]
         objective = milestone.children[0]
+
+        # Set terminal status for entire tree
+        for deliv in objective.children:
+            for action in deliv.children:
+                action.status = ItemStatus.COMPLETED
+            deliv.status = ItemStatus.COMPLETED
+        objective.status = ItemStatus.COMPLETED
 
         # Archive
         manager.archive_strategic_item(objective, "objective")
@@ -110,6 +125,7 @@ class TestArchiveStrategicItem:
         manager = ArchiveManager(storage)
 
         phase = mock_data.create_phase(name="Phase", slug="phase", uuid="phase-uuid")
+        phase.status = ItemStatus.COMPLETED
 
         manager.archive_strategic_item(phase, "phase")
 
@@ -140,6 +156,11 @@ class TestArchiveExecutionTree:
         deliv.add_child(action)
         objective.add_child(deliv)
 
+        # Set terminal status
+        action.status = ItemStatus.COMPLETED
+        deliv.status = ItemStatus.COMPLETED
+        objective.status = ItemStatus.COMPLETED
+
         # Archive objective (which archives execution tree)
         manager.archive_strategic_item(objective, "objective")
 
@@ -159,6 +180,7 @@ class TestGetArchivedItem:
         manager = ArchiveManager(storage)
 
         phase = mock_data.create_phase(name="Phase", slug="phase", uuid="phase-uuid")
+        phase.status = ItemStatus.COMPLETED
         manager.archive_strategic_item(phase, "phase")
 
         archived = manager.get_archived_item("phase-uuid", "phase")
@@ -172,6 +194,7 @@ class TestGetArchivedItem:
         manager = ArchiveManager(storage)
 
         milestone = mock_data.create_milestone(uuid="ms-uuid")
+        milestone.status = ItemStatus.COMPLETED
         manager.archive_strategic_item(milestone, "milestone")
 
         archived = manager.get_archived_item("ms-uuid", "milestone")
@@ -184,6 +207,7 @@ class TestGetArchivedItem:
         manager = ArchiveManager(storage)
 
         objective = mock_data.create_objective(uuid="obj-uuid")
+        objective.status = ItemStatus.COMPLETED
         manager.archive_strategic_item(objective, "objective")
 
         archived = manager.get_archived_item("obj-uuid", "objective")
@@ -219,6 +243,10 @@ class TestLazyLoading:
         )
         phase.add_child(milestone)
 
+        # Set terminal status
+        milestone.status = ItemStatus.COMPLETED
+        phase.status = ItemStatus.COMPLETED
+
         manager.archive_strategic_item(phase, "phase")
 
         # Get archived phase
@@ -241,6 +269,10 @@ class TestLazyLoading:
             name="Objective", slug="obj", parent_uuid=milestone.uuid, uuid="obj-uuid"
         )
         milestone.add_child(objective)
+
+        # Set terminal status
+        objective.status = ItemStatus.COMPLETED
+        milestone.status = ItemStatus.COMPLETED
 
         manager.archive_strategic_item(milestone, "milestone")
 
@@ -265,6 +297,10 @@ class TestLazyLoading:
             uuid="deliv-uuid",
         )
         objective.add_child(deliv)
+
+        # Set terminal status
+        deliv.status = ItemStatus.COMPLETED
+        objective.status = ItemStatus.COMPLETED
 
         manager.archive_strategic_item(objective, "objective")
 
@@ -294,6 +330,11 @@ class TestLazyLoading:
         deliv.add_child(action)
         objective.add_child(deliv)
 
+        # Set terminal status
+        action.status = ItemStatus.COMPLETED
+        deliv.status = ItemStatus.COMPLETED
+        objective.status = ItemStatus.COMPLETED
+
         manager.archive_strategic_item(objective, "objective")
 
         # Get archived deliverable through objective
@@ -321,6 +362,7 @@ class TestArchivedItemProperties:
             slug="test-phase",
             uuid="phase-uuid",
         )
+        phase.status = ItemStatus.COMPLETED
         manager.archive_strategic_item(phase, "phase")
 
         archived = manager.get_archived_item("phase-uuid", "phase")
@@ -337,6 +379,7 @@ class TestArchivedItemProperties:
         manager = ArchiveManager(storage)
 
         phase = mock_data.create_phase(slug="phase", uuid="phase-uuid")
+        phase.status = ItemStatus.COMPLETED
         manager.archive_strategic_item(phase, "phase")
 
         archived = manager.get_archived_item("phase-uuid", "phase")
@@ -352,6 +395,10 @@ class TestArchivedItemProperties:
             name="Obj", slug="obj", parent_uuid=milestone.uuid, uuid="obj-uuid"
         )
         milestone.add_child(objective)
+
+        # Set terminal status
+        objective.status = ItemStatus.COMPLETED
+        milestone.status = ItemStatus.COMPLETED
 
         manager.archive_strategic_item(milestone, "milestone")
 

@@ -28,17 +28,17 @@ from prism.managers.storage_manager import StorageManager
 
 
 @pytest.fixture
-def temp_prism_dir(temp_dir: Path, completed_sample_project):
-    """Create a temporary .prism/ directory with completed sample project data."""
+def temp_prism_dir(temp_dir: Path, sample_project):
+    """Create a temporary .prism/ directory with sample project data."""
     prism_dir = temp_dir / ".prism"
     prism_dir.mkdir()
     (prism_dir / "archive").mkdir()
 
-    # Save completed sample project using ProjectManager
+    # Save sample project using ProjectManager
     storage = StorageManager(prism_dir)
     archive_mgr = ArchiveManager(storage)
     project_mgr = ProjectManager(storage, archive_mgr)
-    project_mgr.save(completed_sample_project)
+    project_mgr.save(sample_project)
 
     return prism_dir
 
@@ -74,6 +74,20 @@ class TestCrudAddCommand:
 
     def test_add_phase(self, runner):
         """Add phase via CLI."""
+        # Complete all items in Phase 1 first
+        core = PrismCore()
+        for phase in core.project.phases:
+            for milestone in phase.children:
+                for objective in milestone.children:
+                    for deliv in objective.children:
+                        for action in deliv.children:
+                            action.status = ItemStatus.COMPLETED
+                        deliv.status = ItemStatus.COMPLETED
+                    objective.status = ItemStatus.COMPLETED
+                milestone.status = ItemStatus.COMPLETED
+            phase.status = ItemStatus.COMPLETED
+        core._save_project()
+
         result = runner.invoke(
             cli,
             ["crud", "add", "-t", "phase", "-n", "New Phase", "-d", "Test"],
@@ -85,6 +99,18 @@ class TestCrudAddCommand:
 
     def test_add_milestone(self, runner):
         """Add milestone via CLI."""
+        # Must complete current milestone first
+        core = PrismCore()
+        milestone = core.project.phases[0].children[0]
+        for objective in milestone.children:
+            for deliv in objective.children:
+                for action in deliv.children:
+                    action.status = ItemStatus.COMPLETED
+                deliv.status = ItemStatus.COMPLETED
+            objective.status = ItemStatus.COMPLETED
+        milestone.status = ItemStatus.COMPLETED
+        core._save_project()
+
         result = runner.invoke(
             cli,
             ["crud", "add", "-t", "milestone", "-n", "New Milestone", "-p", "phase-1"],
