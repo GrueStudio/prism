@@ -129,7 +129,7 @@ def _get_item_by_path_or_uuid(
         require_path: If True, errors when no path provided (for edit/delete safety)
 
     Returns:
-        The item if found
+        The item if found, or None if path resolves to None (for :nd/:na with no next item)
 
     Raises:
         click.ClickException: If neither path nor uuid provided, or item not found
@@ -158,6 +158,10 @@ def _get_item_by_path_or_uuid(
 
     # Resolve path (handles special tokens and relative paths)
     resolved = core.navigator.resolve_path(path)
+
+    # Handle special tokens that may resolve to None (e.g., :nd/:na with no next item)
+    if resolved is None:
+        return None
 
     try:
         item = core.get_item_by_path(resolved)
