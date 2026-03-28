@@ -1,7 +1,7 @@
-refactor(models): enforce strict lifecycle rules for project items
+refactor(constants): deprecate and remove redundant status constants
 
-Ensuring strict status transition validation prevents invalid state movements
-and maintains data integrity across the project tree. This also enforces
-that items can only be archived once they have reached a terminal state.
+Replaced usages of string-based status constants (e.g., PENDING_STATUS) with
+ItemStatus enum members throughout the codebase. This standardizes status
+handling and removes legacy constants from prism/constants.py.
 
-Completes Action: "ItemStatus transition validation"
+Completes Action: "Deprecate redundant status constants"

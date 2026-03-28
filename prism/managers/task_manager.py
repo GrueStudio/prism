@@ -15,12 +15,6 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import click
 
-from prism.constants import (
-    ARCHIVED_STATUS,
-    COMPLETED_STATUS,
-    DEFAULT_STATUS,
-    VALID_STATUSES,
-)
 from prism.managers.config_manager import get_config_manager
 from prism.exceptions import (
     InvalidOperationError,
@@ -589,16 +583,17 @@ class TaskManager:
             raise ValidationError("Unsupported item type during instantiation.")
 
         # Enforce business rule: new items cannot be created as "completed" or "archived"
-        if status in [COMPLETED_STATUS, ARCHIVED_STATUS]:
-            new_item.status = DEFAULT_STATUS
+        if status in [ItemStatus.COMPLETED.value, ItemStatus.ARCHIVED.value]:
+            raise ValidationError(f"Cannot create new item with status '{status}'. Status must be one of: {', '.join(valid_values)}.")
         elif status is not None:
             # Validate status against allowed values
-            if status not in VALID_STATUSES:
+            valid_values = [s.value for s in ItemStatus]
+            if status not in valid_values:
                 raise ValidationError(
-                    f"Invalid status: '{status}'. Status must be one of: {', '.join(VALID_STATUSES)}."
+                    f"Invalid status: '{status}'. Status must be one of: {', '.join(valid_values)}."
                 )
             new_item.status = status
         else:
-            new_item.status = DEFAULT_STATUS
+            new_item.status = ItemStatus.PENDING
 
         return new_item
