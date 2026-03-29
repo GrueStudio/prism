@@ -33,6 +33,14 @@ class ItemStatus(str, Enum):
 
 
 # Valid status transitions: current status -> allowed next statuses
+#
+# Design rationale for flexible workflow:
+# - PENDING → COMPLETED: Allow quick completion for trivial tasks that don't need in-progress state
+# - COMPLETED → IN_PROGRESS: Allow reopening work that was marked done prematurely
+# - COMPLETED → CANCELLED: Allow marking completed work as cancelled if requirements changed
+# - CANCELLED → IN_PROGRESS: Allow restarting cancelled work when priorities shift
+# - CANCELLED → ARCHIVED: Allow archiving cancelled items for historical record
+# - ARCHIVED: Truly terminal state - no transitions allowed (historical integrity)
 VALID_STATUS_TRANSITIONS = {
     ItemStatus.PENDING: {ItemStatus.IN_PROGRESS, ItemStatus.COMPLETED, ItemStatus.CANCELLED},
     ItemStatus.IN_PROGRESS: {ItemStatus.COMPLETED, ItemStatus.PAUSED, ItemStatus.CANCELLED},
