@@ -1,7 +1,0 @@
-refactor(constants): deprecate and remove redundant status constants
-
-Replaced usages of string-based status constants (e.g., PENDING_STATUS) with
-ItemStatus enum members throughout the codebase. This standardizes status
-handling and removes legacy constants from prism/constants.py.
-
-Completes Action: "Deprecate redundant status constants"
