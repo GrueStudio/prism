@@ -15,12 +15,6 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import click
 
-from prism.constants import (
-    ARCHIVED_STATUS,
-    COMPLETED_STATUS,
-    DEFAULT_STATUS,
-    VALID_STATUSES,
-)
 from prism.managers.config_manager import get_config_manager
 from prism.exceptions import (
     InvalidOperationError,
@@ -149,7 +143,7 @@ class TaskManager:
         Args:
             action: Action to start.
         """
-        action.status = "in-progress"
+        action.set_status(ItemStatus.IN_PROGRESS)
         action_path = self.navigator.get_item_path(action)
         self.project.task_cursor = action_path
         self._save_callback()
@@ -190,8 +184,7 @@ class TaskManager:
         if not current_action or current_action.status != ItemStatus.IN_PROGRESS:
             return None
 
-        current_action.status = ItemStatus.COMPLETED
-        current_action.updated_at = datetime.now()
+        current_action.set_status(ItemStatus.COMPLETED)
 
         # Cascade completion up the tree
         self._cascade_completion(current_action)
@@ -238,8 +231,7 @@ class TaskManager:
 
         # If all children are terminal, mark parent as complete and continue cascading
         if all_children_terminal and parent.status != ItemStatus.COMPLETED:
-            parent.status = ItemStatus.COMPLETED
-            parent.updated_at = datetime.now()
+            parent.set_status(ItemStatus.COMPLETED)
             click.echo(f"  ✓ {type(parent).__name__} '{parent.name}' marked complete")
 
             # Continue cascading up the tree recursively
@@ -270,8 +262,7 @@ class TaskManager:
 
         # If parent is completed, change it to in-progress
         if parent.status == ItemStatus.COMPLETED:
-            parent.status = ItemStatus.IN_PROGRESS
-            parent.updated_at = datetime.now()
+            parent.set_status(ItemStatus.IN_PROGRESS)
             click.echo(f"  ✓ {type(parent).__name__} '{parent.name}' changed to in-progress")
 
             # Continue cascading up to phase level
@@ -592,16 +583,20 @@ class TaskManager:
             raise ValidationError("Unsupported item type during instantiation.")
 
         # Enforce business rule: new items cannot be created as "completed" or "archived"
-        if status in [COMPLETED_STATUS, ARCHIVED_STATUS]:
-            new_item.status = DEFAULT_STATUS
+        if status in [ItemStatus.COMPLETED, ItemStatus.ARCHIVED]:
+            raise ValidationError(
+                f"Cannot create new item with status '{status.value if isinstance(status, ItemStatus) else status}'. "
+                f"New items must start in 'pending' status."
+            )
         elif status is not None:
             # Validate status against allowed values
-            if status not in VALID_STATUSES:
+            valid_values = [s.value for s in ItemStatus]
+            if status not in valid_values:
                 raise ValidationError(
-                    f"Invalid status: '{status}'. Status must be one of: {', '.join(VALID_STATUSES)}."
+                    f"Invalid status: '{status}'. Status must be one of: {', '.join(valid_values)}."
                 )
             new_item.status = status
         else:
-            new_item.status = DEFAULT_STATUS
+            new_item.status = ItemStatus.PENDING
 
         return new_item

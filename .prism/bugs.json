@@ -125,6 +125,24 @@
       "status": "open",
       "created_at": "2026-03-25T17:41:08.329524",
       "updated_at": "2026-03-25T17:41:08.329526"
+    },
+    {
+      "uuid": "cebe4efc-882a-4f25-a795-9321cc35a7f2",
+      "bug_type": {
+        "name": "CLI & UX",
+        "prefix": "CLI",
+        "description": "Command line interface, argument parsing, and display issues"
+      },
+      "bug_id": "CLI280326_01",
+      "description": "Navigation error incorrectly claims path is behind task cursor. When task cursor is at path 1/1/1/5/1 (5th deliverable, 1st action), navigating to 1/1/1/7 (7th deliverable) fails with error claiming path is behind task cursor. However, 1/1/1/7 comes AFTER 1/1/1/5/1 in depth-first order, not before. The _is_path_behind() logic incorrectly compares path segments - it compares segment 4 (value 7) against segment 4 (value 5) but should recognize that 7 > 5 means the target is ahead, not behind.",
+      "steps_to_reproduce": null,
+      "root_cause": null,
+      "fix_description": null,
+      "logs": [],
+      "counter": 1,
+      "status": "open",
+      "created_at": "2026-03-28T16:36:21.576548",
+      "updated_at": "2026-03-28T16:36:21.576552"
     }
   ]
 }

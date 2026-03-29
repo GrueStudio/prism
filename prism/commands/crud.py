@@ -129,7 +129,7 @@ def _get_item_by_path_or_uuid(
         require_path: If True, errors when no path provided (for edit/delete safety)
 
     Returns:
-        The item if found
+        The item if found, or None if path resolves to None (for :nd/:na with no next item)
 
     Raises:
         click.ClickException: If neither path nor uuid provided, or item not found
@@ -158,6 +158,10 @@ def _get_item_by_path_or_uuid(
 
     # Resolve path (handles special tokens and relative paths)
     resolved = core.navigator.resolve_path(path)
+
+    # Handle special tokens that may resolve to None (e.g., :nd/:na with no next item)
+    if resolved is None:
+        return None
 
     try:
         item = core.get_item_by_path(resolved)
@@ -273,29 +277,18 @@ def _display_item(item, show_children: bool = True):
     # Display children based on item type - all items now use .children property
     children = []
     child_type = ""
+    item_type = getattr(item, "item_type", None)
 
-    if isinstance(item, Phase):
+    if item_type == "phase":
         children = [(m.name, m.slug) for m in item.children]
         child_type = "Milestones"
-    elif hasattr(item, "item_type") and item.item_type == "phase":  # ArchivedItem
-        children = [(m.name, m.slug) for m in item.children]
-        child_type = "Milestones"
-    elif isinstance(item, Milestone):
+    elif item_type == "milestone":
         children = [(o.name, o.slug) for o in item.children]
         child_type = "Objectives"
-    elif hasattr(item, "item_type") and item.item_type == "milestone":  # ArchivedItem
-        children = [(o.name, o.slug) for o in item.children]
-        child_type = "Objectives"
-    elif isinstance(item, Objective):
+    elif item_type == "objective":
         children = [(d.name, d.slug) for d in item.children]
         child_type = "Deliverables"
-    elif hasattr(item, "item_type") and item.item_type == "objective":  # ArchivedItem
-        children = [(d.name, d.slug) for d in item.children]
-        child_type = "Deliverables"
-    elif isinstance(item, Deliverable):
-        children = [(a.name, a.slug) for a in item.children]
-        child_type = "Actions"
-    elif hasattr(item, "item_type") and item.item_type == "deliverable":  # ArchivedItem
+    elif item_type == "deliverable":
         children = [(a.name, a.slug) for a in item.children]
         child_type = "Actions"
 
@@ -303,7 +296,7 @@ def _display_item(item, show_children: bool = True):
         click.echo(f"\n{child_type}:")
         for i, (name, slug) in enumerate(children, 1):
             click.echo(f"  {i}. {name} ({slug})")
-    else:
+    elif child_type:
         click.echo(f"\nNo {child_type.lower()}.")
 
 
@@ -328,13 +321,14 @@ def show(path: Optional[str], uuid: Optional[str], json_output: bool):
             item_dict = _serialize_item(item)
 
             # Add children based on item type - all items now use .children
-            if isinstance(item, Phase):
+            item_type = getattr(item, "item_type", None)
+            if item_type == "phase":
                 item_dict["children"] = [_serialize_item(m) for m in item.children]
-            elif isinstance(item, Milestone):
+            elif item_type == "milestone":
                 item_dict["children"] = [_serialize_item(o) for o in item.children]
-            elif isinstance(item, Objective):
+            elif item_type == "objective":
                 item_dict["children"] = [_serialize_item(d) for d in item.children]
-            elif isinstance(item, Deliverable):
+            elif item_type == "deliverable":
                 item_dict["children"] = [_serialize_item(a) for a in item.children]
 
             click.echo(json.dumps(item_dict, indent=2))

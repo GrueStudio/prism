@@ -47,16 +47,6 @@ VALIDATION_INVALID_STATUS = (
 )
 VALIDATION_DUPLICATE_SLUG = "An item with this slug already exists in the same parent. Please use a unique name."
 
-# Status constants (not configurable)
-DEFAULT_STATUS = "pending"
-VALID_STATUSES = ["pending", "in-progress", "completed", "cancelled", "archived"]
-COMPLETED_STATUS = "completed"
-ARCHIVED_STATUS = "archived"
-IN_PROGRESS_STATUS = "in-progress"
-PENDING_STATUS = "pending"
-CANCELLED_STATUS = "cancelled"
-PAUSED_STATUS = "paused"
-
 # Date format defaults
 DEFAULT_DATE_FORMATS = [
     "%Y-%m-%d",  # YYYY-MM-DD (ISO 8601)
@@ -75,7 +65,8 @@ DEFAULT_DATE_MAX_YEARS_FUTURE = 10
 DEFAULT_DATE_MAX_YEARS_PAST = 1
 
 # Orphan defaults
-DEFAULT_ORPHAN_NAME_REGEX = r"^[a-zA-Z0-9\s\-_'\"]+$"
+DEFAULT_ORPHAN_NAME_REGEX = r"^[a-zA-Z0-9\s_-]+$"
+
 DEFAULT_ORPHAN_DEFAULT_PRIORITY = 0
 DEFAULT_ORPHAN_PRIORITY_MIN = -100
 DEFAULT_ORPHAN_PRIORITY_MAX = 100

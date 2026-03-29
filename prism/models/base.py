@@ -10,7 +10,15 @@ from datetime import datetime, timedelta
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, Field, PrivateAttr, field_serializer, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    field_serializer,
+    field_validator,
+    model_validator,
+)
 
 
 class ItemStatus(str, Enum):
@@ -25,13 +33,21 @@ class ItemStatus(str, Enum):
 
 
 # Valid status transitions: current status -> allowed next statuses
+#
+# Design rationale for flexible workflow:
+# - PENDING → COMPLETED: Allow quick completion for trivial tasks that don't need in-progress state
+# - COMPLETED → IN_PROGRESS: Allow reopening work that was marked done prematurely
+# - COMPLETED → CANCELLED: Allow marking completed work as cancelled if requirements changed
+# - CANCELLED → IN_PROGRESS: Allow restarting cancelled work when priorities shift
+# - CANCELLED → ARCHIVED: Allow archiving cancelled items for historical record
+# - ARCHIVED: Truly terminal state - no transitions allowed (historical integrity)
 VALID_STATUS_TRANSITIONS = {
-    ItemStatus.PENDING: {ItemStatus.IN_PROGRESS, ItemStatus.CANCELLED},
+    ItemStatus.PENDING: {ItemStatus.IN_PROGRESS, ItemStatus.COMPLETED, ItemStatus.CANCELLED},
     ItemStatus.IN_PROGRESS: {ItemStatus.COMPLETED, ItemStatus.PAUSED, ItemStatus.CANCELLED},
     ItemStatus.PAUSED: {ItemStatus.IN_PROGRESS, ItemStatus.CANCELLED},
-    ItemStatus.COMPLETED: {ItemStatus.ARCHIVED, ItemStatus.CANCELLED},
-    ItemStatus.ARCHIVED: set(),  # Terminal state
-    ItemStatus.CANCELLED: set(),  # Terminal state
+    ItemStatus.COMPLETED: {ItemStatus.IN_PROGRESS, ItemStatus.ARCHIVED, ItemStatus.CANCELLED},
+    ItemStatus.ARCHIVED: set(),  # Truly terminal state
+    ItemStatus.CANCELLED: {ItemStatus.IN_PROGRESS, ItemStatus.ARCHIVED},
 }
 
 
@@ -53,11 +69,19 @@ class BaseItem(BaseModel):
     Subclasses override _item_type to specify their type for validation.
     """
 
+    model_config = ConfigDict(validate_assignment=True)
+
     uuid: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
     description: Optional[str] = None
     slug: str
     status: ItemStatus = ItemStatus.PENDING
+
+    _last_status: ItemStatus = PrivateAttr(default=ItemStatus.PENDING)
+
+    def model_post_init(self, __context) -> None:
+        """Initialize _last_status after model construction."""
+        self._last_status = self.status
 
     @field_serializer("status")
     def serialize_status(self, status: str | ItemStatus) -> str:
@@ -68,7 +92,7 @@ class BaseItem(BaseModel):
 
     @field_validator("status", mode="before")
     @classmethod
-    def validate_status(cls, v):
+    def validate_status_type(cls, v):
         """Convert string status to ItemStatus enum when loading."""
         if isinstance(v, ItemStatus):
             return v
@@ -82,6 +106,30 @@ class BaseItem(BaseModel):
                 )
         return v
 
+    @model_validator(mode="after")
+    def validate_status_transition_rule(self) -> "BaseItem":
+        """Validate status transition only when status field changes."""
+        # Get the new status value
+        new_status = self.status
+        
+        # Check if _last_status exists (not first initialization)
+        if hasattr(self, '_last_status') and self._last_status is not None:
+            last_status = self._last_status
+            
+            # Only validate if status actually changed
+            if new_status != last_status:
+                allowed = VALID_STATUS_TRANSITIONS.get(last_status, set())
+                if new_status not in allowed:
+                    raise ValueError(
+                        f"Invalid status transition from '{last_status.value}' to '{new_status.value}'. "
+                        f"Allowed transitions from '{last_status.value}': "
+                        f"{', '.join(t.value for t in allowed) or 'none (terminal state)'}"
+                    )
+        
+        # Always update _last_status to current value
+        self._last_status = new_status
+        return self
+
     parent_uuid: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
@@ -93,6 +141,7 @@ class BaseItem(BaseModel):
     def model_post_init(self, __context) -> None:
         """Initialize _children after model construction."""
         self._children = [None] * len(self.child_uuids)
+        self._last_status = self.status
 
     @property
     def item_type(self) -> str:
@@ -135,16 +184,11 @@ class BaseItem(BaseModel):
         else:
             new_status = ItemStatus.PENDING
 
-        # Validate transition
-        allowed_transitions = VALID_STATUS_TRANSITIONS.get(self.status, set())
-        if new_status != self.status and new_status not in allowed_transitions:
-            raise ValueError(
-                f"Invalid status transition from '{self.status.value}' to '{new_status.value}'. "
-                f"Allowed transitions from '{self.status.value}': "
-                f"{', '.join(t.value for t in allowed_transitions) or 'none (terminal state)'}"
-            )
-
-        self.status = new_status
+        if self.status != new_status:
+            # Pydantic's assignment validation will handle transition checking.
+            # We just assign it here.
+            self.status = new_status
+            self.updated_at = datetime.now()
 
     @field_validator("slug")
     @classmethod
@@ -185,6 +229,19 @@ class BaseItem(BaseModel):
         else:
             index = self.child_uuids.index(child.uuid)
             self._children[index] = child
+
+    def remove_child(self, child) -> None:
+        """Remove a child item from this item.
+
+        Updates both the _children list and child_uuids list.
+
+        Args:
+            child: Child item to remove.
+        """
+        if child.uuid in self.child_uuids:
+            index = self.child_uuids.index(child.uuid)
+            self.child_uuids.pop(index)
+            self._children.pop(index)
 
 
 # =============================================================================

@@ -14,6 +14,7 @@ from prism.managers.archive_manager import ArchiveManager
 from prism.managers.project_manager import ProjectManager
 from prism.managers.storage_manager import StorageManager
 from prism.models.archived import ArchivedItem
+from prism.models.base import ItemStatus
 from prism.models.files import StrategicFile
 
 
@@ -120,6 +121,7 @@ class TestProjectLoad:
         )
 
         # Archive phase2
+        phase2.status = ItemStatus.COMPLETED
         archive_mgr.archive_strategic_item(phase2, "phase")
 
         # Save phase1 in strategic

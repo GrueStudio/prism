@@ -17,7 +17,7 @@ Signals:
 from enum import Enum, auto
 from typing import Any, List, Optional
 
-from prism.models.base import BaseItem
+from prism.models.base import BaseItem, ItemStatus
 from prism.signals import signal
 
 
@@ -145,9 +145,41 @@ class ArchivedItem:
         return self._wrapped_item.slug
 
     @property
-    def status(self) -> str:
-        """Item status - always returns 'archived' for ArchivedItem."""
-        return "archived"
+    def status(self) -> ItemStatus:
+        """Item status (loaded on first access)."""
+        self._ensure_loaded()
+        if self._wrapped_item is None:
+            raise ValueError(f"ArchivedItem {id(self)} not loaded")
+        return self._wrapped_item.status
+
+    def get_status(self) -> ItemStatus:
+        """Get status as ItemStatus enum."""
+        return self.status
+
+    def set_status(self, value: ItemStatus | str | None = None) -> None:
+        """
+        Set status (not allowed for archived items).
+
+        Raises:
+            ValueError: Always raised as archived items are in terminal state.
+        """
+        # Get new status for error message
+        if isinstance(value, ItemStatus):
+            new_status = value
+        elif isinstance(value, str):
+            try:
+                new_status = ItemStatus(value)
+            except ValueError:
+                new_status = value  # Use raw value for error
+        else:
+            new_status = ItemStatus.PENDING
+
+        status_val = getattr(new_status, "value", str(new_status))
+
+        raise ValueError(
+            f"Invalid status transition from 'archived' to '{status_val}'. "
+            "Allowed transitions from 'archived': none (terminal state)"
+        )
 
     @property
     def parent_uuid(self) -> Optional[str]:
@@ -259,6 +291,26 @@ class ArchivedItem:
         if self._wrapped_item:
             return self._wrapped_item.time_spent
         return None
+
+    def model_dump(self, mode: str = "python", **kwargs) -> dict:
+        """
+        Serialize item to a dict.
+
+        Triggers load if not yet loaded.
+
+        Args:
+            mode: Serialization mode ("python" or "json").
+            **kwargs: Additional arguments for serialization.
+
+        Returns:
+            A dictionary representation of the item.
+        """
+        self._ensure_loaded()
+        if self._wrapped_item is None:
+            raise ValueError(f"ArchivedItem {id(self)} not loaded")
+
+        # Delegate to wrapped item's model_dump
+        return self._wrapped_item.model_dump(mode=mode, **kwargs)
 
     def add_child(self, child):
         if not self._load_state == LoadState.LOADED or not self._wrapped_item:

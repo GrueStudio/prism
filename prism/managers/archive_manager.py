@@ -11,8 +11,9 @@ from typing import Dict, Optional
 
 from prism.managers.storage_manager import StorageManager
 from prism.models.archived import ArchivedItem, LoadState
-from prism.models.base import BaseItem, Milestone, Objective, Phase
+from prism.models.base import BaseItem, ItemStatus, Milestone, Objective, Phase
 from prism.models.files import ArchivedStrategicFile, ExecutionFile
+from prism.exceptions import InvalidOperationError
 
 
 class ArchiveManager:
@@ -85,7 +86,14 @@ class ArchiveManager:
         Args:
             item: The completed BaseItem to archive.
             item_type: Type string ('phase', 'milestone', 'objective').
+
+        Raises:
+            InvalidOperationError: If item or any child is not in terminal status
+                (completed, cancelled, or archived).
         """
+        # Validate: item and all children must be in terminal status BEFORE any saves
+        self._validate_terminal_status(item)
+
         # Invalidate cache
         self._cached_strategic = None
 
@@ -94,7 +102,7 @@ class ArchiveManager:
 
         def append_item(am, item):
             if not isinstance(item, ArchivedItem):
-                item.status = "archived"
+                item.status = ItemStatus.ARCHIVED
             if isinstance(item, Phase):
                 archived.phases.append(item)
                 for milestone in item.children:
@@ -111,6 +119,31 @@ class ArchiveManager:
         # Save
         self.storage.save_archived_strategic(archived)
 
+    def _validate_terminal_status(self, item: BaseItem) -> None:
+        """
+        Validate that item and all children are in terminal status.
+
+        Terminal statuses are: completed, cancelled, archived.
+        Recursively validates entire subtree.
+
+        Args:
+            item: Item to validate.
+
+        Raises:
+            InvalidOperationError: If item or any child is not in terminal status.
+        """
+        TERMINAL_STATUSES = {ItemStatus.COMPLETED, ItemStatus.CANCELLED, ItemStatus.ARCHIVED}
+
+        if item.status not in TERMINAL_STATUSES:
+            raise InvalidOperationError(
+                f"Cannot archive '{item.name}': status is '{item.status.value}'. "
+                f"Item must be in terminal status (completed, cancelled, or archived) before archiving."
+            )
+
+        # Recursively validate all children
+        for child in item.children:
+            self._validate_terminal_status(child)
+
     def _archive_execution_tree(self, objective: Objective) -> None:
         """
         Archive execution tree for completed objective.
@@ -125,10 +158,10 @@ class ArchiveManager:
         deliverables = []
         actions = []
         for deliverable in objective.children:
-            deliverable.status = "archived"
+            deliverable.status = ItemStatus.ARCHIVED
             deliverables.append(deliverable)
             for action in deliverable.children:
-                action.status = "archived"
+                action.status = ItemStatus.ARCHIVED
                 actions.append(action)
 
         execution = ExecutionFile(
