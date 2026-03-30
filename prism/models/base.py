@@ -6,7 +6,7 @@ Common base for all strategic and execution items.
 
 import re
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import List, Optional
 
@@ -131,8 +131,8 @@ class BaseItem(BaseModel):
         return self
 
     parent_uuid: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.now)
-    updated_at: datetime = Field(default_factory=datetime.now)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     time_spent: Optional[timedelta] = None
     child_uuids: List[str] = Field(default_factory=list)
     _children: List[Optional["BaseItem"]] = PrivateAttr()
@@ -188,7 +188,7 @@ class BaseItem(BaseModel):
             # Pydantic's assignment validation will handle transition checking.
             # We just assign it here.
             self.status = new_status
-            self.updated_at = datetime.now()
+            self.updated_at = datetime.now(timezone.utc)
 
     @field_validator("slug")
     @classmethod

@@ -5,7 +5,7 @@ Handles CRUD operations for bug items, including ID generation and
 log file management.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from prism.models.bug import BugItem, BugStatus
@@ -244,7 +244,7 @@ class BugManager:
                     else:
                         raise ValueError(f"Invalid field: '{key}'")
                 
-                bug.updated_at = datetime.now()
+                bug.updated_at = datetime.now(timezone.utc)
                 bugs[i] = bug
                 self._save_bugs(bugs)
                 return bug
@@ -284,7 +284,7 @@ class BugManager:
             A tuple of (bug_id, counter).
         """
         prefix = bug_type.prefix
-        date_str = datetime.now().strftime("%d%m%y")
+        date_str = datetime.now(timezone.utc).strftime("%d%m%y")
         
         bugs = self._load_bugs()
         

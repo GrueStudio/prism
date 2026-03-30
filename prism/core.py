@@ -5,7 +5,7 @@ Orchestrates manager classes for all business operations.
 Uses StorageManager for .prism/ folder-based storage exclusively.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -307,7 +307,7 @@ class PrismCore:
                     isinstance(item, Action)
                     and not is_completed
                     and item.due_date
-                    and item.due_date < datetime.now()
+                    and item.due_date < datetime.now(timezone.utc)
                 ):
                     summary["overdue_actions"].append(
                         {"path": current_path, "due_date": item.due_date.isoformat()}

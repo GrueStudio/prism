@@ -2,10 +2,13 @@
 Utility functions for the Prism CLI application.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Tuple
 
-from prism.managers.config_manager import get_config_manager
+# Configuration reflected from ConfigManager
+DATE_FORMATS = []
+DATE_MAX_YEARS_PAST = 0
+DATE_MAX_YEARS_FUTURE = 0
 
 
 def parse_date(date_string: str) -> Optional[datetime]:
@@ -16,12 +19,12 @@ def parse_date(date_string: str) -> Optional[datetime]:
         date_string: The date string to parse.
         
     Returns:
-        A datetime object if parsing succeeds, None otherwise.
+        A timezone-aware (UTC) datetime object if parsing succeeds, None otherwise.
     """
-    config = get_config_manager()
-    for fmt in config.DATE_FORMATS:
+    for fmt in DATE_FORMATS:
         try:
-            return datetime.strptime(date_string, fmt)
+            dt = datetime.strptime(date_string, fmt)
+            return dt.replace(tzinfo=timezone.utc)
         except ValueError:
             continue
     return None
@@ -32,30 +35,26 @@ def validate_date_range(date: datetime) -> Tuple[bool, Optional[str]]:
     Validate that a date is within acceptable range from configuration.
     
     Args:
-        date: The datetime object to validate.
+        date: The datetime object to validate (should be timezone-aware).
         
     Returns:
         A tuple of (is_valid, error_message). If valid, error_message is None.
     """
-    config = get_config_manager()
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     
-    max_past = config.DATE_MAX_YEARS_PAST
-    max_future = config.DATE_MAX_YEARS_FUTURE
-    
-    min_date = datetime(now.year - max_past, now.month, now.day)
-    max_date = datetime(now.year + max_future, now.month, now.day)
+    min_date = datetime(now.year - DATE_MAX_YEARS_PAST, now.month, now.day, tzinfo=timezone.utc)
+    max_date = datetime(now.year + DATE_MAX_YEARS_FUTURE, now.month, now.day, tzinfo=timezone.utc)
     
     if date < min_date:
         return False, (
             f"Date {date.strftime('%Y-%m-%d')} is too far in the past. "
-            f"Dates must be within the last {max_past} year."
+            f"Dates must be within the last {DATE_MAX_YEARS_PAST} year."
         )
     
     if date > max_date:
         return False, (
             f"Date {date.strftime('%Y-%m-%d')} is too far in the future. "
-            f"Dates must be within the next {max_future} years."
+            f"Dates must be within the next {DATE_MAX_YEARS_FUTURE} years."
         )
     
     return True, None
@@ -72,3 +71,18 @@ def format_date(date: datetime) -> str:
         A string in YYYY-MM-DD format.
     """
     return date.strftime("%Y-%m-%d")
+
+
+def to_local_time(dt: datetime) -> datetime:
+    """
+    Convert a UTC datetime to the local timezone.
+    
+    Args:
+        dt: The UTC datetime object.
+        
+    Returns:
+        A datetime object in the local timezone.
+    """
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone()
