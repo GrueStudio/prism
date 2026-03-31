@@ -22,6 +22,7 @@ from prism.models.files import (
     ExecutionFile,
     OrphansFile,
     StrategicFile,
+    ActiveTimersFile,
 )
 
 
@@ -266,6 +267,68 @@ class StorageManager:
         """Save BugsFile model to bugs.json."""
         file_path = self.prism_dir / "bugs.json"
         self._atomic_write(file_path, data.model_dump(mode="json"))
+
+    # =========================================================================
+    # Time Tracking (Active Timers & Archive CSV)
+    # =========================================================================
+
+    def load_active_timers(self) -> ActiveTimersFile:
+        """Load active_timers.json and return as ActiveTimersFile model."""
+        file_path = self.prism_dir / "active_timers.json"
+        if not file_path.exists():
+            return ActiveTimersFile()
+
+        try:
+            with open(file_path, "r") as f:
+                data = json.load(f)
+            return ActiveTimersFile.model_validate(data)
+        except (json.JSONDecodeError, ValidationError) as e:
+            raise StorageError(f"Failed to load active_timers.json: {e}")
+
+    def save_active_timers(self, data: ActiveTimersFile) -> None:
+        """Save ActiveTimersFile model to active_timers.json."""
+        file_path = self.prism_dir / "active_timers.json"
+        self._atomic_write(file_path, data.model_dump(mode="json"))
+
+    def append_timelog_csv(self, log: "TimeLog") -> None:
+        """Append a completed TimeLog to timelogs.csv."""
+        import csv
+        file_path = self.prism_dir / "timelogs.csv"
+        
+        file_exists = file_path.exists()
+        
+        try:
+            with open(file_path, "a", newline="") as f:
+                fieldnames = ["uuid", "action_uuid", "start_time", "end_time", "description", "duration_seconds"]
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                
+                if not file_exists:
+                    writer.writeheader()
+                
+                writer.writerow({
+                    "uuid": log.uuid,
+                    "action_uuid": log.action_uuid,
+                    "start_time": log.start_time.isoformat(),
+                    "end_time": log.end_time.isoformat() if log.end_time else "",
+                    "description": log.description or "",
+                    "duration_seconds": log.duration.total_seconds()
+                })
+        except Exception as e:
+            raise StorageError(f"Failed to append to timelogs.csv: {e}")
+
+    def read_timelogs_csv(self) -> List[Dict[str, Any]]:
+        """Read all entries from timelogs.csv as a list of dictionaries."""
+        import csv
+        file_path = self.prism_dir / "timelogs.csv"
+        if not file_path.exists():
+            return []
+
+        try:
+            with open(file_path, "r", newline="") as f:
+                reader = csv.DictReader(f)
+                return list(reader)
+        except Exception as e:
+            raise StorageError(f"Failed to read timelogs.csv: {e}")
 
     # =========================================================================
     # Bug Log Files
