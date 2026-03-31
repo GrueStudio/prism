@@ -21,10 +21,12 @@ from prism.managers.orphan_manager import OrphanManager
 from prism.managers.project_manager import ProjectManager
 from prism.managers.storage_manager import StorageError, StorageManager
 from prism.managers.task_manager import TaskManager
+from prism.managers.time_manager import TimeManager
 
 __all__ = [
     "CRUDManager",
     "TaskManager",
+    "TimeManager",
     "NavigationManager",
     "NavigationError",
     "StorageManager",

@@ -19,6 +19,7 @@ from prism.managers import (
     ProjectManager,
     StorageManager,
     TaskManager,
+    TimeManager,
 )
 from prism.managers.crud_manager import CRUDManager
 from prism.models.files import ConfigFile
