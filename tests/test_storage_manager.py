@@ -9,6 +9,7 @@ Tests cover:
 """
 
 import json
+from datetime import timedelta
 from pathlib import Path
 
 import pytest
@@ -92,6 +93,29 @@ class TestStrategicFileOperations:
         
         assert "phase_uuids" in data
         assert data["phase_uuids"] == ["uuid-1", "uuid-2"]
+
+    def test_load_strategic_with_null_time_spent(self, empty_prism_dir: Path):
+        """Load strategic.json with null time_spent fields handles it gracefully."""
+        manager = StorageManager(empty_prism_dir)
+        
+        # Manually create JSON with null time_spent
+        data = {
+            "phase": {
+                "uuid": "uuid-1",
+                "name": "Phase",
+                "slug": "phase",
+                "time_spent": None,
+                "child_uuids": []
+            },
+            "phase_uuids": ["uuid-1"]
+        }
+        file_path = empty_prism_dir / "strategic.json"
+        with open(file_path, "w") as f:
+            json.dump(data, f)
+            
+        # Load and verify
+        result = manager.load_strategic()
+        assert result.phase.time_spent == timedelta(0)
 
 
 class TestExecutionFileOperations:

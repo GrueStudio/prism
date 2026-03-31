@@ -143,6 +143,24 @@
       "status": "open",
       "created_at": "2026-03-28T16:36:21.576548",
       "updated_at": "2026-03-28T16:36:21.576552"
+    },
+    {
+      "uuid": "075f5134-91d5-483f-8ec9-fcc68b1d0bfd",
+      "bug_type": {
+        "name": "Data & Persistence",
+        "prefix": "DATA",
+        "description": "Storage, integrity, and Pydantic model consistency"
+      },
+      "bug_id": "DATA310326_01",
+      "description": "Pydantic validation error on null time_spent. Strategic and execution items with null time_spent fields fail Pydantic validation on load, preventing the CLI from functioning with existing data.",
+      "steps_to_reproduce": "Load existing .prism/strategic.json or execution.json containing items with 'time_spent': null. Run any prism command that loads the project.",
+      "root_cause": "The model's 'time_spent' field is a pydantic 'timedelta', which by default does not allow 'None' values. Existing data created before this field was added defaults to 'null' in JSON, causing validation errors.",
+      "fix_description": "Added a 'before' field_validator to 'BaseItem' in 'prism/models/base.py' to convert 'None' to 'timedelta(0)' for 'time_spent' during de-serialization. Added regression test in 'tests/test_storage_manager.py'.",
+      "logs": [],
+      "counter": 1,
+      "status": "fixed",
+      "created_at": "2026-03-31T15:12:40.554156Z",
+      "updated_at": "2026-03-31T15:14:11.589788Z"
     }
   ]
 }

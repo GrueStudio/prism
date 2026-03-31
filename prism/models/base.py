@@ -106,6 +106,14 @@ class BaseItem(BaseModel):
                 )
         return v
 
+    @field_validator("time_spent", mode="before")
+    @classmethod
+    def validate_time_spent(cls, v):
+        """Handle None values for time_spent, defaulting to zero duration."""
+        if v is None:
+            return timedelta(0)
+        return v
+
     @model_validator(mode="after")
     def validate_status_transition_rule(self) -> "BaseItem":
         """Validate status transition only when status field changes."""
@@ -133,7 +141,7 @@ class BaseItem(BaseModel):
     parent_uuid: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    time_spent: Optional[timedelta] = None
+    time_spent: timedelta = Field(default_factory=timedelta)
     child_uuids: List[str] = Field(default_factory=list)
     _children: List[Optional["BaseItem"]] = PrivateAttr()
     _item_type: str = PrivateAttr(default="base")
