@@ -9,7 +9,7 @@
       "parent_uuid": "96857505-1fa0-49c9-b7c8-4177fd732009",
       "created_at": "2026-03-25T18:38:12.441698",
       "updated_at": "2026-03-26T01:45:30.319425",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [
         "3e1ef304-13af-4411-9c93-dd93f845cc2b",
         "2c4365ff-ec65-4f40-9625-eff4fb118eef",
@@ -25,7 +25,7 @@
       "parent_uuid": "96857505-1fa0-49c9-b7c8-4177fd732009",
       "created_at": "2026-03-25T18:38:12.827569",
       "updated_at": "2026-03-26T16:05:27.740833",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [
         "9dffd045-9411-4061-a0ad-0d3326a363fe",
         "f2a25c5a-642f-453c-8f92-0f7760b85018",
@@ -41,7 +41,7 @@
       "parent_uuid": "96857505-1fa0-49c9-b7c8-4177fd732009",
       "created_at": "2026-03-25T18:38:13.221622",
       "updated_at": "2026-03-26T16:19:34.827684",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [
         "167cc4d0-a52a-4950-bfda-62a6b0a6865f",
         "95dd2d62-f645-4aac-80b7-e9769fa504a6",
@@ -57,7 +57,7 @@
       "parent_uuid": "96857505-1fa0-49c9-b7c8-4177fd732009",
       "created_at": "2026-03-25T18:38:13.615436",
       "updated_at": "2026-03-28T12:46:34.376203",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [
         "84a5d2b5-491a-4856-ac39-451b84a3bc13",
         "97fea515-74f8-4119-aa05-3c6e7e7f929a",
@@ -70,11 +70,11 @@
       "name": "Temporal Foundation",
       "description": "Implement timezone awareness and prepare schema for time tracking.",
       "slug": "temporal-foundation",
-      "status": "pending",
+      "status": "completed",
       "parent_uuid": "96857505-1fa0-49c9-b7c8-4177fd732009",
       "created_at": "2026-03-25T18:38:14.013391",
-      "updated_at": "2026-03-25T18:38:14.013395",
-      "time_spent": null,
+      "updated_at": "2026-04-01T05:25:27.620573Z",
+      "time_spent": "PT0S",
       "child_uuids": [
         "2c10f1c9-0f9f-4643-a883-9b84a09a40a0",
         "9a3c7939-9221-49dc-bbc6-5518e2f2051d",
@@ -90,7 +90,7 @@
       "parent_uuid": "96857505-1fa0-49c9-b7c8-4177fd732009",
       "created_at": "2026-03-25T18:38:14.512210",
       "updated_at": "2026-03-25T18:38:14.512213",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [
         "0240f393-7912-4b83-a112-96dd91f530cc",
         "54cde269-6f14-4c74-af1a-6e96993bedaa",
@@ -107,7 +107,7 @@
       "parent_uuid": "96857505-1fa0-49c9-b7c8-4177fd732009",
       "created_at": "2026-03-25T18:38:14.902012",
       "updated_at": "2026-03-25T18:38:14.902016",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [
         "8eb358ec-efd3-4cf3-b8d8-83e0235a21c3",
         "214321c7-4f26-4dbf-bd2f-b68a4815fe96",
@@ -126,7 +126,7 @@
       "parent_uuid": "96857505-1fa0-49c9-b7c8-4177fd732009",
       "created_at": "2026-03-28T16:48:31.298239",
       "updated_at": "2026-03-28T16:48:31.298243",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [
         "a7c4d61b-8b9c-4579-a1ac-3a37313acc20",
         "eb63fc8b-f9da-488d-8e53-b17fc891471f",
@@ -144,7 +144,7 @@
       "parent_uuid": "b32f2fde-c85b-42cf-95e8-626c612539ef",
       "created_at": "2026-03-25T18:43:11.218392",
       "updated_at": "2026-03-26T01:00:49.671569",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [],
       "due_date": null
     },
@@ -157,7 +157,7 @@
       "parent_uuid": "b32f2fde-c85b-42cf-95e8-626c612539ef",
       "created_at": "2026-03-25T18:43:11.594808",
       "updated_at": "2026-03-26T01:33:19.087129",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [],
       "due_date": null
     },
@@ -170,7 +170,7 @@
       "parent_uuid": "b32f2fde-c85b-42cf-95e8-626c612539ef",
       "created_at": "2026-03-25T18:43:11.966974",
       "updated_at": "2026-03-26T01:45:30.311496",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [],
       "due_date": null
     },
@@ -183,7 +183,7 @@
       "parent_uuid": "1b4ab715-2cce-4ce7-bd11-adc8e4ba4a8c",
       "created_at": "2026-03-26T00:24:23.757818",
       "updated_at": "2026-03-26T16:05:10.020582",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [],
       "due_date": null
     },
@@ -196,7 +196,7 @@
       "parent_uuid": "1b4ab715-2cce-4ce7-bd11-adc8e4ba4a8c",
       "created_at": "2026-03-26T00:24:24.134079",
       "updated_at": "2026-03-26T16:05:15.698922",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [],
       "due_date": null
     },
@@ -209,7 +209,7 @@
       "parent_uuid": "1b4ab715-2cce-4ce7-bd11-adc8e4ba4a8c",
       "created_at": "2026-03-26T00:24:24.505055",
       "updated_at": "2026-03-26T16:05:27.732963",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [],
       "due_date": null
     },
@@ -222,7 +222,7 @@
       "parent_uuid": "b856928b-73a7-45af-a6e2-34cbb3eed9bf",
       "created_at": "2026-03-26T00:24:33.845911",
       "updated_at": "2026-03-26T16:19:17.401205",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [],
       "due_date": null
     },
@@ -235,7 +235,7 @@
       "parent_uuid": "b856928b-73a7-45af-a6e2-34cbb3eed9bf",
       "created_at": "2026-03-26T00:24:34.221922",
       "updated_at": "2026-03-26T16:19:25.249064",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [],
       "due_date": null
     },
@@ -248,7 +248,7 @@
       "parent_uuid": "b856928b-73a7-45af-a6e2-34cbb3eed9bf",
       "created_at": "2026-03-26T00:24:34.616180",
       "updated_at": "2026-03-26T16:19:34.817586",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [],
       "due_date": null
     },
@@ -261,7 +261,7 @@
       "parent_uuid": "86ef92a0-fef7-4073-bfeb-0a17a661e528",
       "created_at": "2026-03-26T00:30:40.278090",
       "updated_at": "2026-03-28T01:44:39.492861",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [],
       "due_date": null
     },
@@ -274,7 +274,7 @@
       "parent_uuid": "86ef92a0-fef7-4073-bfeb-0a17a661e528",
       "created_at": "2026-03-26T00:30:40.671339",
       "updated_at": "2026-03-28T11:14:34.779396",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [],
       "due_date": null
     },
@@ -287,7 +287,7 @@
       "parent_uuid": "86ef92a0-fef7-4073-bfeb-0a17a661e528",
       "created_at": "2026-03-26T00:30:41.052604",
       "updated_at": "2026-03-28T12:30:56.785610",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [],
       "due_date": null
     },
@@ -300,7 +300,7 @@
       "parent_uuid": "86ef92a0-fef7-4073-bfeb-0a17a661e528",
       "created_at": "2026-03-26T00:30:41.439782",
       "updated_at": "2026-03-28T12:46:34.365312",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [],
       "due_date": null
     },
@@ -313,7 +313,7 @@
       "parent_uuid": "0d740d88-01bc-44d2-a7d5-9836b4ef103d",
       "created_at": "2026-03-26T00:32:19.721717",
       "updated_at": "2026-03-30T19:47:19.857188Z",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [],
       "due_date": null
     },
@@ -322,11 +322,11 @@
       "name": "TimeLog Schema",
       "description": "Define TimeLog model and add time_logs field to Action.",
       "slug": "timelog-schema",
-      "status": "in-progress",
+      "status": "completed",
       "parent_uuid": "0d740d88-01bc-44d2-a7d5-9836b4ef103d",
       "created_at": "2026-03-26T00:32:20.132259",
-      "updated_at": "2026-03-30T19:47:19.977778Z",
-      "time_spent": null,
+      "updated_at": "2026-04-01T05:25:27.233257Z",
+      "time_spent": "PT0S",
       "child_uuids": [],
       "due_date": null
     },
@@ -335,11 +335,11 @@
       "name": "Computed time_spent",
       "description": "Implement time_spent as a property that sums children's time logs.",
       "slug": "computed-time-spent",
-      "status": "pending",
+      "status": "completed",
       "parent_uuid": "0d740d88-01bc-44d2-a7d5-9836b4ef103d",
       "created_at": "2026-03-26T00:32:20.502669",
-      "updated_at": "2026-03-26T00:32:20.502673",
-      "time_spent": null,
+      "updated_at": "2026-04-01T05:25:27.611634Z",
+      "time_spent": "PT0S",
       "child_uuids": [],
       "due_date": null
     },
@@ -352,7 +352,7 @@
       "parent_uuid": "bc6db80f-4f39-4675-b2cd-e1d1b4688d23",
       "created_at": "2026-03-25T18:43:12.375602",
       "updated_at": "2026-03-25T18:43:12.375607",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [],
       "due_date": null
     },
@@ -365,7 +365,7 @@
       "parent_uuid": "bc6db80f-4f39-4675-b2cd-e1d1b4688d23",
       "created_at": "2026-03-26T00:33:51.593599",
       "updated_at": "2026-03-26T00:33:51.593603",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [],
       "due_date": null
     },
@@ -378,7 +378,7 @@
       "parent_uuid": "bc6db80f-4f39-4675-b2cd-e1d1b4688d23",
       "created_at": "2026-03-26T00:33:51.993169",
       "updated_at": "2026-03-26T00:33:51.993173",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [],
       "due_date": null
     },
@@ -391,7 +391,7 @@
       "parent_uuid": "bc6db80f-4f39-4675-b2cd-e1d1b4688d23",
       "created_at": "2026-03-26T00:33:52.374765",
       "updated_at": "2026-03-26T00:33:52.374769",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [],
       "due_date": null
     },
@@ -404,7 +404,7 @@
       "parent_uuid": "b68eaae4-4b15-461a-8274-c9dfdbe260fc",
       "created_at": "2026-03-26T00:37:08.288850",
       "updated_at": "2026-03-26T00:37:08.288853",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [],
       "due_date": null
     },
@@ -417,7 +417,7 @@
       "parent_uuid": "b68eaae4-4b15-461a-8274-c9dfdbe260fc",
       "created_at": "2026-03-26T00:37:08.687112",
       "updated_at": "2026-03-26T00:37:08.687116",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [],
       "due_date": null
     },
@@ -430,7 +430,7 @@
       "parent_uuid": "b68eaae4-4b15-461a-8274-c9dfdbe260fc",
       "created_at": "2026-03-26T00:37:09.110182",
       "updated_at": "2026-03-26T00:37:09.110187",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [],
       "due_date": null
     },
@@ -443,7 +443,7 @@
       "parent_uuid": "b68eaae4-4b15-461a-8274-c9dfdbe260fc",
       "created_at": "2026-03-28T16:45:00.421611",
       "updated_at": "2026-03-28T16:45:00.421615",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [],
       "due_date": null
     },
@@ -456,7 +456,7 @@
       "parent_uuid": "b68eaae4-4b15-461a-8274-c9dfdbe260fc",
       "created_at": "2026-03-28T16:45:00.926856",
       "updated_at": "2026-03-28T16:45:00.926860",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [],
       "due_date": null
     },
@@ -469,7 +469,7 @@
       "parent_uuid": "b68eaae4-4b15-461a-8274-c9dfdbe260fc",
       "created_at": "2026-03-28T16:45:01.373376",
       "updated_at": "2026-03-28T16:45:01.373380",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [],
       "due_date": null
     },
@@ -482,7 +482,7 @@
       "parent_uuid": "810962e1-1596-4517-b97c-e7860dcc4f89",
       "created_at": "2026-03-28T16:49:57.644305",
       "updated_at": "2026-03-28T16:49:57.644309",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [],
       "due_date": null
     },
@@ -495,7 +495,7 @@
       "parent_uuid": "810962e1-1596-4517-b97c-e7860dcc4f89",
       "created_at": "2026-03-28T16:49:58.072056",
       "updated_at": "2026-03-28T16:49:58.072062",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [],
       "due_date": null
     },
@@ -508,7 +508,7 @@
       "parent_uuid": "810962e1-1596-4517-b97c-e7860dcc4f89",
       "created_at": "2026-03-28T16:49:58.517193",
       "updated_at": "2026-03-28T16:49:58.517197",
-      "time_spent": null,
+      "time_spent": "PT0S",
       "child_uuids": [],
       "due_date": null
     }
