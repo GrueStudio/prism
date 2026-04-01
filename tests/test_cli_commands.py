@@ -476,6 +476,52 @@ class TestTaskNextCommand:
         assert "Completed" in result.output
 
 
+class TestTaskCommandExtensions:
+    """Test extensions to task commands (paths, reset)."""
+
+    def test_start_with_path(self, runner):
+        """Task start with explicit path."""
+        result = runner.invoke(
+            cli,
+            ["task", "start", "/phase-1/milestone-1/objective-1/deliverable-1/action-2"],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+        assert "Currently working on: Action 2" in result.output
+
+    def test_next_with_path(self, runner):
+        """Task next with explicit path."""
+        # Start action 1
+        runner.invoke(cli, ["task", "start"])
+
+        result = runner.invoke(
+            cli,
+            ["task", "next", "/phase-1/milestone-1/objective-1/deliverable-2/action-3"],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+        assert "Completed task: Action 1" in result.output
+        assert "Started next task: Action 3" in result.output
+
+    def test_next_with_reset(self, runner):
+        """Task next with --reset flag."""
+        # Start action 1, then move to action 2
+        runner.invoke(cli, ["task", "start"])
+        runner.invoke(cli, ["task", "next"])
+
+        result = runner.invoke(
+            cli,
+            ["task", "next", "--reset"],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+        assert "Completed task: Action 2" in result.output
+        assert "Started next task: Action 1" in result.output
+
+
 # =============================================================================
 # Status Command Tests
 # =============================================================================

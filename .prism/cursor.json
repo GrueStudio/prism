@@ -1,4 +1,4 @@
 {
-  "task_cursor": null,
-  "crud_context": "alpha/time-tracking/readiness/navigation-path-comparison-fix"
+  "task_cursor": "alpha/time-tracking/readiness/task-interface-overhaul/actions-out-of-order",
+  "crud_context": "alpha/time-tracking/readiness"
 }

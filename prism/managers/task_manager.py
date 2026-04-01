@@ -148,16 +148,58 @@ class TaskManager:
         self.project.task_cursor = action_path
         self._save_callback()
 
-    def start_next_action(self) -> Optional[Action]:
-        """Start the next pending action.
+    def start_action_by_path(self, path: str) -> Action:
+        """Start a specific action or deliverable's first action by path.
 
-        If there's an action in progress, returns it.
+        Args:
+            path: Path to the action or deliverable.
+
+        Returns:
+            The started action.
+
+        Raises:
+            NotFoundError: If item at path not found.
+            InvalidOperationError: If item is not an action or deliverable.
+        """
+        item = self.navigator.resolve_to_item(path)
+        if not item:
+            raise NotFoundError(f"Item not found at path: {path}")
+
+        action_to_start = None
+        if isinstance(item, Action):
+            action_to_start = item
+        elif isinstance(item, Deliverable):
+            # Start first pending action in deliverable
+            action_to_start = self._find_next_pending_action_in_deliverable(item)
+            if not action_to_start and item.children:
+                # Fallback to first action if none pending
+                action_to_start = item.children[0]
+        
+        if not action_to_start:
+            raise InvalidOperationError(
+                f"Cannot start item at '{path}'. It must be an action or a deliverable with actions."
+            )
+
+        self._start_action(action_to_start)
+        return action_to_start
+
+    def start_next_action(self, path: Optional[str] = None) -> Optional[Action]:
+        """Start the next pending action, or a specific action if path provided.
+
+        If a path is provided, starts that specific action.
+        If there's an action in progress and no path provided, returns it.
         Otherwise, finds the next pending action, sets it to 'in-progress',
         and updates the task cursor.
+
+        Args:
+            path: Optional path to a specific action to start.
 
         Returns:
             The started action, or None if no pending action found.
         """
+        if path:
+            return self.start_action_by_path(path)
+
         # Check if there's an action currently in progress
         current_action = self.get_current_action()
         if current_action and current_action.status == ItemStatus.IN_PROGRESS:
@@ -271,11 +313,14 @@ class TaskManager:
 
     def complete_current_and_start_next(
         self,
+        next_path: Optional[str] = None,
+        reset: bool = False,
     ) -> Tuple[Optional[Action], Optional[Action]]:
         """Complete the current action and start the next pending one.
 
-        Does NOT start the next action if the current deliverable was completed.
-        This enforces deliverable boundaries for 'prism task next'.
+        Args:
+            next_path: Optional path to the specific next action to start.
+            reset: If True, reset to the first action of the current deliverable.
 
         Returns:
             Tuple of (completed_action, next_action)
@@ -284,6 +329,27 @@ class TaskManager:
         if not completed_action:
             return (None, None)
 
+        # If explicit next_path provided, use it
+        if next_path:
+            next_action = self.start_next_action(path=next_path)
+            return (completed_action, next_action)
+
+        # If reset requested, find the first action of the current deliverable
+        if reset:
+            item_path = self.navigator.get_item_path(completed_action)
+            if item_path:
+                segments = item_path.split("/")
+                if len(segments) >= 2:
+                    deliv_path = "/".join(segments[:-1])
+                    deliverable = self.navigator.get_item_by_path(deliv_path)
+                    if isinstance(deliverable, Deliverable) and deliverable.children:
+                        # Reset to the first action of the deliverable
+                        # (even if it was already completed)
+                        first_action = deliverable.children[0]
+                        self._start_action(first_action)
+                        return (completed_action, first_action)
+
+        # Default sequential behavior
         # Check if deliverable boundary was reached
         parent_path = self.navigator.get_item_path(completed_action)
         if parent_path:

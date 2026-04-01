@@ -1063,3 +1063,72 @@ class TestTaskManagerIntegration:
         )
 
         assert item1.slug != item2.slug
+
+
+# =============================================================================
+# Out-of-Order and Reset Tasks
+# =============================================================================
+
+
+class TestOutOfOrderTasks:
+    """Test starting tasks out of order and resetting deliverables."""
+
+    def test_start_action_by_path(self, task_manager):
+        """Test starting a specific action by its path."""
+        path = "/phase-1/milestone-1/objective-1/deliverable-1/action-2"
+        started = task_manager.start_action_by_path(path)
+
+        assert started.name == "Action 2"
+        assert started.status == ItemStatus.IN_PROGRESS
+        assert task_manager.project.task_cursor == "phase-1/milestone-1/objective-1/deliverable-1/action-2"
+
+    def test_start_deliverable_by_path(self, task_manager):
+        """Test starting a deliverable by path (starts its first pending action)."""
+        path = "/phase-1/milestone-1/objective-1/deliverable-2"
+        # Deliverable 2 has Action 3 and Action 4
+        started = task_manager.start_action_by_path(path)
+
+        assert started.name == "Action 3"
+        assert started.status == ItemStatus.IN_PROGRESS
+        assert (
+            task_manager.project.task_cursor
+            == "phase-1/milestone-1/objective-1/deliverable-2/action-3"
+        )
+
+    def test_next_with_path(self, task_manager):
+        """Test 'next' command with an explicit path."""
+        # Start first action
+        task_manager.start_next_action()
+
+        # Complete and go to a specific action out of order
+        next_path = "/phase-1/milestone-1/objective-1/deliverable-2/action-3"
+
+        completed, next_action = task_manager.complete_current_and_start_next(
+            next_path=next_path
+        )
+
+        assert completed.name == "Action 1"
+        assert next_action.name == "Action 3"
+        assert task_manager.project.task_cursor == "phase-1/milestone-1/objective-1/deliverable-2/action-3"
+
+    def test_next_with_reset(self, task_manager):
+        """Test 'next' command with --reset."""
+        # Start action 1
+        task_manager.start_next_action()
+        # Complete action 1 and start action 2
+        task_manager.complete_current_and_start_next()
+
+        assert (
+            task_manager.project.task_cursor
+            == "phase-1/milestone-1/objective-1/deliverable-1/action-2"
+        )
+
+        # Complete action 2 and reset to action 1
+        completed, next_action = task_manager.complete_current_and_start_next(reset=True)
+
+        assert completed.name == "Action 2"
+        assert next_action.name == "Action 1"
+        assert (
+            task_manager.project.task_cursor
+            == "phase-1/milestone-1/objective-1/deliverable-1/action-1"
+        )
