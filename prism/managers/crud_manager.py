@@ -5,7 +5,7 @@ Handles all CRUD operations for strategic and execution items.
 """
 
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 import click
@@ -410,7 +410,7 @@ class CRUDManager:
             updated = True
 
         if updated:
-            item_to_update.updated_at = datetime.now()
+            item_to_update.updated_at = datetime.now(timezone.utc)
         else:
             raise ValidationError(
                 "No update parameters provided. "

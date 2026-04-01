@@ -7,7 +7,7 @@ Bugs are standalone items (similar to orphans), not part of the BaseItem hierarc
 
 import re
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import List, Optional
 
@@ -45,7 +45,7 @@ class BugLog(BaseModel):
     """
 
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    created_at: datetime = Field(default_factory=datetime.now)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     title: str  # Descriptive name (e.g., "Crash Report", "Stack Trace")
     log_type: str = "general"  # e.g., "stack_trace", "error_log", "note", "attachment_ref"
     metadata: Optional[dict] = None
@@ -104,8 +104,8 @@ class BugItem(BaseModel):
                     f"Invalid status: '{v}'. Valid statuses are: {valid_values}"
                 )
         return v
-    created_at: datetime = Field(default_factory=datetime.now)
-    updated_at: datetime = Field(default_factory=datetime.now)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     @field_validator("description")
     @classmethod
@@ -145,7 +145,7 @@ class BugItem(BaseModel):
             title=title, log_type=log_type, metadata=metadata or {}
         )
         self.logs.append(log)
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.now(timezone.utc)
         return log
 
     def set_status(self, value: BugStatus | str) -> None:
@@ -174,4 +174,4 @@ class BugItem(BaseModel):
             )
         
         self.status = value
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.now(timezone.utc)

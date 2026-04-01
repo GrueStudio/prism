@@ -6,7 +6,7 @@ Common base for all strategic and execution items.
 
 import re
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import List, Optional
 
@@ -106,6 +106,14 @@ class BaseItem(BaseModel):
                 )
         return v
 
+    @field_validator("time_spent", mode="before")
+    @classmethod
+    def validate_time_spent(cls, v):
+        """Handle None values for time_spent, defaulting to zero duration."""
+        if v is None:
+            return timedelta(0)
+        return v
+
     @model_validator(mode="after")
     def validate_status_transition_rule(self) -> "BaseItem":
         """Validate status transition only when status field changes."""
@@ -131,9 +139,9 @@ class BaseItem(BaseModel):
         return self
 
     parent_uuid: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.now)
-    updated_at: datetime = Field(default_factory=datetime.now)
-    time_spent: Optional[timedelta] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    time_spent: timedelta = Field(default_factory=timedelta)
     child_uuids: List[str] = Field(default_factory=list)
     _children: List[Optional["BaseItem"]] = PrivateAttr()
     _item_type: str = PrivateAttr(default="base")
@@ -188,7 +196,7 @@ class BaseItem(BaseModel):
             # Pydantic's assignment validation will handle transition checking.
             # We just assign it here.
             self.status = new_status
-            self.updated_at = datetime.now()
+            self.updated_at = datetime.now(timezone.utc)
 
     @field_validator("slug")
     @classmethod
@@ -257,6 +265,31 @@ class Action(BaseItem):
 
     due_date: Optional[datetime] = None
     _item_type: str = PrivateAttr(default="action")
+
+    @field_validator("due_date", mode="before")
+    @classmethod
+    def validate_due_date_timezone(cls, v):
+        """Ensure due_date is timezone-aware (UTC) if provided."""
+        if v is None:
+            return None
+        
+        # If it's a string, Pydantic's default parsing happens first in some modes,
+        # but since we are 'before', we might get a string or a datetime.
+        if isinstance(v, str):
+            # Let Pydantic's internal logic handle the string conversion first
+            # by returning and letting the next step run, or we can parse here.
+            # However, it's safer to let the type hint do its work and validate 'after'
+            # or handle the object if it's already a datetime.
+            return v
+
+        if isinstance(v, datetime):
+            if v.tzinfo is None:
+                # Assume UTC if naive, or raise error? 
+                # Standards suggest forcing awareness.
+                return v.replace(tzinfo=timezone.utc)
+            return v.astimezone(timezone.utc)
+        
+        return v
 
     def add_child(self, child) -> None:
         """Actions cannot have children.

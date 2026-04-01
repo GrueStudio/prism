@@ -1,4 +1,4 @@
 {
-  "task_cursor": "alpha/time-tracking/readiness/temporal-foundation/timezone-awareness",
+  "task_cursor": "alpha/time-tracking/readiness/temporal-foundation/timelog-schema",
   "crud_context": "alpha/time-tracking/readiness/navigation-path-comparison-fix"
 }

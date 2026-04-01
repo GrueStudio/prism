@@ -7,6 +7,7 @@ management, and log attachment.
 import click
 from typing import Optional
 from prism.managers.bug_manager import BugManager
+from prism.utils import to_local_time
 
 
 @click.group()
@@ -77,7 +78,7 @@ def list_bugs(search: Optional[str], status_filter: Optional[str], sort_by: str,
 
     for bug in bugs:
         # Format updated time
-        updated_str = bug.updated_at.strftime("%Y-%m-%d %H:%M:%S")
+        updated_str = to_local_time(bug.updated_at).strftime("%Y-%m-%d %H:%M:%S")
         
         # Format description (truncate if too long)
         desc = bug.description.replace("\n", " ")
@@ -122,8 +123,8 @@ def show_bug(bug_id: str):
     click.echo("Status:      ", nl=False)
     click.secho(bug_item.status.value, fg=status_color, bold=True)
     
-    click.echo(f"Created:     {bug_item.created_at.strftime('%Y-%m-%d %H:%M:%S')}")
-    click.echo(f"Updated:     {bug_item.updated_at.strftime('%Y-%m-%d %H:%M:%S')}")
+    click.echo(f"Created:     {to_local_time(bug_item.created_at).strftime('%Y-%m-%d %H:%M:%S')}")
+    click.echo(f"Updated:     {to_local_time(bug_item.updated_at).strftime('%Y-%m-%d %H:%M:%S')}")
     click.echo(f"\nDescription: {bug_item.description}")
     
     if bug_item.steps_to_reproduce:

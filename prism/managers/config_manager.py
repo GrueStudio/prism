@@ -72,6 +72,12 @@ class ConfigManager:
         Orphan.PRIORITY_MAX = self.ORPHAN_PRIORITY_MAX
         Orphan.PRIORITY_LABELS = self.ORPHAN_PRIORITY_LABELS
 
+        # Update utils date settings
+        from prism import utils
+        utils.DATE_FORMATS = self.DATE_FORMATS
+        utils.DATE_MAX_YEARS_PAST = self.DATE_MAX_YEARS_PAST
+        utils.DATE_MAX_YEARS_FUTURE = self.DATE_MAX_YEARS_FUTURE
+
     def get_model(self) -> ConfigFile:
         """Get the underlying ConfigFile model."""
         return self._config

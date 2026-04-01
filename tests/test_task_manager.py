@@ -9,7 +9,7 @@ Tests cover:
 - Slug generation
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 
@@ -240,7 +240,7 @@ class TestCascadeCompletion:
         for deliverable in objective.children:
             for action in deliverable.children:
                 action.status = ItemStatus.COMPLETED
-                action.updated_at = datetime.now()
+                action.updated_at = datetime.now(timezone.utc)
             deliverable.status = ItemStatus.COMPLETED
 
         # Manually trigger cascade on last deliverable

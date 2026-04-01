@@ -12,6 +12,7 @@ from .base import Action, Deliverable, Milestone, Objective, Phase
 from .bug import BugItem
 from .config import BugType, ConfigFile
 from .orphan import Orphan
+from .time import TimeLog
 
 
 class StrategicFile(BaseModel):
@@ -66,6 +67,15 @@ class BugsFile(BaseModel):
     """
 
     bugs: List[BugItem] = Field(default_factory=list)
+
+
+class ActiveTimersFile(BaseModel):
+    """Model for active_timers.json file.
+
+    List of currently running timers.
+    """
+
+    timers: List[TimeLog] = Field(default_factory=list)
 
 
 class CursorFile(BaseModel):
