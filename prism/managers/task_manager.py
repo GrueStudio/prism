@@ -159,8 +159,20 @@ class TaskManager:
 
         Raises:
             NotFoundError: If item at path not found.
-            InvalidOperationError: If item is not an action or deliverable.
+            InvalidOperationError: If item is not an action or deliverable,
+                                 or if another action is paused.
         """
+        # Check if another action is currently paused
+        current_action = self.get_current_action()
+        if current_action and current_action.status == ItemStatus.PAUSED:
+            action_path = self.navigator.get_item_path(current_action)
+            resolved_path = self.navigator.resolve_path(path)
+            if action_path != resolved_path:
+                raise InvalidOperationError(
+                    f"Action '{current_action.name}' is currently paused. "
+                    "Please resume it or complete it before starting a different action."
+                )
+
         item = self.navigator.resolve_to_item(path)
         if not item:
             raise NotFoundError(f"Item not found at path: {path}")
@@ -187,7 +199,7 @@ class TaskManager:
         """Start the next pending action, or a specific action if path provided.
 
         If a path is provided, starts that specific action.
-        If there's an action in progress and no path provided, returns it.
+        If there's an action in progress or paused, and no path provided, returns/resumes it.
         Otherwise, finds the next pending action, sets it to 'in-progress',
         and updates the task cursor.
 
@@ -200,9 +212,14 @@ class TaskManager:
         if path:
             return self.start_action_by_path(path)
 
-        # Check if there's an action currently in progress
+        # Check if there's an action currently in progress or paused
         current_action = self.get_current_action()
-        if current_action and current_action.status == ItemStatus.IN_PROGRESS:
+        if current_action and current_action.status in {
+            ItemStatus.IN_PROGRESS,
+            ItemStatus.PAUSED,
+        }:
+            if current_action.status == ItemStatus.PAUSED:
+                self._start_action(current_action)
             return current_action
 
         # If no action in progress, find the next pending one
@@ -231,6 +248,20 @@ class TaskManager:
         # Cascade completion up the tree
         self._cascade_completion(current_action)
 
+        self._save_callback()
+        return current_action
+
+    def pause_current_action(self) -> Optional[Action]:
+        """Pause the current action.
+
+        Returns:
+            The paused action, or None if no action in progress.
+        """
+        current_action = self.get_current_action()
+        if not current_action or current_action.status != ItemStatus.IN_PROGRESS:
+            return None
+
+        current_action.set_status(ItemStatus.PAUSED)
         self._save_callback()
         return current_action
 

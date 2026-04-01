@@ -521,6 +521,20 @@ class TestTaskCommandExtensions:
         assert "Completed task: Action 2" in result.output
         assert "Started next task: Action 1" in result.output
 
+    def test_pause_action(self, runner):
+        """Task pause command."""
+        # Start an action
+        runner.invoke(cli, ["task", "start"])
+
+        result = runner.invoke(
+            cli,
+            ["task", "pause"],
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+        assert "Paused task: Action 1" in result.output
+
 
 # =============================================================================
 # Status Command Tests

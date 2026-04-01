@@ -23,6 +23,10 @@ commit_message.txt
 pr_body.txt
 exec_tree.json
 
+# Agentic workflows
 GEMINI.md
 QWEN.md
 AGENT.md
+.agent/
+.gemini/
+.qwen/

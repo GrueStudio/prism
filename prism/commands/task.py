@@ -51,6 +51,17 @@ def done():
 
 
 @task.command()
+def pause():
+    """Mark the current task as paused."""
+    core = PrismCore()
+    action = core.task_manager.pause_current_action()
+    if action:
+        click.echo(f"Paused task: {action.name}")
+    else:
+        click.echo("No task in progress to pause.")
+
+
+@task.command()
 @click.argument("path", required=False)
 @click.option("--reset", is_flag=True, help="Reset to first action of current deliverable.")
 def next(path: Optional[str], reset: bool):

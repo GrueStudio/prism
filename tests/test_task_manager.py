@@ -1133,20 +1133,25 @@ class TestOutOfOrderTasks:
             == "phase-1/milestone-1/objective-1/deliverable-1/action-1"
         )
 
-    def test_pause_current_action(self, task_manager):
-        """Test pausing the current in-progress action."""
-        # Start an action
+    def test_resume_paused_action(self, task_manager):
+        """Test that start_next_action resumes a paused action."""
         action = task_manager.start_next_action()
-        assert action.status == ItemStatus.IN_PROGRESS
+        task_manager.pause_current_action()
+        assert action.status == ItemStatus.PAUSED
 
-        # Pause the action
-        # This will fail as the method is not implemented yet
-        paused_action = task_manager.pause_current_action()
+        # Start again (no path) - should resume the paused action
+        resumed = task_manager.start_next_action()
+        assert resumed is action
+        assert resumed.status == ItemStatus.IN_PROGRESS
 
-        assert paused_action.status == ItemStatus.PAUSED
-        assert paused_action is action
-        # Cursor should remain on the paused action
-        assert (
-            task_manager.project.task_cursor
-            == "phase-1/milestone-1/objective-1/deliverable-1/action-1"
-        )
+    def test_start_different_action_while_paused_raises(self, task_manager):
+        """Test that starting a different action while one is paused raises error."""
+        task_manager.start_next_action()
+        task_manager.pause_current_action()
+
+        # Try to start a different action by path
+        different_path = "/phase-1/milestone-1/objective-1/deliverable-1/action-2"
+        with pytest.raises(
+            InvalidOperationError, match="is currently paused. Please resume it"
+        ):
+            task_manager.start_action_by_path(different_path)
