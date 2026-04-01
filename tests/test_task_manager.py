@@ -1132,3 +1132,21 @@ class TestOutOfOrderTasks:
             task_manager.project.task_cursor
             == "phase-1/milestone-1/objective-1/deliverable-1/action-1"
         )
+
+    def test_pause_current_action(self, task_manager):
+        """Test pausing the current in-progress action."""
+        # Start an action
+        action = task_manager.start_next_action()
+        assert action.status == ItemStatus.IN_PROGRESS
+
+        # Pause the action
+        # This will fail as the method is not implemented yet
+        paused_action = task_manager.pause_current_action()
+
+        assert paused_action.status == ItemStatus.PAUSED
+        assert paused_action is action
+        # Cursor should remain on the paused action
+        assert (
+            task_manager.project.task_cursor
+            == "phase-1/milestone-1/objective-1/deliverable-1/action-1"
+        )

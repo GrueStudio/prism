@@ -361,10 +361,10 @@
       "name": "Task Pause Reproduction",
       "description": "TDD: Test case for marking in-progress task as paused.",
       "slug": "task-pause-reproduction",
-      "status": "pending",
+      "status": "completed",
       "parent_uuid": "bc6db80f-4f39-4675-b2cd-e1d1b4688d23",
       "created_at": "2026-03-26T00:33:51.593599",
-      "updated_at": "2026-03-26T00:33:51.593603",
+      "updated_at": "2026-04-01T18:21:34.684249Z",
       "time_spent": "PT0S",
       "child_uuids": [],
       "due_date": null
