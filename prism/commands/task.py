@@ -7,6 +7,7 @@ import click
 from typing import Optional
 
 from prism.core import PrismCore
+from prism.models.base import ItemStatus
 
 
 @click.group()
@@ -17,6 +18,31 @@ def task():
     marked complete when all their children are done.
     """
     pass
+
+
+def _display_task_start(core: PrismCore, action, completed_action=None):
+    """Helper to display task start information with deliverable context."""
+    # Check if we moved to a new deliverable
+    show_deliverable = True
+    deliverable = core.project.get_item(action.parent_uuid)
+    
+    if completed_action:
+        if completed_action.parent_uuid == action.parent_uuid:
+            show_deliverable = False
+            
+    if show_deliverable and deliverable:
+        click.secho("\n" + "=" * 40, fg="blue")
+        click.secho(f"🚀 Deliverable: ", nl=False)
+        click.secho(deliverable.name, fg="blue", bold=True)
+        if deliverable.description:
+            click.echo(f"   {deliverable.description}")
+        click.secho("=" * 40 + "\n", fg="blue")
+
+    status_indicator = "⏳ " if action.status == ItemStatus.IN_PROGRESS else ""
+    click.secho(f"{status_indicator}Working on: ", nl=False)
+    click.secho(action.name, fg="cyan", bold=True)
+    if action.description:
+        click.echo(f"   {action.description}")
 
 
 @task.command()
@@ -30,7 +56,7 @@ def start(path: Optional[str]):
     core = PrismCore()
     action = core.task_manager.start_next_action(path=path)
     if action:
-        click.echo(f"Currently working on: {action.name}")
+        _display_task_start(core, action)
     else:
         click.echo("No pending tasks found.")
 
@@ -45,9 +71,11 @@ def done():
     core = PrismCore()
     action = core.task_manager.complete_current_action()
     if action:
-        click.echo(f"Completed task: {action.name}")
+        click.secho("✓ ", fg="green", nl=False)
+        click.echo("Completed task: ", nl=False)
+        click.secho(action.name, fg="green", bold=True)
     else:
-        click.echo("No task in progress.")
+        click.secho("No task in progress.", fg="yellow")
 
 
 @task.command()
@@ -56,9 +84,11 @@ def pause():
     core = PrismCore()
     action = core.task_manager.pause_current_action()
     if action:
-        click.echo(f"Paused task: {action.name}")
+        click.secho("⏸ ", fg="yellow", nl=False)
+        click.echo("Paused task: ", nl=False)
+        click.secho(action.name, fg="yellow", bold=True)
     else:
-        click.echo("No task in progress to pause.")
+        click.secho("No task in progress to pause.", fg="yellow")
 
 
 @task.command()
@@ -78,10 +108,12 @@ def next(path: Optional[str], reset: bool):
         next_path=path, reset=reset
     )
     if completed:
-        click.echo(f"Completed task: {completed.name}")
+        click.secho("✓ ", fg="green", nl=False)
+        click.echo("Completed task: ", nl=False)
+        click.secho(completed.name, fg="green", bold=True)
         if next_action:
-            click.echo(f"Started next task: {next_action.name}")
+            _display_task_start(core, next_action, completed_action=completed)
         else:
-            click.echo("All tasks completed!")
+            click.secho("\n🎉 All tasks completed!", fg="magenta", bold=True)
     else:
-        click.echo("No task in progress to complete.")
+        click.secho("No task in progress to complete.", fg="yellow")

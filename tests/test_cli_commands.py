@@ -424,7 +424,7 @@ class TestTaskStartCommand:
         )
 
         assert result.exit_code == 0
-        assert "Currently working on" in result.output
+        assert "Working on" in result.output
 
 
 class TestTaskDoneCommand:
@@ -488,7 +488,7 @@ class TestTaskCommandExtensions:
         )
 
         assert result.exit_code == 0
-        assert "Currently working on: Action 2" in result.output
+        assert "Working on: Action 2" in result.output
 
     def test_next_with_path(self, runner):
         """Task next with explicit path."""
@@ -503,7 +503,7 @@ class TestTaskCommandExtensions:
 
         assert result.exit_code == 0
         assert "Completed task: Action 1" in result.output
-        assert "Started next task: Action 3" in result.output
+        assert "Working on: Action 3" in result.output
 
     def test_next_with_reset(self, runner):
         """Task next with --reset flag."""
@@ -519,7 +519,7 @@ class TestTaskCommandExtensions:
 
         assert result.exit_code == 0
         assert "Completed task: Action 2" in result.output
-        assert "Started next task: Action 1" in result.output
+        assert "Working on: Action 1" in result.output
 
     def test_pause_action(self, runner):
         """Task pause command."""
