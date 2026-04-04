@@ -271,20 +271,21 @@ class TaskManager:
         # Cascade completion up the tree
         events.extend(self._cascade_completion(current_action))
 
-        # If we just completed the task and didn't move to a new one (cursor still points here)
-        # check if we should pause the parent deliverable if it has more work
-        if self.project.task_cursor:
-            parent = self.project.get_item(current_action.parent_uuid)
-            if isinstance(parent, Deliverable) and parent.status == ItemStatus.IN_PROGRESS:
-                # Only pause if there's no auto-advance happening (which would resume it)
-                # and there are still pending items
-                pending_sibling = self._find_next_pending_action_in_deliverable(parent)
-                if pending_sibling:
-                    old_p_status = parent.status
-                    parent.set_status(ItemStatus.PAUSED)
-                    events.append(StatusChangeEvent(parent, old_p_status, ItemStatus.PAUSED, cascaded=True))
-                    # Clear cursor since we've "paused" our work on this deliverable
-                    self.project.task_cursor = None
+        # Always clear the task cursor when an action is completed, 
+        # unless it's immediately replaced by a 'next' command (handled there)
+        self.project.task_cursor = None
+
+        # If we just completed the task, check if we should pause the parent 
+        # deliverable if it still has pending work but no active task
+        parent = self.navigator.get_parent(current_action)
+        if isinstance(parent, Deliverable) and parent.status == ItemStatus.IN_PROGRESS:
+            # Only pause if there's no auto-advance happening (which would resume it)
+            # and there are still pending items
+            pending_sibling = self._find_next_pending_action_in_deliverable(parent)
+            if pending_sibling:
+                old_p_status = parent.status
+                parent.set_status(ItemStatus.PAUSED)
+                events.append(StatusChangeEvent(parent, old_p_status, ItemStatus.PAUSED, cascaded=True))
 
         self._save_callback()
         return current_action, events
@@ -305,7 +306,7 @@ class TaskManager:
         events = [StatusChangeEvent(current_action, old_status, ItemStatus.PAUSED)]
         
         # Also pause the parent deliverable
-        parent = self.project.get_item(current_action.parent_uuid)
+        parent = self.navigator.get_parent(current_action)
         if isinstance(parent, Deliverable) and parent.status == ItemStatus.IN_PROGRESS:
             old_p_status = parent.status
             parent.set_status(ItemStatus.PAUSED)
@@ -324,10 +325,7 @@ class TaskManager:
             List of status change events.
         """
         events = []
-        if not item.parent_uuid:
-            return events
-
-        parent = self.project.get_item(item.parent_uuid)
+        parent = self.navigator.get_parent(item)
         if not parent:
             return events
 
@@ -362,10 +360,7 @@ class TaskManager:
             List of status change events.
         """
         events = []
-        if not item.parent_uuid:
-            return events
-
-        parent = self.project.get_item(item.parent_uuid)
+        parent = self.navigator.get_parent(item)
         if not parent:
             return events
 
@@ -378,6 +373,7 @@ class TaskManager:
             if not isinstance(parent, Phase):
                 events.extend(self._cascade_in_progress(parent))
                 
+        return events
         return events
 
     def cascade_status_to_in_progress(self, item: BaseItem) -> List[StatusChangeEvent]:
@@ -415,7 +411,7 @@ class TaskManager:
 
         # If reset requested, find the first action of the current deliverable
         if reset:
-            deliverable = self.project.get_item(completed_action.parent_uuid)
+            deliverable = self.navigator.get_parent(completed_action)
             if isinstance(deliverable, Deliverable) and deliverable.children:
                 first_action = deliverable.children[0]
                 start_events = self._start_action(first_action)
@@ -424,7 +420,7 @@ class TaskManager:
 
         # Default sequential behavior
         # Check if deliverable boundary was reached
-        deliverable = self.project.get_item(completed_action.parent_uuid)
+        deliverable = self.navigator.get_parent(completed_action)
         if isinstance(deliverable, Deliverable) and deliverable.status == ItemStatus.COMPLETED:
             # Deliverable boundary reached, do not auto-start next action
             # The cursor was already cleared in complete_current_action

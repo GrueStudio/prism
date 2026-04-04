@@ -9,6 +9,7 @@ from typing import Dict, List, Optional
 from prism.exceptions import NavigationError
 from prism.models.base import (
     BaseItem,
+    ItemStatus,
     Milestone,
     Objective,
     Phase,
@@ -103,6 +104,19 @@ class NavigationManager:
             project: Project instance containing all items.
         """
         self.project = project
+
+    def get_parent(self, item: BaseItem) -> Optional[BaseItem]:
+        """Get the parent of an item.
+
+        Args:
+            item: Item to find parent for.
+
+        Returns:
+            Parent item or None if not found or item is at root.
+        """
+        if not item.parent_uuid:
+            return None
+        return self.project.get_item(item.parent_uuid)
 
     def _resolve_path_segment(self, items: list, segment: str) -> Optional[object]:
         """Resolve a path segment to a specific item.
@@ -293,27 +307,14 @@ class NavigationManager:
     def get_crud_context(self) -> Optional[str]:
         """Get current CRUD context (deliverable-level path).
 
-        CRUD context must not be 'behind' task_cursor in depth-first traversal order.
-        If task_cursor is at 2/2/2/2/2, crud_context cannot be at 1/*, 2/1/*, 2/2/1/*, etc.
-
         Returns:
-            - crud_context if explicitly set (validated to not be behind task_cursor)
+            - crud_context if explicitly set
             - Otherwise, parent deliverable path from task_cursor
             - None if neither available
         """
         # Use explicit crud_context if set
         if self.project.crud_context:
-            # Validate it's not behind task_cursor in depth-first order
-            if self.project.task_cursor:
-                if self._is_path_behind(
-                    self.project.crud_context, self.project.task_cursor
-                ):
-                    # crud_context is behind task_cursor, reset it
-                    self.project.crud_context = None
-                else:
-                    return self.project.crud_context
-            else:
-                return self.project.crud_context
+            return self.project.crud_context
 
         # Infer from task_cursor (get parent deliverable)
         if self.project.task_cursor:
@@ -326,60 +327,10 @@ class NavigationManager:
 
         return None
 
-    def _is_path_behind(self, path1: str, path2: str) -> bool:
-        """Check if path1 comes before path2 in depth-first traversal order.
-
-        Examples (path1 behind path2 = True):
-            "1/1/1" behind "2/1/1" = True
-            "2/1/1" behind "2/2/1" = True
-            "2/2/1" behind "2/2/2" = True
-            "2/2/2/1" behind "2/2/2/2" = True
-
-        Args:
-            path1: First path to compare.
-            path2: Second path to compare.
-
-        Returns:
-            True if path1 comes before path2 in depth-first order.
-        """
-        parts1 = path1.split("/")
-        parts2 = path2.split("/")
-
-        for i in range(min(len(parts1), len(parts2))):
-            try:
-                num1 = int(parts1[i])
-                num2 = int(parts2[i])
-            except ValueError:
-                # If not a number, compare as strings
-                if parts1[i] < parts2[i]:
-                    return True
-                elif parts1[i] > parts2[i]:
-                    return False
-                continue
-
-            if num1 < num2:
-                return True
-            elif num1 > num2:
-                return False
-
-        # path1 is a prefix of path2 (path1 is ancestor of path2)
-        # Ancestor is NOT behind descendant in depth-first order
-        if len(parts1) < len(parts2):
-            return False
-
-        # path2 is a prefix of path1 (path2 is ancestor of path1)
-        # Descendant IS behind ancestor in depth-first order
-        if len(parts1) > len(parts2):
-            return True
-
-        # Paths are equal
-        return False
-
     def set_crud_context(self, path: str) -> bool:
         """Set CRUD context to a specific path.
 
-        CRUD context must not be 'behind' task_cursor in depth-first traversal order.
-        If task_cursor is at 2/2/2/2/2, crud_context cannot be set to 1/*, 2/1/*, etc.
+        Cannot navigate to archived items.
 
         Args:
             path: Path to set as CRUD context.
@@ -391,11 +342,9 @@ class NavigationManager:
         if not item:
             return False
 
-        # Validate: crud_context must not be behind task_cursor in depth-first order
-        if self.project.task_cursor:
-            if self._is_path_behind(path, self.project.task_cursor):
-                # Path is behind task_cursor, reject it
-                return False
+        # Cannot navigate to archived items
+        if getattr(item, "status", None) == ItemStatus.ARCHIVED:
+            return False
 
         self.project.crud_context = path
         return True
@@ -623,6 +572,8 @@ class NavigationManager:
     def resolve_path(self, path: Optional[str] = None) -> Optional[str]:
         """Resolve any path: special tokens, relative, or absolute.
 
+        Supports mixing special tokens with relative paths, e.g., ":co/deliverable/1".
+
         Args:
             path: Path string, special token, or None for current position.
 
@@ -633,13 +584,23 @@ class NavigationManager:
         if path is None or path == "":
             return self.get_crud_context()
 
-        # Check for special token
-        if path.startswith(":"):
-            return self.resolve_special_token(path)
-
         # Absolute path (starts with /)
         if path.startswith("/"):
             return path[1:]
+
+        # Check for special token or token-based path
+        if path.startswith(":"):
+            parts = path.split("/", 1)
+            token = parts[0]
+            remainder = parts[1] if len(parts) > 1 else None
+            
+            resolved_base = self.resolve_special_token(token)
+            if not resolved_base:
+                return None
+                
+            if remainder:
+                return f"{resolved_base}/{remainder}"
+            return resolved_base
 
         # Relative path - resolve from CRUD context
         context = self.get_crud_context()

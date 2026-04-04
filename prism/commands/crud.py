@@ -83,15 +83,6 @@ def nav(path: Optional[str]):
     if not resolved:
         raise click.ClickException(f"Cannot navigate to '{path}' - path not resolved.")
 
-    # Validate: path must not be behind task_cursor in depth-first order
-    if core.project.task_cursor:
-        if core.navigator._is_path_behind(resolved, core.project.task_cursor):
-            raise click.ClickException(
-                f"Cannot navigate to '{resolved}' - this path is behind the current task cursor "
-                f"'{core.project.task_cursor}' in depth-first order. "
-                f"You can only navigate to the current position, ancestors, or later branches."
-            )
-
     # Verify item exists
     item = core.get_item_by_path(resolved)
     if not item:
@@ -99,12 +90,15 @@ def nav(path: Optional[str]):
             f"Cannot navigate to '{path}' - item not found at '{resolved}'."
         )
 
+    # Cannot navigate to archived items
+    if getattr(item, "status", None) == "archived":
+        raise click.ClickException(
+            f"Cannot navigate to '{resolved}' because it is archived."
+        )
+
     # Set crud_context (task_cursor is managed by TaskManager only)
     if not core.navigator.set_crud_context(resolved):
-        raise click.ClickException(
-            f"Failed to set CRUD context to '{resolved}'. "
-            f"The path must not be behind the current task cursor."
-        )
+        raise click.ClickException(f"Failed to set CRUD context to '{resolved}'.")
     core._save_project()
 
     click.echo(f"Navigated to: {resolved}")
@@ -268,7 +262,10 @@ def _display_item(item, show_children: bool = True):
     """Display item details in human-readable format."""
     click.echo(f"Name: {item.name}")
     click.echo(f"Description: {item.description or ''}")
-    click.echo(f"Status: {item.status}")
+    
+    # Use .value if status is an enum
+    status_str = item.status.value if hasattr(item.status, "value") else str(item.status)
+    click.echo(f"Status: {status_str}")
     click.echo(f"Type: {type(item).__name__}")
 
     if not show_children:

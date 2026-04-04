@@ -259,6 +259,24 @@ class TestResolvePath:
 
         assert result == "phase-1/milestone-1/objective-1/deliverable-1"
 
+    def test_resolve_token_based_path(self, sample_project):
+        """Resolve supports mixing special tokens with relative paths."""
+        nav = NavigationManager(sample_project)
+        # :co resolves to phase-1/milestone-1/objective-1
+        
+        result = nav.resolve_path(":co/deliverable-1")
+        
+        assert result == "phase-1/milestone-1/objective-1/deliverable-1"
+
+    def test_resolve_token_with_multi_level_remainder(self, sample_project):
+        """Resolve supports tokens with multi-level relative paths."""
+        nav = NavigationManager(sample_project)
+        # :cm resolves to phase-1/milestone-1
+        
+        result = nav.resolve_path(":cm/objective-1/deliverable-1/action-1")
+        
+        assert result == "phase-1/milestone-1/objective-1/deliverable-1/action-1"
+
 
 class TestCrudContext:
     """Test CRUD context management."""
@@ -308,113 +326,20 @@ class TestCrudContext:
 
         assert result is False
 
-    def test_set_crud_context_behind_task_cursor(self, sample_project):
-        """Set CRUD context fails for path behind task_cursor."""
+    def test_set_crud_context_archived_item(self, sample_project):
+        """Set CRUD context fails for archived item."""
+        from prism.models.base import ItemStatus
         nav = NavigationManager(sample_project)
-        nav.project.task_cursor = (
-            "phase-1/milestone-1/objective-1/deliverable-1/action-1"
-        )
-
-        # Try to set context to earlier branch (doesn't exist, but would be behind)
-        # Since we only have phase-1, this tests the validation logic
+        
+        # Mark an item as archived via valid transitions
+        item = nav.get_item_by_path("phase-1/milestone-1/objective-1")
+        item.status = ItemStatus.COMPLETED
+        item.status = ItemStatus.ARCHIVED
+        
         result = nav.set_crud_context("phase-1/milestone-1/objective-1")
-
-        # Ancestor is allowed (not behind)
-        assert result is True
-
-
-class TestDepthFirstValidation:
-    """Test depth-first path validation (_is_path_behind)."""
-
-    def test_path_behind_earlier_phase(self, sample_project, mock_data):
-        """Path in earlier phase is behind."""
-        nav = NavigationManager(sample_project)
-
-        # Add another phase for testing
-        phase2 = mock_data.create_phase(
-            name="Phase 2", slug="phase-2", uuid="phase-2-uuid"
-        )
-        sample_project.add_child(phase2)
-
-        nav.project.task_cursor = (
-            "phase-2/milestone-1/objective-1/deliverable-1/action-1"
-        )
-
-        assert (
-            nav._is_path_behind(
-                "phase-1", "phase-2/milestone-1/objective-1/deliverable-1/action-1"
-            )
-            is True
-        )
-
-    def test_path_behind_earlier_milestone(self, sample_project, mock_data):
-        """Path in earlier milestone is behind."""
-        nav = NavigationManager(sample_project)
-
-        # Add milestone 2
-        milestone2 = mock_data.create_milestone(
-            name="Milestone 2",
-            slug="milestone-2",
-            parent_uuid="phase-1-uuid",
-            uuid="milestone-2-uuid",
-        )
-        sample_project.phases[0].add_child(milestone2)
-
-        nav.project.task_cursor = (
-            "phase-1/milestone-2/objective-1/deliverable-1/action-1"
-        )
-
-        assert (
-            nav._is_path_behind(
-                "phase-1/milestone-1",
-                "phase-1/milestone-2/objective-1/deliverable-1/action-1",
-            )
-            is True
-        )
-
-    def test_path_not_behind_ancestor(self, sample_project):
-        """Ancestor path is NOT behind descendant."""
-        nav = NavigationManager(sample_project)
-        nav.project.task_cursor = (
-            "phase-1/milestone-1/objective-1/deliverable-1/action-1"
-        )
-
-        assert (
-            nav._is_path_behind(
-                "phase-1", "phase-1/milestone-1/objective-1/deliverable-1/action-1"
-            )
-            is False
-        )
-        assert (
-            nav._is_path_behind(
-                "phase-1/milestone-1",
-                "phase-1/milestone-1/objective-1/deliverable-1/action-1",
-            )
-            is False
-        )
-
-    def test_path_not_behind_equal(self, sample_project):
-        """Equal path is NOT behind."""
-        nav = NavigationManager(sample_project)
-        path = "phase-1/milestone-1/objective-1/deliverable-1/action-1"
-        nav.project.task_cursor = path
-
-        assert nav._is_path_behind(path, path) is False
-
-    def test_path_not_behind_later_sibling(self, sample_project):
-        """Later sibling is NOT behind."""
-        nav = NavigationManager(sample_project)
-        nav.project.task_cursor = (
-            "phase-1/milestone-1/objective-1/deliverable-1/action-1"
-        )
-
-        assert (
-            nav._is_path_behind(
-                "phase-1/milestone-1/objective-1/deliverable-1/action-2",
-                "phase-1/milestone-1/objective-1/deliverable-1/action-1",
-            )
-            is False
-        )
+        
+        assert result is False
+        assert nav.project.crud_context is None
 
 
 class TestResolveCurrentOfType:

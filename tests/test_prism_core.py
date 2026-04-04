@@ -190,12 +190,12 @@ class TestPrismCoreTaskOperations:
         )
 
         # Start
-        started = core.start_next_action()
+        started, _ = core.start_next_action()
         assert started is not None
         assert started.status == ItemStatus.IN_PROGRESS
 
         # Complete
-        completed = core.complete_current_action()
+        completed, _ = core.complete_current_action()
         assert completed is not None
         assert completed.status == ItemStatus.COMPLETED
 
@@ -278,7 +278,7 @@ class TestPrismCoreCompletionTracking:
         # Complete one action
         core.task_manager.project.task_cursor = f"{phase.slug}/{milestone.slug}/{objective.slug}/{deliverable.slug}/{action1.slug}"
         core.task_manager.start_next_action()
-        core.task_manager.complete_current_action()
+        _, _ = core.task_manager.complete_current_action()
 
         # Calculate percentage
         pct = core.calculate_completion_percentage(deliverable)
@@ -322,8 +322,8 @@ class TestPrismCoreCompletionTracking:
 
         # Complete everything
         core.task_manager.project.task_cursor = f"{phase.slug}/{milestone.slug}/{objective.slug}/{deliverable.slug}/{action.slug}"
-        core.task_manager.start_next_action()
-        core.task_manager.complete_current_action()
+        _, _ = core.task_manager.start_next_action()
+        _, _ = core.task_manager.complete_current_action()
 
         # Now complete
         assert (

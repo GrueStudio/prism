@@ -12,6 +12,7 @@ import tempfile
 from datetime import datetime
 from pathlib import Path
 from typing import Generator, Optional
+from prism.managers.config_manager import reset_config_manager
 
 import pytest
 
@@ -34,6 +35,15 @@ from prism.models.project import Project
 # =============================================================================
 # Temporary Directory Fixtures
 # =============================================================================
+
+
+@pytest.fixture(autouse=True)
+def reset_globals():
+    """Reset global singletons before each test."""
+    from prism.managers.config_manager import reset_config_manager
+    reset_config_manager()
+    yield
+    reset_config_manager()
 
 
 @pytest.fixture

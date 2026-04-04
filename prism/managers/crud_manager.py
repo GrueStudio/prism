@@ -132,6 +132,7 @@ class CRUDManager:
 
             # Use add_child method which handles type validation
             parent_item.add_child(new_item)
+            self.project.place_item(new_item)
 
             # If parent was completed, cascade status change to in-progress
             if parent_item.status == ItemStatus.COMPLETED:
@@ -145,6 +146,7 @@ class CRUDManager:
                         f"Cannot add phase. Current Phase '{phase.name}' is not complete."
                     )
             self.project.add_child(new_item)
+            self.project.place_item(new_item)
 
         return new_item
 
