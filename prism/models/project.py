@@ -60,7 +60,7 @@ class Project:
                 del self._id_map[item.uuid]
 
     def _map_item(self, item: BaseItem | ArchivedItem):
-        if isinstance(item, BaseItem) and item.uuid not in self._id_map:
+        if item.uuid not in self._id_map:
             self._id_map[item.uuid] = item
 
     def place_item(self, item: BaseItem | ArchivedItem):

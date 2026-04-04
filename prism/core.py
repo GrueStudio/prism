@@ -7,7 +7,7 @@ Uses StorageManager for .prism/ folder-based storage exclusively.
 
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from prism.managers.config_manager import get_config_manager
 from prism.exceptions import ValidationError
@@ -127,19 +127,23 @@ class PrismCore:
         """Get the current action from cursor."""
         return self.task_manager.get_current_action()
 
-    def start_next_action(self) -> Optional[Action]:
+    def start_next_action(self, path: Optional[str] = None) -> Tuple[Optional[Action], List[Any]]:
         """Start the next pending action."""
-        return self.task_manager.start_next_action()
+        return self.task_manager.start_next_action(path=path)
 
-    def complete_current_action(self) -> Optional[Action]:
+    def complete_current_action(self) -> Tuple[Optional[Action], List[Any]]:
         """Complete the current action."""
         return self.task_manager.complete_current_action()
 
     def complete_current_and_start_next(
         self,
-    ) -> tuple[Optional[Action], Optional[Action]]:
+        next_path: Optional[str] = None,
+        reset: bool = False,
+    ) -> Tuple[Optional[Action], Optional[Action], List[Any]]:
         """Complete current action and start next."""
-        return self.task_manager.complete_current_and_start_next()
+        return self.task_manager.complete_current_and_start_next(
+            next_path=next_path, reset=reset
+        )
 
     # =========================================================================
     # Completion Tracking (delegated to TaskManager)

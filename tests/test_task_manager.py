@@ -96,7 +96,7 @@ class TestStartNextAction:
 
     def test_start_next_action_finds_pending(self, task_manager):
         """Start next action finds first pending action."""
-        result = task_manager.start_next_action()
+        result, events = task_manager.start_next_action()
 
         assert result is not None
         assert result.status == ItemStatus.IN_PROGRESS
@@ -109,7 +109,7 @@ class TestStartNextAction:
         first_action = task_manager.get_current_action()
 
         # Start again should return same action
-        result = task_manager.start_next_action()
+        result, events = task_manager.start_next_action()
 
         assert result is first_action
 
@@ -123,7 +123,7 @@ class TestStartNextAction:
             for action in deliverable.children:
                 action.status = ItemStatus.COMPLETED
 
-        result = task_manager.start_next_action()
+        result, events = task_manager.start_next_action()
 
         assert result is None
         assert task_manager.project.task_cursor is None
@@ -141,17 +141,17 @@ class TestCompleteCurrentAction:
 
     def test_complete_current_action_none(self, task_manager):
         """Complete current action returns None when no action in progress."""
-        result = task_manager.complete_current_action()
+        result, events = task_manager.complete_current_action()
         assert result is None
 
     def test_complete_current_action_success(self, task_manager):
         """Complete current action marks action completed."""
         from prism.models.base import ItemStatus
-        
+
         # Start action first
         task_manager.start_next_action()
 
-        result = task_manager.complete_current_action()
+        result, events = task_manager.complete_current_action()
 
         assert result is not None
         assert result.status == ItemStatus.COMPLETED
@@ -183,7 +183,7 @@ class TestCompleteCurrentAndStartNext:
         """Complete and start next returns both actions."""
         task_manager.start_next_action()
 
-        completed, next_action = task_manager.complete_current_and_start_next()
+        completed, next_action, events = task_manager.complete_current_and_start_next()
 
         assert completed is not None
         assert completed.status == ItemStatus.COMPLETED
@@ -191,11 +191,10 @@ class TestCompleteCurrentAndStartNext:
 
     def test_complete_and_start_next_none_when_not_started(self, task_manager):
         """Complete and start next returns (None, None) when not started."""
-        completed, next_action = task_manager.complete_current_and_start_next()
+        completed, next_action, events = task_manager.complete_current_and_start_next()
 
         assert completed is None
         assert next_action is None
-
 
 # =============================================================================
 # Completion Cascading Tests
@@ -288,7 +287,8 @@ class TestCascadeCompletion:
         new_objective = Objective(
             name="New Objective",
             description="Test",
-            slug="new-obj"
+            slug="new-obj",
+            parent_uuid=milestone.uuid
         )
         milestone.add_child(new_objective)
 
@@ -297,8 +297,8 @@ class TestCascadeCompletion:
 
         # Milestone should be in-progress
         assert milestone.status == ItemStatus.IN_PROGRESS
-        # Phase should remain unchanged (not completed)
-        assert phase.status == ItemStatus.PENDING
+        # Phase should also be in-progress now (cascaded)
+        assert phase.status == ItemStatus.IN_PROGRESS
 
     def test_cascade_status_to_in_progress_cascades_to_phase(self, task_manager):
         """Cascade propagates to phase when milestone was completed."""
@@ -314,7 +314,8 @@ class TestCascadeCompletion:
         new_objective = Objective(
             name="New Objective",
             description="Test",
-            slug="new-obj"
+            slug="new-obj",
+            parent_uuid=milestone.uuid
         )
         milestone.add_child(new_objective)
 
@@ -340,7 +341,8 @@ class TestCascadeCompletion:
         new_action = Action(
             name="New Action",
             description="Test",
-            slug="new-action"
+            slug="new-action",
+            parent_uuid=deliverable.uuid
         )
         deliverable.add_child(new_action)
 
@@ -364,7 +366,8 @@ class TestCascadeCompletion:
         new_deliverable = Deliverable(
             name="New Deliverable",
             description="Test",
-            slug="new-deliverable"
+            slug="new-deliverable",
+            parent_uuid=objective.uuid
         )
         objective.add_child(new_deliverable)
 
@@ -1037,11 +1040,11 @@ class TestTaskManagerIntegration:
         task_manager.project.task_cursor = (
             "phase-1/milestone-1/objective-1/deliverable-1/" + action.slug
         )
-        started = task_manager.start_next_action()
+        started, events = task_manager.start_next_action()
         assert started.status == ItemStatus.IN_PROGRESS
 
         # Complete action
-        completed = task_manager.complete_current_action()
+        completed, events = task_manager.complete_current_action()
         assert completed.status == ItemStatus.COMPLETED
 
     def test_slug_uniqueness_across_operations(self, crud_manager):
@@ -1076,7 +1079,7 @@ class TestOutOfOrderTasks:
     def test_start_action_by_path(self, task_manager):
         """Test starting a specific action by its path."""
         path = "/phase-1/milestone-1/objective-1/deliverable-1/action-2"
-        started = task_manager.start_action_by_path(path)
+        started, events = task_manager.start_action_by_path(path)
 
         assert started.name == "Action 2"
         assert started.status == ItemStatus.IN_PROGRESS
@@ -1086,7 +1089,7 @@ class TestOutOfOrderTasks:
         """Test starting a deliverable by path (starts its first pending action)."""
         path = "/phase-1/milestone-1/objective-1/deliverable-2"
         # Deliverable 2 has Action 3 and Action 4
-        started = task_manager.start_action_by_path(path)
+        started, events = task_manager.start_action_by_path(path)
 
         assert started.name == "Action 3"
         assert started.status == ItemStatus.IN_PROGRESS
@@ -1103,7 +1106,7 @@ class TestOutOfOrderTasks:
         # Complete and go to a specific action out of order
         next_path = "/phase-1/milestone-1/objective-1/deliverable-2/action-3"
 
-        completed, next_action = task_manager.complete_current_and_start_next(
+        completed, next_action, events = task_manager.complete_current_and_start_next(
             next_path=next_path
         )
 
@@ -1124,7 +1127,7 @@ class TestOutOfOrderTasks:
         )
 
         # Complete action 2 and reset to action 1
-        completed, next_action = task_manager.complete_current_and_start_next(reset=True)
+        completed, next_action, events = task_manager.complete_current_and_start_next(reset=True)
 
         assert completed.name == "Action 2"
         assert next_action.name == "Action 1"
@@ -1135,23 +1138,22 @@ class TestOutOfOrderTasks:
 
     def test_resume_paused_action(self, task_manager):
         """Test that start_next_action resumes a paused action."""
-        action = task_manager.start_next_action()
+        action, events = task_manager.start_next_action()
         task_manager.pause_current_action()
         assert action.status == ItemStatus.PAUSED
 
         # Start again (no path) - should resume the paused action
-        resumed = task_manager.start_next_action()
+        resumed, events = task_manager.start_next_action()
         assert resumed is action
         assert resumed.status == ItemStatus.IN_PROGRESS
 
-    def test_start_different_action_while_paused_raises(self, task_manager):
-        """Test that starting a different action while one is paused raises error."""
+    def test_start_different_action_while_paused_allowed(self, task_manager):
+        """Test that starting a different action while one is paused is now allowed."""
         task_manager.start_next_action()
         task_manager.pause_current_action()
 
-        # Try to start a different action by path
+        # Try to start a different action by path - should NOT raise now
         different_path = "/phase-1/milestone-1/objective-1/deliverable-1/action-2"
-        with pytest.raises(
-            InvalidOperationError, match="is currently paused. Please resume it"
-        ):
-            task_manager.start_action_by_path(different_path)
+        started, events = task_manager.start_action_by_path(different_path)
+        assert started.name == "Action 2"
+        assert started.status == ItemStatus.IN_PROGRESS

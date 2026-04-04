@@ -81,6 +81,7 @@ class ProjectManager:
         """
         # Load active items from storage
         strategic = self.storage.load_strategic()
+        execution = self.storage.load_execution()
 
         project = Project(strategic.phase_uuids)
 
@@ -89,44 +90,46 @@ class ProjectManager:
         project.task_cursor = cursor_file.task_cursor
         project.crud_context = cursor_file.crud_context
 
-        def _load_strategic(item, parent, item_type):
-            """Load strategic item and its children, then fill in archived siblings."""
-            child_uuids = parent.child_uuids.copy()
-            if item:
-                if isinstance(parent, Project) and isinstance(item, Phase):
-                    parent.add_child(item)
-                else:
-                    project.place_item(item)
-                child_uuids.remove(item.uuid)
-
-            # Fill in archived siblings from child_uuids
-            for uuid in list(child_uuids):
-                if item and uuid == item.uuid:
-                    continue
-                archived = self.archive_manager.get_archived_item(uuid, item_type)
+        # 1. Build Strategic Hierarchy Top-Down
+        # This ensures parents are in the _id_map before children are placed
+        
+        # Phase level
+        for uuid in strategic.phase_uuids:
+            if strategic.phase and uuid == strategic.phase.uuid:
+                project.add_child(strategic.phase)
+            else:
+                archived = self.archive_manager.get_archived_item(uuid, "phase")
                 if archived:
-                    parent.add_child(archived)
+                    project.add_child(archived)
 
-        # Load phase (and archived siblings)
-        _load_strategic(strategic.phase, project, "phase")
-
-        # Load milestone if phase exists
+        # Milestone level
         if strategic.phase:
-            _load_strategic(strategic.milestone, strategic.phase, "milestone")
-        else:
-            return project
+            for uuid in strategic.phase.child_uuids:
+                if strategic.milestone and uuid == strategic.milestone.uuid:
+                    project.place_item(strategic.milestone)
+                else:
+                    archived = self.archive_manager.get_archived_item(uuid, "milestone")
+                    if archived:
+                        project.place_item(archived)
 
-        # Load objective if milestone exists
+        # Objective level
         if strategic.milestone:
-            _load_strategic(strategic.objective, strategic.milestone, "objective")
-        else:
-            return project
+            for uuid in strategic.milestone.child_uuids:
+                if strategic.objective and uuid == strategic.objective.uuid:
+                    project.place_item(strategic.objective)
+                else:
+                    archived = self.archive_manager.get_archived_item(uuid, "objective")
+                    if archived:
+                        project.place_item(archived)
 
-        execution = self.storage.load_execution()
-
-        # Load execution items
-        for item in execution.deliverables + execution.actions:
-            project.place_item(item)
+        # 2. Build Execution Hierarchy
+        # Deliverables (children of Objective)
+        for deliv in execution.deliverables:
+            project.place_item(deliv)
+            
+        # Actions (children of Deliverables)
+        for action in execution.actions:
+            project.place_item(action)
 
         return project
 
@@ -153,6 +156,8 @@ class ProjectManager:
             for child in children:
                 if isinstance(child, BaseItem) and child.get_status() in [
                     ItemStatus.PENDING,
+                    ItemStatus.IN_PROGRESS,
+                    ItemStatus.PAUSED,
                     ItemStatus.COMPLETED,
                 ]:
                     return child

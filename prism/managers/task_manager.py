@@ -11,9 +11,7 @@ Handles:
 
 import re
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Tuple
-
-import click
+from typing import Any, Callable, Dict, List, Optional, Tuple, NamedTuple
 
 from prism.managers.config_manager import get_config_manager
 from prism.exceptions import (
@@ -32,6 +30,14 @@ from prism.models.base import (
     Phase,
 )
 from prism.models.project import Project
+
+
+class StatusChangeEvent(NamedTuple):
+    """Represents a status change that occurred during an operation."""
+    item: BaseItem
+    old_status: ItemStatus
+    new_status: ItemStatus
+    cascaded: bool = False
 
 
 class TaskManager:
@@ -117,7 +123,7 @@ class TaskManager:
         """
         # First, try to find pending actions in non-completed deliverables
         for deliverable in objective.children:
-            if deliverable.status != "completed":
+            if deliverable.status != ItemStatus.COMPLETED:
                 pending_action = self._find_next_pending_action_in_deliverable(
                     deliverable
                 )
@@ -137,42 +143,55 @@ class TaskManager:
 
         return self._find_next_pending_action_in_objective(current_objective)
 
-    def _start_action(self, action: Action) -> None:
+    def _start_action(self, action: Action) -> List[StatusChangeEvent]:
         """Mark an action as in-progress and update the task cursor.
+
+        Enforces single active task by pausing any currently in-progress action.
 
         Args:
             action: Action to start.
+
+        Returns:
+            List of status change events.
         """
-        action.set_status(ItemStatus.IN_PROGRESS)
+        events = []
+        
+        # Check if another action is currently in progress and pause it
+        current_action = self.get_current_action()
+        if current_action and current_action.uuid != action.uuid:
+            if current_action.status == ItemStatus.IN_PROGRESS:
+                old_status = current_action.status
+                current_action.set_status(ItemStatus.PAUSED)
+                events.append(StatusChangeEvent(current_action, old_status, ItemStatus.PAUSED))
+
+        # Start the new action
+        if action.status != ItemStatus.IN_PROGRESS:
+            old_status = action.status
+            action.set_status(ItemStatus.IN_PROGRESS)
+            events.append(StatusChangeEvent(action, old_status, ItemStatus.IN_PROGRESS))
+            
+            # Cascade in-progress up the tree
+            events.extend(self._cascade_in_progress(action))
+
         action_path = self.navigator.get_item_path(action)
         self.project.task_cursor = action_path
         self._save_callback()
+        
+        return events
 
-    def start_action_by_path(self, path: str) -> Action:
+    def start_action_by_path(self, path: str) -> Tuple[Action, List[StatusChangeEvent]]:
         """Start a specific action or deliverable's first action by path.
 
         Args:
             path: Path to the action or deliverable.
 
         Returns:
-            The started action.
+            Tuple of (started_action, list of status change events).
 
         Raises:
             NotFoundError: If item at path not found.
-            InvalidOperationError: If item is not an action or deliverable,
-                                 or if another action is paused.
+            InvalidOperationError: If item is not an action or deliverable.
         """
-        # Check if another action is currently paused
-        current_action = self.get_current_action()
-        if current_action and current_action.status == ItemStatus.PAUSED:
-            action_path = self.navigator.get_item_path(current_action)
-            resolved_path = self.navigator.resolve_path(path)
-            if action_path != resolved_path:
-                raise InvalidOperationError(
-                    f"Action '{current_action.name}' is currently paused. "
-                    "Please resume it or complete it before starting a different action."
-                )
-
         item = self.navigator.resolve_to_item(path)
         if not item:
             raise NotFoundError(f"Item not found at path: {path}")
@@ -192,10 +211,10 @@ class TaskManager:
                 f"Cannot start item at '{path}'. It must be an action or a deliverable with actions."
             )
 
-        self._start_action(action_to_start)
-        return action_to_start
+        events = self._start_action(action_to_start)
+        return action_to_start, events
 
-    def start_next_action(self, path: Optional[str] = None) -> Optional[Action]:
+    def start_next_action(self, path: Optional[str] = None) -> Tuple[Optional[Action], List[StatusChangeEvent]]:
         """Start the next pending action, or a specific action if path provided.
 
         If a path is provided, starts that specific action.
@@ -207,7 +226,7 @@ class TaskManager:
             path: Optional path to a specific action to start.
 
         Returns:
-            The started action, or None if no pending action found.
+            Tuple of (started_action, list of status change events).
         """
         if path:
             return self.start_action_by_path(path)
@@ -218,79 +237,99 @@ class TaskManager:
             ItemStatus.IN_PROGRESS,
             ItemStatus.PAUSED,
         }:
+            events = []
             if current_action.status == ItemStatus.PAUSED:
-                self._start_action(current_action)
-            return current_action
+                events = self._start_action(current_action)
+            return current_action, events
 
         # If no action in progress, find the next pending one
         next_pending_action = self._find_next_pending_action()
 
         if next_pending_action:
-            self._start_action(next_pending_action)
+            events = self._start_action(next_pending_action)
+            return next_pending_action, events
         else:
             self.project.task_cursor = None
             self._save_callback()
+            return None, []
 
-        return next_pending_action
-
-    def complete_current_action(self) -> Optional[Action]:
+    def complete_current_action(self) -> Tuple[Optional[Action], List[StatusChangeEvent]]:
         """Complete the current action without advancing to the next one.
 
         Returns:
-            The completed action, or None if no action in progress.
+            Tuple of (completed_action, list of status change events).
         """
         current_action = self.get_current_action()
         if not current_action or current_action.status != ItemStatus.IN_PROGRESS:
-            return None
+            return None, []
 
+        events = []
+        old_status = current_action.status
         current_action.set_status(ItemStatus.COMPLETED)
+        events.append(StatusChangeEvent(current_action, old_status, ItemStatus.COMPLETED))
 
         # Cascade completion up the tree
-        self._cascade_completion(current_action)
+        events.extend(self._cascade_completion(current_action))
+
+        # If we just completed the task and didn't move to a new one (cursor still points here)
+        # check if we should pause the parent deliverable if it has more work
+        if self.project.task_cursor:
+            parent = self.project.get_item(current_action.parent_uuid)
+            if isinstance(parent, Deliverable) and parent.status == ItemStatus.IN_PROGRESS:
+                # Only pause if there's no auto-advance happening (which would resume it)
+                # and there are still pending items
+                pending_sibling = self._find_next_pending_action_in_deliverable(parent)
+                if pending_sibling:
+                    old_p_status = parent.status
+                    parent.set_status(ItemStatus.PAUSED)
+                    events.append(StatusChangeEvent(parent, old_p_status, ItemStatus.PAUSED, cascaded=True))
+                    # Clear cursor since we've "paused" our work on this deliverable
+                    self.project.task_cursor = None
 
         self._save_callback()
-        return current_action
+        return current_action, events
 
-    def pause_current_action(self) -> Optional[Action]:
+    def pause_current_action(self) -> Tuple[Optional[Action], List[StatusChangeEvent]]:
         """Pause the current action.
 
         Returns:
-            The paused action, or None if no action in progress.
+            Tuple of (paused_action, list of status change events).
         """
         current_action = self.get_current_action()
         if not current_action or current_action.status != ItemStatus.IN_PROGRESS:
-            return None
+            return None, []
 
+        old_status = current_action.status
         current_action.set_status(ItemStatus.PAUSED)
+        
+        events = [StatusChangeEvent(current_action, old_status, ItemStatus.PAUSED)]
+        
+        # Also pause the parent deliverable
+        parent = self.project.get_item(current_action.parent_uuid)
+        if isinstance(parent, Deliverable) and parent.status == ItemStatus.IN_PROGRESS:
+            old_p_status = parent.status
+            parent.set_status(ItemStatus.PAUSED)
+            events.append(StatusChangeEvent(parent, old_p_status, ItemStatus.PAUSED, cascaded=True))
+
         self._save_callback()
-        return current_action
+        return current_action, events
 
-    def _cascade_completion(self, item: BaseItem) -> None:
+    def _cascade_completion(self, item: BaseItem) -> List[StatusChangeEvent]:
         """Cascade completion status up the tree when all children are complete.
-
-        When all actions in a deliverable are complete, mark deliverable complete.
-        When all deliverables in an objective are complete, mark objective complete.
-
-        Does NOT cascade to milestones or phases to allow adding new children.
-
-        Prints a notification when a parent item is marked complete.
 
         Args:
             item: The completed item.
+
+        Returns:
+            List of status change events.
         """
-        # Get the parent of the completed item
-        item_path = self.navigator.get_item_path(item)
-        if not item_path:
-            return
+        events = []
+        if not item.parent_uuid:
+            return events
 
-        segments = item_path.split("/")
-        if len(segments) < 2:
-            return  # Top-level item, no parent to update
-
-        parent_path = "/".join(segments[:-1])
-        parent = self.navigator.get_item_by_path(parent_path)
+        parent = self.project.get_item(item.parent_uuid)
         if not parent:
-            return
+            return events
 
         # Check if all children are terminal (completed, archived, or cancelled)
         all_children_terminal = False
@@ -300,53 +339,59 @@ class TaskManager:
                 for a in parent.children
             )
         else:
-            all_children_terminal = True # No children means it's effectively terminal
+            all_children_terminal = True
 
         # If all children are terminal, mark parent as complete and continue cascading
         if all_children_terminal and parent.status != ItemStatus.COMPLETED:
+            old_status = parent.status
             parent.set_status(ItemStatus.COMPLETED)
-            click.echo(f"  ✓ {type(parent).__name__} '{parent.name}' marked complete")
+            events.append(StatusChangeEvent(parent, old_status, ItemStatus.COMPLETED, cascaded=True))
 
             # Continue cascading up the tree recursively
-            self._cascade_completion(parent)
+            events.extend(self._cascade_completion(parent))
 
-    def cascade_status_to_in_progress(self, item: BaseItem) -> None:
-        """Cascade status change to 'in-progress' up the tree when child added to completed parent.
+        return events
 
-        When a child is added to a completed milestone/objective/deliverable,
-        change its status to 'in-progress' and cascade up to the phase level.
+    def _cascade_in_progress(self, item: BaseItem) -> List[StatusChangeEvent]:
+        """Cascade in-progress status up the tree.
 
         Args:
-            item: The item whose status changed to 'in-progress'.
+            item: The item that became in-progress.
+
+        Returns:
+            List of status change events.
         """
-        # Get the parent of the item
-        item_path = self.navigator.get_item_path(item)
-        if not item_path:
-            return
+        events = []
+        if not item.parent_uuid:
+            return events
 
-        segments = item_path.split("/")
-        if len(segments) < 2:
-            return  # Top-level item, no parent to update
-
-        parent_path = "/".join(segments[:-1])
-        parent = self.navigator.get_item_by_path(parent_path)
+        parent = self.project.get_item(item.parent_uuid)
         if not parent:
-            return
+            return events
 
-        # If parent is completed, change it to in-progress
-        if parent.status == ItemStatus.COMPLETED:
+        # Only cascade up to Phase level
+        if parent.status != ItemStatus.IN_PROGRESS:
+            old_status = parent.status
             parent.set_status(ItemStatus.IN_PROGRESS)
-            click.echo(f"  ✓ {type(parent).__name__} '{parent.name}' changed to in-progress")
+            events.append(StatusChangeEvent(parent, old_status, ItemStatus.IN_PROGRESS, cascaded=True))
+            
+            if not isinstance(parent, Phase):
+                events.extend(self._cascade_in_progress(parent))
+                
+        return events
 
-            # Continue cascading up to phase level
-            if isinstance(parent, (Objective, Milestone)):
-                self.cascade_status_to_in_progress(parent)
+    def cascade_status_to_in_progress(self, item: BaseItem) -> List[StatusChangeEvent]:
+        """External entry point for cascading in-progress status."""
+        events = self._cascade_in_progress(item)
+        if events:
+            self._save_callback()
+        return events
 
     def complete_current_and_start_next(
         self,
         next_path: Optional[str] = None,
         reset: bool = False,
-    ) -> Tuple[Optional[Action], Optional[Action]]:
+    ) -> Tuple[Optional[Action], Optional[Action], List[StatusChangeEvent]]:
         """Complete the current action and start the next pending one.
 
         Args:
@@ -354,50 +399,40 @@ class TaskManager:
             reset: If True, reset to the first action of the current deliverable.
 
         Returns:
-            Tuple of (completed_action, next_action)
+            Tuple of (completed_action, next_action, list of status change events)
         """
-        completed_action = self.complete_current_action()
+        completed_action, comp_events = self.complete_current_action()
         if not completed_action:
-            return (None, None)
+            return None, None, []
+
+        all_events = list(comp_events)
 
         # If explicit next_path provided, use it
         if next_path:
-            next_action = self.start_next_action(path=next_path)
-            return (completed_action, next_action)
+            next_action, start_events = self.start_next_action(path=next_path)
+            all_events.extend(start_events)
+            return completed_action, next_action, all_events
 
         # If reset requested, find the first action of the current deliverable
         if reset:
-            item_path = self.navigator.get_item_path(completed_action)
-            if item_path:
-                segments = item_path.split("/")
-                if len(segments) >= 2:
-                    deliv_path = "/".join(segments[:-1])
-                    deliverable = self.navigator.get_item_by_path(deliv_path)
-                    if isinstance(deliverable, Deliverable) and deliverable.children:
-                        # Reset to the first action of the deliverable
-                        # (even if it was already completed)
-                        first_action = deliverable.children[0]
-                        self._start_action(first_action)
-                        return (completed_action, first_action)
+            deliverable = self.project.get_item(completed_action.parent_uuid)
+            if isinstance(deliverable, Deliverable) and deliverable.children:
+                first_action = deliverable.children[0]
+                start_events = self._start_action(first_action)
+                all_events.extend(start_events)
+                return completed_action, first_action, all_events
 
         # Default sequential behavior
         # Check if deliverable boundary was reached
-        parent_path = self.navigator.get_item_path(completed_action)
-        if parent_path:
-            # path is like phase/milestone/objective/deliverable/action
-            segments = parent_path.split("/")
-            if len(segments) >= 2:
-                deliv_path = "/".join(segments[:-1])
-                deliverable = self.navigator.get_item_by_path(deliv_path)
-                if deliverable and deliverable.status == ItemStatus.COMPLETED:
-                    # Deliverable boundary reached, do not auto-start next action
-                    # Also clear the cursor since we're not starting a new task
-                    self.project.task_cursor = None
-                    self._save_callback()
-                    return (completed_action, None)
+        deliverable = self.project.get_item(completed_action.parent_uuid)
+        if isinstance(deliverable, Deliverable) and deliverable.status == ItemStatus.COMPLETED:
+            # Deliverable boundary reached, do not auto-start next action
+            # The cursor was already cleared in complete_current_action
+            return completed_action, None, all_events
 
-        next_action = self.start_next_action()
-        return (completed_action, next_action)
+        next_action, start_events = self.start_next_action()
+        all_events.extend(start_events)
+        return completed_action, next_action, all_events
 
     # =========================================================================
     # Completion Tracking

@@ -535,6 +535,25 @@ class TestTaskCommandExtensions:
         assert result.exit_code == 0
         assert "Paused task: Action 1" in result.output
 
+    def test_resume_paused_task_display(self, runner):
+        """Test that resuming a paused task shows 'Resuming' message."""
+        runner.invoke(cli, ["task", "start"])
+        runner.invoke(cli, ["task", "pause"])
+
+        result = runner.invoke(cli, ["task", "start"])
+        assert result.exit_code == 0
+        assert "Resuming task: Action 1" in result.output
+
+    def test_done_on_paused_task_shows_hint(self, runner):
+        """Test that running 'done' on a paused task shows a hint."""
+        runner.invoke(cli, ["task", "start"])
+        runner.invoke(cli, ["task", "pause"])
+
+        result = runner.invoke(cli, ["task", "done"])
+        assert result.exit_code == 0
+        assert "Task is currently paused: Action 1" in result.output
+        assert "Please resume it with 'prism task start'" in result.output
+
 
 # =============================================================================
 # Status Command Tests
